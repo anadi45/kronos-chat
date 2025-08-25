@@ -113,6 +113,7 @@ Once the server is running, you can access:
 - `GET /api/v1/chat/` - Chat operations
 - `GET /api/v1/users/` - User operations
 - `POST /api/v1/agent/invoke` - Invoke the LangGraph agent with Gemini
+- `POST /api/v1/agent/stream` - Stream the LangGraph agent response with Gemini
 
 ## Agent Functionality
 
@@ -134,11 +135,23 @@ The server includes a LangGraph agent powered by Google's Gemini model. The agen
   }
   ```
 
+### Streaming API
+
+- **Endpoint**: `POST /api/v1/agent/stream`
+- **Request Body**: 
+  ```json
+  {
+    "message": "What is 2 + 3?"
+  }
+  ```
+- **Response**: Streams the agent's response in real-time as plain text
+
 ### Agent Components
 
 1. **LangGraph Framework**: Used to create the agent's decision-making workflow
 2. **Gemini Integration**: Uses Google's Gemini 1.5 Flash model for natural language understanding
 3. **Tools**: Currently includes a simple `add` function tool
+4. **Streaming Support**: Real-time streaming of agent responses and tool usage
 
 ### Adding New Tools
 

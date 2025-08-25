@@ -1,9 +1,9 @@
 import os
-from typing import Annotated
+from typing import AsyncGenerator
 from dotenv import load_dotenv
 from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain_core.messages import HumanMessage, SystemMessage
-from langgraph.graph import END, StateGraph, MessagesState
+from langchain_core.messages import HumanMessage, AIMessage
+from langgraph.graph import StateGraph, MessagesState
 from langgraph.prebuilt import ToolNode, tools_condition
 from .tools import add
 
@@ -40,7 +40,7 @@ class Agent:
         # Set the entrypoint
         workflow.set_entry_point("agent")
         
-        # Add edges
+        # Add conditional edges
         workflow.add_conditional_edges(
             "agent",
             tools_condition,
@@ -59,4 +59,19 @@ class Agent:
         """Invoke the agent with a message."""
         messages = [HumanMessage(content=message)]
         result = self.graph.invoke({"messages": messages})
-        return result['messages'][-1].content if result['messages'] else ""
+        # Return only the final AI message content
+        for msg in reversed(result['messages']):
+            if isinstance(msg, AIMessage) and msg.content:
+                return msg.content
+        return ""
+    
+    async def astream(self, message: str) -> AsyncGenerator[str, None]:
+        """Stream the agent's response."""
+        messages = [HumanMessage(content=message)]
+        async for chunk in self.graph.astream({"messages": messages}):
+            # Look for agent responses
+            if "agent" in chunk:
+                agent_messages = chunk["agent"].get("messages", [])
+                for msg in agent_messages:
+                    if hasattr(msg, 'content') and msg.content:
+                        yield msg.content

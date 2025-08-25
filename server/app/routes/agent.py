@@ -1,6 +1,8 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Response
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from app.agent import Agent
+import asyncio
 
 router = APIRouter(prefix="/agent", tags=["agent"])
 
@@ -27,3 +29,17 @@ async def invoke_agent(request: AgentRequest):
         return AgentResponse(response=response)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/stream")
+async def stream_agent(request: AgentRequest):
+    if agent is None:
+        raise HTTPException(status_code=500, detail="Agent not initialized")
+    
+    async def event_generator():
+        try:
+            async for chunk in agent.astream(request.message):
+                yield chunk
+        except Exception as e:
+            yield f"Error: {str(e)}\n"
+    
+    return StreamingResponse(event_generator(), media_type="text/plain")
