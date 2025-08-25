@@ -159,6 +159,11 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
 
+# Virtual environment files
+venv/
+env/
+ENV/
+
 # VS Code
 .vscode/
 
@@ -183,22 +188,3 @@ Thumbs.db
 .Trashes
 ehthumbs.db
 Thumbs.db
-
-# Node.js files (for future client)
-node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# Client build outputs
-client/dist/
-client/build/
-
-# Editor files
-*.swp
-*.swo
-*~
-
-# Monorepo specific
-**/venv/
-**/.env
