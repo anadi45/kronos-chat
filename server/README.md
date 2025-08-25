@@ -23,6 +23,31 @@ A FastAPI backend for the Kronos chat application.
 
 - Python 3.7 or higher
 - pip (Python package installer)
+- PostgreSQL database server
+
+### PostgreSQL Setup
+
+1. Install PostgreSQL on your system:
+   - **Windows**: Download from [postgresql.org](https://www.postgresql.org/download/windows/)
+   - **macOS**: `brew install postgresql`
+   - **Ubuntu/Debian**: `sudo apt-get install postgresql postgresql-contrib`
+
+2. Start the PostgreSQL service:
+   - **Windows**: Start the PostgreSQL service from Services
+   - **macOS**: `brew services start postgresql`
+   - **Ubuntu/Debian**: `sudo systemctl start postgresql`
+
+3. Create a database and user for the application:
+   ```sql
+   CREATE DATABASE kronos_chat;
+   CREATE USER kronos_user WITH PASSWORD 'kronos_password';
+   GRANT ALL PRIVILEGES ON DATABASE kronos_chat TO kronos_user;
+   ```
+
+4. Update the database connection string in your `.env` file:
+   ```
+   DATABASE_URL=postgresql://kronos_user:kronos_password@localhost:5432/kronos_chat
+   ```
 
 ### Virtual Environment Setup
 
@@ -55,6 +80,13 @@ A virtual environment is recommended to isolate project dependencies.
 With the virtual environment activated, install the required dependencies:
 ```bash
 pip install -r requirements.txt
+```
+
+### Database Initialization
+
+Initialize the database tables:
+```bash
+python init_db.py
 ```
 
 ### Starting the Server
@@ -111,7 +143,11 @@ Once the server is running, you can access:
 - `GET /` - Welcome message
 - `GET /health` - Health check
 - `GET /api/v1/chat/` - Chat operations
-- `GET /api/v1/users/` - User operations
+- `GET /api/v1/users/` - List users
+- `POST /api/v1/users/` - Create a new user
+- `GET /api/v1/users/{user_id}` - Get a specific user
+- `PUT /api/v1/users/{user_id}` - Update a specific user
+- `DELETE /api/v1/users/{user_id}` - Delete a specific user
 - `POST /api/v1/agent/invoke` - Invoke the LangGraph agent with Gemini
 - `POST /api/v1/agent/stream` - Stream the LangGraph agent response with Gemini
 

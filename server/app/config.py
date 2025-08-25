@@ -1,8 +1,11 @@
-from pydantic import BaseSettings
+from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
     # Database settings
-    database_url: str = "sqlite:///./kronos_chat.db"
+    database_url: str = "postgresql://kronos_user:kronos_password@localhost:5432/kronos_chat"
+    
+    # API Keys
+    gemini_api_key: str
     
     # JWT settings
     secret_key: str = "your-secret-key-here"

@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from app.routes import chat, users, agent
+from app.utils import init_db
 
 def create_app() -> FastAPI:
     app = FastAPI(
@@ -7,6 +8,9 @@ def create_app() -> FastAPI:
         description="A FastAPI backend for the Kronos chat application",
         version="0.1.0"
     )
+    
+    # Initialize the database
+    init_db()
     
     # Include routers
     app.include_router(chat.router, prefix="/api/v1/chat", tags=["chat"])
