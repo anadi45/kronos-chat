@@ -5,8 +5,8 @@ This is a monorepo for the Kronos Chat application, containing both the client a
 ## Project Structure
 
 ```
-├── client/                 # Frontend application (to be implemented)
-├── server/                 # Backend server
+├── client/                 # Frontend application (React + TypeScript)
+├── server/                 # Backend server (FastAPI)
 │   ├── app/                # Main application code
 │   │   ├── main.py         # Application factory
 │   │   ├── config.py       # Configuration settings
@@ -44,7 +44,15 @@ For detailed information about the server, see [server/README.md](server/README.
 
 ### Client
 
-The client directory is reserved for the frontend application which will be implemented later.
+The client is a React + TypeScript frontend application for the Kronos Chat system.
+
+**Technology Stack:**
+- [React](https://react.dev/) - A JavaScript library for building user interfaces
+- [TypeScript](https://www.typescriptlang.org/) - A typed superset of JavaScript
+- [Vite](https://vitejs.dev/) - Next generation frontend tooling
+- [ESLint](https://eslint.org/) - Pluggable JavaScript linter
+
+For detailed information about the client, see [client/README.md](client/README.md).
 
 ## Development Setup
 
@@ -75,7 +83,22 @@ The client directory is reserved for the frontend application which will be impl
 
 ### Client
 
-Client setup instructions will be added when the frontend implementation begins.
+1. Navigate to the client directory:
+   ```bash
+   cd client
+   ```
+
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+
+3. Start the development server:
+   ```bash
+   npm run dev
+   ```
+
+4. Open your browser to `http://localhost:5173`
 
 ## Monorepo Benefits
 
