@@ -82,6 +82,7 @@ Once the server is running, you can access:
 │   ├── models/          # Database models
 │   ├── schemas/         # Pydantic schemas
 │   ├── database/        # Database connection and setup
+│   ├── agent/           # LangGraph agent with Gemini integration
 │   └── utils/           # Utility functions
 ├── main.py              # Application entry point
 ├── requirements.txt     # Python dependencies
@@ -98,6 +99,7 @@ Once the server is running, you can access:
 │   ├── models/          # Database models
 │   ├── schemas/         # Pydantic schemas
 │   ├── database/        # Database connection and setup
+│   ├── agent/           # LangGraph agent with Gemini integration
 │   └── utils/           # Utility functions
 ├── main.py              # Application entry point
 ├── requirements.txt     # Python dependencies
@@ -110,6 +112,40 @@ Once the server is running, you can access:
 - `GET /health` - Health check
 - `GET /api/v1/chat/` - Chat operations
 - `GET /api/v1/users/` - User operations
+- `POST /api/v1/agent/invoke` - Invoke the LangGraph agent with Gemini
+
+## Agent Functionality
+
+The server includes a LangGraph agent powered by Google's Gemini model. The agent is equipped with a simple `add` tool that can perform addition operations.
+
+### Agent API
+
+- **Endpoint**: `POST /api/v1/agent/invoke`
+- **Request Body**: 
+  ```json
+  {
+    "message": "What is 2 + 3?"
+  }
+  ```
+- **Response**:
+  ```json
+  {
+    "response": "2 + 3 = 5"
+  }
+  ```
+
+### Agent Components
+
+1. **LangGraph Framework**: Used to create the agent's decision-making workflow
+2. **Gemini Integration**: Uses Google's Gemini 1.5 Flash model for natural language understanding
+3. **Tools**: Currently includes a simple `add` function tool
+
+### Adding New Tools
+
+To add new tools to the agent:
+1. Create a new tool function in `app/agent/tools.py` using the `@tool` decorator
+2. Import and bind the tool in `app/agent/agent.py`
+3. The agent will automatically be able to use the new tool
 
 ## Development
 

@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from app.routes import chat, users
+from app.routes import chat, users, agent
 
 def create_app() -> FastAPI:
     app = FastAPI(
@@ -11,6 +11,7 @@ def create_app() -> FastAPI:
     # Include routers
     app.include_router(chat.router, prefix="/api/v1/chat", tags=["chat"])
     app.include_router(users.router, prefix="/api/v1/users", tags=["users"])
+    app.include_router(agent.router, prefix="/api/v1", tags=["agent"])
     
     @app.get("/")
     async def root():
