@@ -4,22 +4,31 @@ import EnhancedOAuthManager from './components/EnhancedOAuthManager'
 import AuthConfigManager from './components/AuthConfigManager'
 import OAuthCallback from './components/OAuthCallback'
 import ToolExecutor from './components/ToolExecutor'
+import AuthWrapper from './components/AuthWrapper'
+import { UserProfile } from './services/apiService'
 
-function App() {
+interface AppProps {
+  user?: UserProfile;
+  onLogout?: () => void;
+}
+
+function App({ user, onLogout }: AppProps) {
   const [activeTab, setActiveTab] = useState<'connections' | 'auth-configs' | 'tools' | 'callback'>('connections')
 
   const renderContent = () => {
+    const userId = user?.id || "unknown";
+    
     switch (activeTab) {
       case 'connections':
-        return <EnhancedOAuthManager userId="demo-user" />
+        return <EnhancedOAuthManager userId={userId} />
       case 'auth-configs':
-        return <AuthConfigManager userId="demo-user" />
+        return <AuthConfigManager userId={userId} />
       case 'tools':
         return <ToolExecutor />
       case 'callback':
         return <OAuthCallback />
       default:
-        return <EnhancedOAuthManager userId="demo-user" />
+        return <EnhancedOAuthManager userId={userId} />
     }
   }
 
@@ -30,8 +39,29 @@ function App() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-6">
             <h1 className="text-3xl font-bold text-gray-900">Kronos Chat</h1>
-            <div className="text-sm text-gray-600">
-              Powered by Composio Integration
+            <div className="flex items-center space-x-4">
+              {user && (
+                <div className="flex items-center space-x-2">
+                  <div className="text-sm">
+                    <span className="text-gray-600">Welcome, </span>
+                    <span className="font-medium text-gray-900">
+                      {user.first_name || user.email}
+                    </span>
+                  </div>
+                  <button
+                    onClick={onLogout}
+                    className="inline-flex items-center px-3 py-1 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                  >
+                    <svg className="-ml-1 mr-1 h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M3 3a1 1 0 00-1 1v12a1 1 0 102 0V4a1 1 0 00-1-1zm10.293 9.293a1 1 0 001.414 1.414l3-3a1 1 0 000-1.414l-3-3a1 1 0 10-1.414 1.414L14.586 9H7a1 1 0 100 2h7.586l-1.293 1.293z" clipRule="evenodd" />
+                    </svg>
+                    Logout
+                  </button>
+                </div>
+              )}
+              <div className="text-sm text-gray-600">
+                Powered by Composio Integration
+              </div>
             </div>
           </div>
         </div>
@@ -92,4 +122,11 @@ function App() {
   )
 }
 
-export default App
+// Wrapped App component with authentication
+const WrappedApp = () => (
+  <AuthWrapper>
+    <App />
+  </AuthWrapper>
+);
+
+export default WrappedApp

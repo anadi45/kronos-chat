@@ -32,14 +32,14 @@ def get_database_session() -> Generator[Session, None, None]:
 # Authentication dependencies
 async def get_current_user(
     credentials: Optional[HTTPAuthorizationCredentials] = Depends(security),
-    settings: Settings = Depends(get_app_settings)
+    db: Session = Depends(get_database_session)
 ) -> dict:
     """
     Get current authenticated user.
     
     Args:
         credentials: JWT token from Authorization header
-        settings: Application settings
+        db: Database session
         
     Returns:
         dict: User information
@@ -51,22 +51,31 @@ async def get_current_user(
         raise AuthenticationError("Missing authentication token")
     
     try:
-        # TODO: Implement JWT token validation
-        # For now, return a mock user
-        token = credentials.credentials
+        from ..services.auth_service import auth_service
         
-        # Mock validation - replace with actual JWT validation
-        if token == "demo-token":
-            return {
-                "user_id": "demo-user",
-                "email": "demo@example.com",
-                "roles": ["user"]
-            }
+        # Verify JWT token
+        token_data = auth_service.verify_token(credentials.credentials)
         
-        raise AuthenticationError("Invalid token")
+        # Get user from database
+        user = auth_service.get_user_by_email(db, token_data.email)
+        if not user:
+            raise AuthenticationError("User not found")
+        
+        if not user.is_active:
+            raise AuthenticationError("User account is deactivated")
+        
+        return {
+            "user_id": str(user.id),
+            "email": user.email,
+            "first_name": user.first_name,
+            "last_name": user.last_name,
+            "is_active": user.is_active
+        }
         
     except Exception as e:
         logger.error(f"Authentication error: {e}")
+        if isinstance(e, AuthenticationError):
+            raise e
         raise AuthenticationError("Authentication failed")
 
 

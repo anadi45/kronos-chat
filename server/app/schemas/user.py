@@ -13,7 +13,37 @@ class UserBase(BaseModel):
 
 class UserCreate(UserBase):
     """User creation model."""
-    pass
+    password: str = Field(..., min_length=8, description="Password (min 8 characters)")
+
+
+class UserSignup(UserBase):
+    """User signup model."""
+    password: str = Field(..., min_length=8, description="Password (min 8 characters)")
+    confirm_password: str = Field(..., description="Password confirmation")
+
+    @validator('confirm_password')
+    def passwords_match(cls, v, values):
+        if 'password' in values and v != values['password']:
+            raise ValueError('Passwords do not match')
+        return v
+
+
+class UserLogin(BaseModel):
+    """User login model."""
+    email: EmailStr = Field(..., description="Valid email address")
+    password: str = Field(..., description="User password")
+
+
+class Token(BaseModel):
+    """JWT token model."""
+    access_token: str
+    token_type: str = "bearer"
+    expires_in: int
+
+
+class TokenData(BaseModel):
+    """Token data model."""
+    email: Optional[str] = None
 
 
 class UserUpdate(BaseModel):

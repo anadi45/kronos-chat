@@ -13,6 +13,7 @@ class User(Base):
     
     # User identifiers with constraints
     email = Column(String(255), unique=True, index=True, nullable=False)
+    password_hash = Column(String(255), nullable=False)
     
     # Name fields with reasonable limits
     first_name = Column(String(100), nullable=True)

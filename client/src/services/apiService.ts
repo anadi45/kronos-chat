@@ -96,6 +96,38 @@ export interface ToolExecuteResponse {
   error?: string;
 }
 
+// Authentication types
+export interface UserSignup {
+  email: string;
+  password: string;
+  confirm_password: string;
+  first_name?: string;
+  last_name?: string;
+}
+
+export interface UserLogin {
+  email: string;
+  password: string;
+}
+
+export interface AuthToken {
+  access_token: string;
+  token_type: string;
+  expires_in: number;
+}
+
+export interface UserProfile {
+  id: string;
+  email: string;
+  first_name?: string;
+  last_name?: string;
+  is_active: boolean;
+  profile_image_url?: string;
+  last_login?: string;
+  created_at: string;
+  updated_at?: string;
+}
+
 export interface AuthConfigListResponse {
   items: AuthConfig[];
   total_pages: number;
@@ -123,6 +155,12 @@ class ApiService {
     // Request interceptor
     this.client.interceptors.request.use(
       (config) => {
+        // Add authorization header if token exists
+        const token = localStorage.getItem("access_token");
+        if (token) {
+          config.headers.Authorization = `Bearer ${token}`;
+        }
+
         console.log(
           `API Request: ${config.method?.toUpperCase()} ${config.url}`
         );
@@ -148,6 +186,64 @@ class ApiService {
         return Promise.reject(error);
       }
     );
+  }
+
+  // Authentication Methods
+  async signup(userData: UserSignup): Promise<UserProfile> {
+    const response = await this.client.post("/auth/signup", userData);
+    return response.data;
+  }
+
+  async login(credentials: UserLogin): Promise<AuthToken> {
+    const response = await this.client.post("/auth/login", credentials);
+    const token = response.data;
+
+    // Store token in localStorage
+    localStorage.setItem("access_token", token.access_token);
+    localStorage.setItem("token_type", token.token_type);
+    localStorage.setItem("expires_in", token.expires_in.toString());
+    localStorage.setItem("login_time", Date.now().toString());
+
+    return token;
+  }
+
+  async logout(): Promise<void> {
+    try {
+      await this.client.post("/auth/logout");
+    } finally {
+      // Clear token from localStorage regardless of API call result
+      localStorage.removeItem("access_token");
+      localStorage.removeItem("token_type");
+      localStorage.removeItem("expires_in");
+      localStorage.removeItem("login_time");
+    }
+  }
+
+  async getCurrentUser(): Promise<UserProfile> {
+    const response = await this.client.get("/auth/me");
+    return response.data;
+  }
+
+  isAuthenticated(): boolean {
+    const token = localStorage.getItem("access_token");
+    const loginTime = localStorage.getItem("login_time");
+    const expiresIn = localStorage.getItem("expires_in");
+
+    if (!token || !loginTime || !expiresIn) {
+      return false;
+    }
+
+    const now = Date.now();
+    const loginTimestamp = parseInt(loginTime);
+    const expirationTime = loginTimestamp + parseInt(expiresIn) * 1000;
+
+    if (now >= expirationTime) {
+      // Token expired, clear storage
+      this.logout();
+      return false;
+    }
+
+    return true;
   }
 
   // Health Check
