@@ -1,39 +1,56 @@
-from sqlalchemy import Column, Integer, String, DateTime, Boolean, Text
+from sqlalchemy import Column, String, DateTime, Boolean
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.sql import func
+import uuid
 
 from ..core.database import Base
 
 class User(Base):
     __tablename__ = "users"
     
-    id = Column(Integer, primary_key=True, index=True)
-    username = Column(String(50), unique=True, index=True, nullable=False)
+    # Use UUID for better scalability and security
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
+    
+    # User identifiers with constraints
     email = Column(String(255), unique=True, index=True, nullable=False)
-    full_name = Column(String(255), nullable=True)
+    
+    # Name fields with reasonable limits
+    first_name = Column(String(100), nullable=True)
+    last_name = Column(String(100), nullable=True)
+    
+    # User status and profile
     is_active = Column(Boolean, default=True, nullable=False)
-    is_superuser = Column(Boolean, default=False, nullable=False)
-    profile_image_url = Column(String(500), nullable=True)
-    bio = Column(Text, nullable=True)
-    preferences = Column(Text, nullable=True)  # JSON string for user preferences
+    profile_image_url = Column(String(2048), nullable=True)  # URLs can be long
+    
+    # Timestamps with timezone
     last_login = Column(DateTime(timezone=True), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
     
     def __repr__(self):
-        return f"<User(id={self.id}, username='{self.username}', email='{self.email}', active={self.is_active})>"
+        return f"<User(id={self.id}, email='{self.email}', active={self.is_active})>"
     
     def to_dict(self):
         """Convert user model to dictionary."""
         return {
-            "id": self.id,
-            "username": self.username,
+            "id": str(self.id),  # Convert UUID to string for JSON serialization
             "email": self.email,
-            "full_name": self.full_name,
+            "first_name": self.first_name,
+            "last_name": self.last_name,
             "is_active": self.is_active,
-            "is_superuser": self.is_superuser,
             "profile_image_url": self.profile_image_url,
-            "bio": self.bio,
             "last_login": self.last_login.isoformat() if self.last_login else None,
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None
         }
+    
+    @property
+    def full_name(self):
+        """Property to get full name from first and last name."""
+        if self.first_name and self.last_name:
+            return f"{self.first_name} {self.last_name}"
+        elif self.first_name:
+            return self.first_name
+        elif self.last_name:
+            return self.last_name
+        return None

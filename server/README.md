@@ -90,15 +90,7 @@ Initialize the database with migrations:
 python init_db.py
 ```
 
-This will run all database migrations to set up the database schema. If you need to run migrations manually, you can use:
-
-```bash
-# Upgrade to the latest version
-python run_migrations.py --upgrade
-
-# Downgrade to the base version
-python run_migrations.py --downgrade
-```
+This will run all database migrations to set up the database schema. The current schema includes a simplified User table with essential fields only.
 
 For more detailed information about migrations, see [alembic/README.md](alembic/README.md).
 

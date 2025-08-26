@@ -10,8 +10,8 @@ import sys
 import os
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
-from app.database import Base
-from app.models import User
+from app.core.database import Base
+from app.models.user import User
 # Import all models here for Alembic to detect them
 # from app.models import *
 
@@ -69,7 +69,7 @@ def run_migrations_online() -> None:
 
     """
     # Use the engine from your application instead of creating a new one
-    from app.database import engine
+    from app.core.database import engine
     
     with engine.connect() as connection:
         context.configure(
