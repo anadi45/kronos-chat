@@ -4,6 +4,7 @@ import EnhancedOAuthManager from './components/EnhancedOAuthManager'
 import AuthConfigManager from './components/AuthConfigManager'
 import OAuthCallback from './components/OAuthCallback'
 import ToolExecutor from './components/ToolExecutor'
+import IntegrationDashboard from './components/IntegrationDashboard'
 import AuthWrapper from './components/AuthWrapper'
 import { UserProfile } from './services/apiService'
 
@@ -13,12 +14,14 @@ interface AppProps {
 }
 
 function App({ user, onLogout }: AppProps) {
-  const [activeTab, setActiveTab] = useState<'connections' | 'auth-configs' | 'tools' | 'callback'>('connections')
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'connections' | 'auth-configs' | 'tools' | 'callback'>('dashboard')
 
   const renderContent = () => {
     const userId = user?.id || "unknown";
     
     switch (activeTab) {
+      case 'dashboard':
+        return <IntegrationDashboard userId={userId} />
       case 'connections':
         return <EnhancedOAuthManager userId={userId} />
       case 'auth-configs':
@@ -28,7 +31,7 @@ function App({ user, onLogout }: AppProps) {
       case 'callback':
         return <OAuthCallback />
       default:
-        return <EnhancedOAuthManager userId={userId} />
+        return <IntegrationDashboard userId={userId} />
     }
   }
 
@@ -72,6 +75,7 @@ function App({ user, onLogout }: AppProps) {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex space-x-8">
             {[
+              { id: 'dashboard', label: 'Integration Dashboard', icon: '📊' },
               { id: 'connections', label: 'OAuth Connections', icon: '🔗' },
               { id: 'auth-configs', label: 'Auth Configurations', icon: '⚙️' },
               { id: 'tools', label: 'Tool Executor', icon: '🛠️' },

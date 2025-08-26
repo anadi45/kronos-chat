@@ -128,6 +128,82 @@ export interface UserProfile {
   updated_at?: string;
 }
 
+// Integration Dashboard types
+export interface IntegrationConnection {
+  account_id: string;
+  status: "active" | "inactive" | "pending" | "error" | "disabled";
+  created_at?: string;
+  last_used?: string;
+  error_message?: string;
+}
+
+export interface IntegrationSummary {
+  provider: string;
+  display_name: string;
+  description?: string;
+  logo_url?: string;
+  categories: string[];
+  total_connections: number;
+  active_connections: number;
+  inactive_connections: number;
+  error_connections: number;
+  health: "healthy" | "warning" | "error" | "unknown";
+  health_message?: string;
+  has_auth_config: boolean;
+  auth_schemes: string[];
+  available_actions: number;
+  last_connection_attempt?: string;
+  connections: IntegrationConnection[];
+}
+
+export interface IntegrationDashboard {
+  user_id: string;
+  total_integrations: number;
+  connected_integrations: number;
+  total_connections: number;
+  healthy_connections: number;
+  categories: string[];
+  popular_integrations: string[];
+  integrations: IntegrationSummary[];
+  composio_health: boolean;
+  last_updated: string;
+}
+
+export interface IntegrationCategory {
+  name: string;
+  display_name: string;
+  description?: string;
+  icon?: string;
+  service_count: number;
+  connected_count: number;
+  services: string[];
+}
+
+export interface IntegrationStats {
+  total_available: number;
+  total_connected: number;
+  total_connections: number;
+  active_connections: number;
+  failed_connections: number;
+  categories: IntegrationCategory[];
+}
+
+export interface IntegrationActionRequest {
+  provider: string;
+  action: string;
+  connection_id?: string;
+  auth_config_id?: string;
+  parameters?: Record<string, unknown>;
+}
+
+export interface IntegrationActionResponse {
+  success: boolean;
+  message: string;
+  redirect_url?: string;
+  connection_id?: string;
+  data?: Record<string, unknown>;
+}
+
 export interface AuthConfigListResponse {
   items: AuthConfig[];
   total_pages: number;
@@ -396,6 +472,62 @@ class ApiService {
   // Tool Execution
   async executeTool(request: ToolExecuteRequest): Promise<ToolExecuteResponse> {
     const response = await this.client.post("/composio/tools/execute", request);
+    return response.data;
+  }
+
+  // Integration Dashboard Methods
+  async getIntegrationDashboard(): Promise<IntegrationDashboard> {
+    const response = await this.client.get("/integrations/dashboard");
+    return response.data;
+  }
+
+  async getIntegrationStats(): Promise<IntegrationStats> {
+    const response = await this.client.get("/integrations/stats");
+    return response.data;
+  }
+
+  async getIntegrationSummary(params?: {
+    category?: string;
+    connected_only?: boolean;
+    search?: string;
+  }): Promise<IntegrationSummary[]> {
+    const response = await this.client.get("/integrations/summary", { params });
+    return response.data;
+  }
+
+  async getIntegrationDetails(provider: string): Promise<IntegrationSummary> {
+    const response = await this.client.get(`/integrations/${provider}/details`);
+    return response.data;
+  }
+
+  async performIntegrationAction(
+    actionRequest: IntegrationActionRequest
+  ): Promise<IntegrationActionResponse> {
+    const response = await this.client.post(
+      "/integrations/action",
+      actionRequest
+    );
+    return response.data;
+  }
+
+  async getIntegrationCategories(): Promise<{
+    categories: IntegrationCategory[];
+    total_categories: number;
+  }> {
+    const response = await this.client.get("/integrations/categories");
+    return response.data;
+  }
+
+  async getIntegrationHealth(): Promise<{
+    composio_health: boolean;
+    total_connections: number;
+    healthy_connections: number;
+    failed_connections: number;
+    health_percentage: number;
+    status: string;
+    last_updated: string;
+  }> {
+    const response = await this.client.get("/integrations/health");
     return response.data;
   }
 }

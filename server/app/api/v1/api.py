@@ -3,7 +3,7 @@ Main API router for v1 endpoints.
 """
 from fastapi import APIRouter
 
-from .endpoints import auth, users, chat, agent, composio, health
+from .endpoints import auth, users, chat, agent, composio, health, integrations
 
 api_router = APIRouter()
 
@@ -42,4 +42,10 @@ api_router.include_router(
     composio.router,
     prefix="/composio",
     tags=["composio"]
+)
+
+api_router.include_router(
+    integrations.router,
+    prefix="/integrations",
+    tags=["integrations"]
 )
