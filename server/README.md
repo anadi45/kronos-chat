@@ -85,10 +85,22 @@ pip install -r requirements.txt
 
 ### Database Initialization
 
-Initialize the database tables:
+Initialize the database with migrations:
 ```bash
 python init_db.py
 ```
+
+This will run all database migrations to set up the database schema. If you need to run migrations manually, you can use:
+
+```bash
+# Upgrade to the latest version
+python run_migrations.py --upgrade
+
+# Downgrade to the base version
+python run_migrations.py --downgrade
+```
+
+For more detailed information about migrations, see [alembic/README.md](alembic/README.md).
 
 ### Starting the Server
 

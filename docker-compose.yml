@@ -1,0 +1,75 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: kronos-postgres
+    environment:
+      POSTGRES_DB: kronos_chat
+      POSTGRES_USER: kronos_user
+      POSTGRES_PASSWORD: kronos_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./server/init_db.sql:/docker-entrypoint-initdb.d/init_db.sql
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U kronos_user -d kronos_chat"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # FastAPI Server
+  server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: kronos-server
+    environment:
+      - DATABASE_URL=postgresql://kronos_user:kronos_password@postgres:5432/kronos_chat
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - SECRET_KEY=${SECRET_KEY:-your-secret-key-here}
+      - DEBUG=false
+    volumes:
+      - ./server:/app
+      - /app/__pycache__
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    restart: unless-stopped
+
+  # React Client
+  client:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    container_name: kronos-client
+    ports:
+      - "3000:80"
+    depends_on:
+      - server
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  default:
+    name: kronos-network
