@@ -1,7 +1,17 @@
-from app.main import create_app
-
-app = create_app()
+"""
+Main entry point for Kronos Chat Server.
+"""
+from app.main import app, settings
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    
+    # Run the application
+    uvicorn.run(
+        "main:app",
+        host=settings.app.host,
+        port=settings.app.port,
+        reload=settings.app.reload or settings.app.is_development,
+        log_level=settings.app.log_level.lower(),
+        access_log=settings.app.debug
+    )
