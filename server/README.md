@@ -10,6 +10,7 @@ A FastAPI backend for the Kronos chat application.
 - Modular architecture
 - Health check endpoints
 - Comprehensive error handling
+- OAuth integration with 3000+ tools via Composio
 
 ## Technology Stack
 
@@ -150,6 +151,15 @@ Once the server is running, you can access:
 - `DELETE /api/v1/users/{user_id}` - Delete a specific user
 - `POST /api/v1/agent/invoke` - Invoke the LangGraph agent with Gemini
 - `POST /api/v1/agent/stream` - Stream the LangGraph agent response with Gemini
+- `GET /api/v1/composio/health` - Check Composio integration status
+- `POST /api/v1/composio/connections/initiate` - Initiate OAuth connection
+- `GET /api/v1/composio/connections/{user_id}` - List user connections
+- `GET /api/v1/composio/connections/account/{account_id}` - Get connection details
+- `POST /api/v1/composio/connections/{account_id}/enable` - Enable connection
+- `POST /api/v1/composio/connections/{account_id}/disable` - Disable connection
+- `POST /api/v1/composio/connections/{account_id}/refresh` - Refresh connection
+- `DELETE /api/v1/composio/connections/{account_id}` - Delete connection
+- `POST /api/v1/composio/tools/execute` - Execute a tool on a connected service
 
 ## Agent Functionality
 
@@ -195,6 +205,42 @@ To add new tools to the agent:
 1. Create a new tool function in `app/agent/tools.py` using the `@tool` decorator
 2. Import and bind the tool in `app/agent/agent.py`
 3. The agent will automatically be able to use the new tool
+
+## Composio Integration
+
+The server includes OAuth integration with over 3000 tools via Composio. This allows the application to connect to services like GitHub, Slack, Notion, Gmail, and many others.
+
+### Setup
+
+1. Sign up at [https://www.composio.dev/](https://www.composio.dev/) to get an API key
+2. Add your API key to the environment variables:
+   ```
+   COMPOSIO_API_KEY=your_composio_api_key_here
+   ```
+3. Install the Composio dependency:
+   ```bash
+   pip install composio-core
+   ```
+
+### Supported Providers
+
+- GitHub
+- Slack
+- Notion
+- Gmail
+- Google Calendar
+- Twitter
+- Discord
+- And 3000+ more tools
+
+### Integration Components
+
+1. **Configuration** - Environment-based configuration in `app/config/composio.py`
+2. **Service Layer** - Core business logic in `app/services/composio_service.py`
+3. **API Routes** - RESTful endpoints in `app/routes/composio.py`
+4. **Documentation** - Detailed guide in `COMPOSIO_INTEGRATION.md`
+
+See `COMPOSIO_INTEGRATION.md` for detailed implementation and usage information.
 
 ## Development
 

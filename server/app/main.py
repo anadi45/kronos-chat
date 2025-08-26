@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from app.routes import chat, users, agent
+from app.routes.composio import router as composio_router
 from app.utils import init_db
 
 def create_app() -> FastAPI:
@@ -16,6 +17,7 @@ def create_app() -> FastAPI:
     app.include_router(chat.router, prefix="/api/v1/chat", tags=["chat"])
     app.include_router(users.router, prefix="/api/v1/users", tags=["users"])
     app.include_router(agent.router, prefix="/api/v1", tags=["agent"])
+    app.include_router(composio_router, prefix="/api/v1/composio", tags=["composio"])
     
     @app.get("/")
     async def root():
