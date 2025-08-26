@@ -30,6 +30,9 @@ services:
     environment:
       - DATABASE_URL=postgresql://kronos_user:kronos_password@postgres:5432/kronos_chat
       - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - COMPOSIO_API_KEY=${COMPOSIO_API_KEY}
+      - COMPOSIO_BASE_URL=${COMPOSIO_BASE_URL:-https://backend.composio.dev}
+      - COMPOSIO_CONNECTION_TIMEOUT=${COMPOSIO_CONNECTION_TIMEOUT:-60}
       - SECRET_KEY=${SECRET_KEY:-your-secret-key-here}
       - DEBUG=false
     volumes:
@@ -53,6 +56,9 @@ services:
     build:
       context: ./client
       dockerfile: Dockerfile
+      args:
+        - VITE_COMPOSIO_API_KEY=${VITE_COMPOSIO_API_KEY}
+        - VITE_API_BASE_URL=${VITE_API_BASE_URL:-http://localhost:8000/api/v1}
     container_name: kronos-client
     ports:
       - "3000:80"
