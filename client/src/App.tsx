@@ -7,7 +7,7 @@ import ToolExecutor from './components/ToolExecutor'
 import IntegrationDashboard from './components/IntegrationDashboard'
 import ChatInterface from './components/ChatInterface'
 import AuthWrapper from './components/AuthWrapper'
-import { UserProfile } from './services/apiService'
+import { type UserProfile } from './services/apiService'
 
 interface AppProps {
   user?: UserProfile;

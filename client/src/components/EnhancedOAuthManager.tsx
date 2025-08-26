@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { apiService, ConnectedAccount, AuthConfig, Toolkit, EnhancedConnectionRequest } from '../services/apiService';
+import { apiService, type ConnectedAccount, type AuthConfig, type Toolkit, type EnhancedConnectionRequest } from '../services/apiService';
 import AuthConfigManager from './AuthConfigManager';
 
 interface EnhancedOAuthManagerProps {

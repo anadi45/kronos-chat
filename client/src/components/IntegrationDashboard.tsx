@@ -1,19 +1,19 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { 
   apiService, 
-  IntegrationDashboard as IDashboard, 
-  IntegrationSummary, 
-  IntegrationActionRequest,
-  IntegrationStats 
+  type IntegrationDashboard as IDashboard, 
+  type IntegrationSummary, 
+  type IntegrationActionRequest,
+  type IntegrationStats 
 } from '../services/apiService';
 
 interface IntegrationDashboardProps {
   userId?: string;
 }
 
-const IntegrationDashboard: React.FC<IntegrationDashboardProps> = ({ userId }) => {
+const IntegrationDashboard: React.FC<IntegrationDashboardProps> = ({ userId: _ }) => {
   const [dashboard, setDashboard] = useState<IDashboard | null>(null);
-  const [stats, setStats] = useState<IntegrationStats | null>(null);
+  const [, setStats] = useState<IntegrationStats | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [showConnectedOnly, setShowConnectedOnly] = useState<boolean>(false);

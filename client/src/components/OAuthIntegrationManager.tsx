@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { composioService, type ProviderName } from '../services/composioService';
-import { COMPOSIO_CONFIG } from '../config/composio';
+import { composioService } from '../services/composioService';
+import { COMPOSIO_CONFIG, type ProviderName } from '../config/composio';
 
 interface Connection {
   id: string;

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { apiService, UserLogin } from '../services/apiService';
+import { apiService, type UserLogin } from '../services/apiService';
 
 interface LoginFormProps {
   onSuccess?: () => void;

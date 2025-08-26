@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { apiService, UserSignup } from '../services/apiService';
+import { apiService, type UserSignup } from '../services/apiService';
 
 interface SignupFormProps {
   onSuccess?: () => void;

@@ -1,10 +1,11 @@
 // Composio Integration Exports
 
-export { composioService } from './composioService';
-export type { ProviderName } from './composioService';
+export { composioService } from "./composioService";
+export type { ProviderName } from "../config/composio";
 
-export { default as OAuthIntegrationManager } from './OAuthIntegrationManager';
-export { default as OAuthCallback } from './OAuthCallback';
-export { default as ToolExecutor } from './ToolExecutor';
+// Note: These components need to be implemented
+// export { default as OAuthIntegrationManager } from './OAuthIntegrationManager';
+// export { default as OAuthCallback } from './OAuthCallback';
+// export { default as ToolExecutor } from './ToolExecutor';
 
-export { COMPOSIO_CONFIG } from '../config/composio';
+export { COMPOSIO_CONFIG } from "../config/composio";

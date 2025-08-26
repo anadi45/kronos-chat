@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { apiService, AuthConfig, Toolkit, AuthConfigRequest } from '../services/apiService';
+import { apiService, type AuthConfig, type Toolkit, type AuthConfigRequest } from '../services/apiService';
 
 interface AuthConfigManagerProps {
   userId: string;
   onAuthConfigSelect?: (authConfig: AuthConfig) => void;
 }
 
-const AuthConfigManager: React.FC<AuthConfigManagerProps> = ({ userId, onAuthConfigSelect }) => {
+const AuthConfigManager: React.FC<AuthConfigManagerProps> = ({ userId: _, onAuthConfigSelect }) => {
   const [authConfigs, setAuthConfigs] = useState<AuthConfig[]>([]);
   const [toolkits, setToolkits] = useState<Toolkit[]>([]);
   const [loading, setLoading] = useState(false);

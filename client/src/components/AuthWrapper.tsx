@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { apiService, UserProfile } from '../services/apiService';
+import { apiService, type UserProfile } from '../services/apiService';
 import LoginForm from './LoginForm';
 import SignupForm from './SignupForm';
 
@@ -87,7 +87,7 @@ const AuthWrapper: React.FC<AuthWrapperProps> = ({ children }) => {
       {React.cloneElement(children as React.ReactElement, {
         user,
         onLogout: handleLogout
-      })}
+      } as any)}
     </>
   );
 };
