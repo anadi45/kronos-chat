@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { apiService, ChatMessage, StreamChatRequest } from '../services/apiService';
+import { apiService, type ChatMessage, type StreamChatRequest } from '../services/apiService';
 
 interface ChatInterfaceProps {
   userId?: string;
@@ -13,7 +13,7 @@ interface StreamChunk {
   error?: string;
 }
 
-const ChatInterface: React.FC<ChatInterfaceProps> = ({ userId }) => {
+const ChatInterface: React.FC<ChatInterfaceProps> = () => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [isStreaming, setIsStreaming] = useState(false);
