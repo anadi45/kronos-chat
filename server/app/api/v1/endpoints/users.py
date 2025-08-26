@@ -7,7 +7,6 @@ from typing import List
 import uuid
 
 from ....core.deps import get_database_session, validate_pagination
-from ....core.exceptions import NotFoundError, ValidationError
 from ....models.user import User
 from ....schemas.user import UserCreate, UserUpdate, UserInDB
 
@@ -33,7 +32,8 @@ async def get_user(
     """Get a specific user by ID."""
     user = db.query(User).filter(User.id == user_id).first()
     if user is None:
-        raise NotFoundError("User", str(user_id))
+        print(f"User not found: {user_id}")
+        return
     return user
 
 
@@ -46,12 +46,14 @@ async def create_user(
     # Check if username already exists
     db_user = db.query(User).filter(User.username == user.username).first()
     if db_user:
-        raise ValidationError("Username already registered", field="username")
+        print(f"Username already registered: {user.username}")
+        return
     
     # Check if email already exists
     db_user = db.query(User).filter(User.email == user.email).first()
     if db_user:
-        raise ValidationError("Email already registered", field="email")
+        print(f"Email already registered: {user.email}")
+        return
     
     # Create new user
     db_user = User(**user.dict())
@@ -70,7 +72,8 @@ async def update_user(
     """Update an existing user."""
     db_user = db.query(User).filter(User.id == user_id).first()
     if db_user is None:
-        raise NotFoundError("User", str(user_id))
+        print(f"User not found: {user_id}")
+        return
     
     # Update user fields
     update_data = user.dict(exclude_unset=True)
@@ -90,7 +93,8 @@ async def delete_user(
     """Delete a user."""
     db_user = db.query(User).filter(User.id == user_id).first()
     if db_user is None:
-        raise NotFoundError("User", str(user_id))
+        print(f"User not found: {user_id}")
+        return
     
     db.delete(db_user)
     db.commit()

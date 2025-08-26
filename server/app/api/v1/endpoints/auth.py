@@ -5,7 +5,6 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from ....core.deps import get_database_session, get_current_user
-from ....core.exceptions import AuthenticationError, ValidationError
 from ....schemas.user import UserSignup, UserLogin, Token, UserProfile
 from ....services.auth_service import auth_service
 
@@ -33,11 +32,6 @@ async def signup(
     try:
         user = auth_service.create_user(db, user_signup)
         return UserProfile.from_orm(user)
-    except ValidationError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
-        )
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -66,12 +60,7 @@ async def login(
     try:
         token = auth_service.login_user(db, user_login)
         return token
-    except AuthenticationError as e:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=str(e),
-            headers={"WWW-Authenticate": "Bearer"}
-        )
+    
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

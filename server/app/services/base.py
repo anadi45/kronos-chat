@@ -1,17 +1,12 @@
 """
 Base service class for Kronos Chat Server.
 """
-from abc import ABC, abstractmethod
+from abc import ABC, ABCMeta, abstractmethod
 from typing import Optional, Any
 
-from ..core.config import get_settings
-from ..core.logging import LoggerMixin
-from ..core.exceptions import ConfigurationError
-
-settings = get_settings()
 
 
-class BaseService(LoggerMixin, ABC):
+class BaseService(ABC):
     """Base class for all services."""
     
     def __init__(self):
@@ -49,20 +44,20 @@ class BaseService(LoggerMixin, ABC):
             self._validate_configuration()
             self._initialize_client()
             self._initialized = True
-            self.logger.info(f"{self.__class__.__name__} initialized successfully")
+            print(f"{self.__class__.__name__} initialized successfully")
         except Exception as e:
-            self.logger.error(f"Failed to initialize {self.__class__.__name__}: {e}")
+            print(f"Failed to initialize {self.__class__.__name__}: {e}")
             raise
     
     def reset(self) -> None:
         """Reset the service state."""
         self._initialized = False
         self._client = None
-        self.logger.info(f"{self.__class__.__name__} reset")
+        print(f"{self.__class__.__name__} reset")
 
 
-class SingletonServiceMeta(type):
-    """Metaclass for singleton services."""
+class SingletonServiceMeta(ABCMeta):
+    """Metaclass for singleton services that inherits from ABCMeta to resolve conflicts."""
     
     _instances = {}
     

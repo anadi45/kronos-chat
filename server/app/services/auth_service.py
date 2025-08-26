@@ -10,7 +10,7 @@ from sqlalchemy.exc import IntegrityError
 from ..models.user import User
 from ..schemas.user import UserCreate, UserSignup, UserLogin, Token, TokenData
 from ..core.config import get_settings
-from ..core.exceptions import AuthenticationError, ValidationError
+
 
 
 class AuthService:
@@ -55,10 +55,12 @@ class AuthService:
             )
             email: str = payload.get("sub")
             if email is None:
-                raise AuthenticationError("Invalid token payload")
+                print("Invalid token payload")
+                return
             token_data = TokenData(email=email)
         except JWTError:
-            raise AuthenticationError("Invalid token")
+            print("Invalid token")
+            return
         return token_data
     
     def get_user_by_email(self, db: Session, email: str) -> Optional[User]:
@@ -82,7 +84,8 @@ class AuthService:
         """Create a new user."""
         # Check if user already exists
         if self.get_user_by_email(db, user_signup.email):
-            raise ValidationError("Email already registered")
+            print(f"Email already registered: {user_signup.email}")
+            return
         
         # Create user with hashed password
         hashed_password = self.get_password_hash(user_signup.password)
@@ -107,16 +110,19 @@ class AuthService:
             return db_user
         except IntegrityError:
             db.rollback()
-            raise ValidationError("Email already registered")
+            print(f"Email already registered: {user_signup.email}")
+            return
     
     def login_user(self, db: Session, user_login: UserLogin) -> Token:
         """Login user and return JWT token."""
         user = self.authenticate_user(db, user_login.email, user_login.password)
         if not user:
-            raise AuthenticationError("Invalid email or password")
+            print("Invalid email or password")
+            return
         
         if not user.is_active:
-            raise AuthenticationError("Account is deactivated")
+            print("Account is deactivated")
+            return
         
         # Update last login
         user.last_login = datetime.utcnow()

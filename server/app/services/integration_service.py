@@ -10,10 +10,7 @@ from ..schemas.integration import (
     IntegrationStatus, ConnectionHealth, IntegrationCategory, IntegrationStats
 )
 from ..services.composio_service import composio_service
-from ..core.exceptions import ComposioError
-from ..core.logging import get_logger
 
-logger = get_logger(__name__)
 
 
 class IntegrationService:
@@ -159,14 +156,14 @@ class IntegrationService:
             try:
                 toolkits = await self.composio.get_available_toolkits(limit=100)
             except Exception as e:
-                logger.warning(f"Failed to get toolkits: {e}")
+                print(f"Failed to get toolkits: {e}")
                 toolkits = []
             
             # Get user's connections
             try:
                 connections = await self.composio.list_connected_accounts(user_id)
             except Exception as e:
-                logger.warning(f"Failed to get connections for user {user_id}: {e}")
+                print(f"Failed to get connections for user {user_id}: {e}")
                 connections = []
             
             # Group connections by provider
@@ -270,8 +267,12 @@ class IntegrationService:
             )
             
         except Exception as e:
-            logger.error(f"Failed to get integration dashboard: {e}")
-            raise ComposioError(f"Failed to get integration dashboard: {str(e)}")
+            print(f"Failed to get integration dashboard: {e}")
+            return IntegrationDashboard(
+                user_id=user_id,
+                composio_health=False,
+                integrations=[]
+            )           
     
     async def get_integration_stats(self, user_id: str) -> IntegrationStats:
         """Get integration statistics for analytics."""

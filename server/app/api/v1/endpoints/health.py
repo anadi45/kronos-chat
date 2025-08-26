@@ -3,7 +3,7 @@ Health check endpoints.
 """
 from fastapi import APIRouter, Depends
 
-from ....core.deps import check_database_health, check_composio_health, check_gemini_health
+from ....core.deps import check_database_health, check_composio_health
 from ....core.config import get_settings
 
 router = APIRouter()
@@ -44,9 +44,6 @@ async def detailed_health_check():
     # Check Composio
     health_status["services"]["composio"] = await check_composio_health()
     
-    # Check Gemini
-    health_status["services"]["gemini"] = await check_gemini_health()
-    
     # Determine overall status
     service_statuses = [
         service["status"] for service in health_status["services"].values()
@@ -81,7 +78,4 @@ async def composio_health():
     return await check_composio_health()
 
 
-@router.get("/gemini")
-async def gemini_health():
-    """Check Gemini AI service health."""
-    return await check_gemini_health()
+

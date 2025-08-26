@@ -88,35 +88,7 @@ class ComposioSettings(BaseSettings):
         return bool(self.api_key)
 
 
-class GeminiSettings(BaseSettings):
-    """Google Gemini AI settings."""
-    
-    api_key: str = Field(
-        default="",
-        env="GEMINI_API_KEY",
-        description="Google Gemini API key"
-    )
-    model: str = Field(
-        default="gemini-pro",
-        env="GEMINI_MODEL",
-        description="Gemini model to use"
-    )
-    temperature: float = Field(
-        default=0.7,
-        env="GEMINI_TEMPERATURE",
-        description="Model temperature"
-    )
-    max_tokens: int = Field(
-        default=1000,
-        env="GEMINI_MAX_TOKENS",
-        description="Maximum tokens to generate"
-    )
-    
-    @validator("api_key")
-    def validate_api_key(cls, v: str) -> str:
-        if not v:
-            raise ValueError("GEMINI_API_KEY is required")
-        return v
+
 
 
 class AppSettings(BaseSettings):
@@ -232,9 +204,6 @@ class Settings(BaseSettings):
     # Composio settings (optional)
     composio: Optional[ComposioSettings] = None
     
-    # Gemini settings (optional)
-    gemini: Optional[GeminiSettings] = None
-    
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         
@@ -243,12 +212,6 @@ class Settings(BaseSettings):
             self.composio = ComposioSettings()
         except ValueError:
             # Composio API key not provided, skip initialization
-            pass
-            
-        try:
-            self.gemini = GeminiSettings()
-        except ValueError:
-            # Gemini API key not provided, skip initialization
             pass
     
     class Config:

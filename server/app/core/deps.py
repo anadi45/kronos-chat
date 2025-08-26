@@ -8,10 +8,6 @@ from sqlalchemy.orm import Session
 
 from .config import get_settings, Settings
 from .database import get_db
-from .exceptions import AuthenticationError, ConfigurationError
-from .logging import get_logger
-
-logger = get_logger(__name__)
 
 # Security scheme for JWT authentication
 security = HTTPBearer(auto_error=False)
@@ -124,26 +120,7 @@ def get_optional_composio_service():
         return None
 
 
-def get_gemini_service():
-    """Get Gemini AI service instance."""
-    from ..services.gemini_service import gemini_service
-    
-    if not gemini_service.initialized:
-        raise ConfigurationError(
-            "Gemini service not initialized. Check GEMINI_API_KEY configuration.",
-            config_key="GEMINI_API_KEY"
-        )
-    
-    return gemini_service
 
-
-def get_optional_gemini_service():
-    """Get Gemini AI service instance if available, None otherwise."""
-    try:
-        return get_gemini_service()
-    except ConfigurationError:
-        logger.warning("Gemini service not available")
-        return None
 
 
 # Validation dependencies
@@ -256,35 +233,7 @@ async def check_composio_health() -> dict:
         }
 
 
-async def check_gemini_health() -> dict:
-    """
-    Check Gemini AI service health.
-    
-    Returns:
-        dict: Health status information
-    """
-    try:
-        gemini_service = get_gemini_service()
-        return {
-            "status": "healthy",
-            "configured": True,
-            "initialized": gemini_service.initialized
-        }
-    except ConfigurationError:
-        return {
-            "status": "unavailable",
-            "configured": False,
-            "initialized": False,
-            "message": "Gemini API key not configured"
-        }
-    except Exception as e:
-        logger.error(f"Gemini health check failed: {e}")
-        return {
-            "status": "unhealthy",
-            "configured": True,
-            "initialized": False,
-            "message": str(e)
-        }
+
 
 
 # Common dependencies combinations
@@ -294,6 +243,4 @@ AuthDeps = Depends(get_current_user)
 AdminDeps = Depends(get_current_admin_user)
 ComposioDeps = Depends(get_composio_service)
 OptionalComposioDeps = Depends(get_optional_composio_service)
-GeminiDeps = Depends(get_gemini_service)
-OptionalGeminiDeps = Depends(get_optional_gemini_service)
 PaginationDeps = Depends(validate_pagination)

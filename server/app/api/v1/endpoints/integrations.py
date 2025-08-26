@@ -5,7 +5,6 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from typing import Optional, List
 
 from ....core.deps import get_current_user, get_database_session
-from ....core.exceptions import ComposioError, ValidationError
 from ....schemas.integration import (
     IntegrationDashboard, IntegrationStats, IntegrationSummary,
     IntegrationActionRequest, IntegrationActionResponse
@@ -185,7 +184,8 @@ async def perform_integration_action(
         
         elif action == "disconnect":
             if not action_request.connection_id:
-                raise ValidationError("Connection ID required for disconnect action")
+                print("Connection ID required for disconnect action")
+                return
             
             success = await composio_service.delete_connected_account(action_request.connection_id)
             
@@ -196,7 +196,8 @@ async def perform_integration_action(
         
         elif action == "refresh":
             if not action_request.connection_id:
-                raise ValidationError("Connection ID required for refresh action")
+                print("Connection ID required for refresh action")
+                return
             
             success = await composio_service.refresh_connected_account(action_request.connection_id)
             
@@ -207,7 +208,8 @@ async def perform_integration_action(
         
         elif action == "enable":
             if not action_request.connection_id:
-                raise ValidationError("Connection ID required for enable action")
+                print("Connection ID required for enable action")
+                return
             
             success = await composio_service.enable_connected_account(action_request.connection_id)
             
@@ -218,7 +220,8 @@ async def perform_integration_action(
         
         elif action == "disable":
             if not action_request.connection_id:
-                raise ValidationError("Connection ID required for disable action")
+                print("Connection ID required for disable action")
+                return
             
             success = await composio_service.disable_connected_account(action_request.connection_id)
             
@@ -228,17 +231,12 @@ async def perform_integration_action(
             )
         
         else:
-            raise ValidationError(f"Unknown action: {action}")
+            print(f"Unknown action: {action}")
+            return
     
-    except ValidationError as e:
-        raise HTTPException(status_code=400, detail=str(e))
-    except ComposioError as e:
-        raise HTTPException(status_code=503, detail=str(e))
     except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Failed to perform action '{action}' on {provider}: {str(e)}"
-        )
+        print(f"Failed to perform action '{action}' on {provider}: {str(e)}")
+        return
 
 
 @router.get("/categories")

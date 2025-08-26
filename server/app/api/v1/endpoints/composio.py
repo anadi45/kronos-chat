@@ -6,7 +6,6 @@ from typing import List, Optional, Dict, Any, Union
 from pydantic import BaseModel, Field
 
 from ....core.deps import get_optional_composio_service, validate_user_id
-from ....core.exceptions import ComposioError, ConfigurationError, ValidationError
 from ....services.composio_service import ComposioService
 
 router = APIRouter()
@@ -100,15 +99,11 @@ class EnhancedConnectionRequest(BaseModel):
 def check_composio_availability(composio_service: Optional[ComposioService]):
     """Check if Composio service is available."""
     if not composio_service:
-        raise ConfigurationError(
-            "Composio service not available. Check COMPOSIO_API_KEY configuration.",
-            config_key="COMPOSIO_API_KEY"
-        )
+        print("Composio service not available. Check COMPOSIO_API_KEY configuration.")
+        return
     if not composio_service.initialized:
-        raise ConfigurationError(
-            "Composio service not properly initialized",
-            config_key="COMPOSIO_API_KEY"
-        )
+        print("Composio service not properly initialized")
+        return
 
 
 # Helper function to handle async operations
@@ -169,7 +164,8 @@ async def initiate_connection(
         
         return ConnectionInitiateResponse(**result)
     except Exception as e:
-        raise ComposioError(f"Failed to initiate connection: {str(e)}", operation="initiate_connection")
+        print(f"Failed to initiate connection: {str(e)}")
+        return
 
 
 @router.get("/connections/{user_id}", response_model=List[ConnectionStatusResponse])
@@ -185,7 +181,8 @@ async def list_connections(
         accounts = await composio_service.list_connected_accounts(user_id)
         return [ConnectionStatusResponse(**account) for account in accounts]
     except Exception as e:
-        raise ComposioError(f"Failed to list connections: {str(e)}", operation="list_connections")
+        print(f"Failed to list connections: {str(e)}")
+        return
 
 
 @router.get("/connections/account/{account_id}", response_model=ConnectionStatusResponse)

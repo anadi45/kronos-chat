@@ -1,7 +1,6 @@
 from typing import Dict, Any, Optional, List, Union
-
+from composio_client import Composio
 from ..core.config import get_settings
-from ..core.exceptions import ComposioError, ConfigurationError
 from .base import SingletonService
 
 settings = get_settings()
@@ -13,34 +12,29 @@ class ComposioService(SingletonService):
     def _validate_configuration(self) -> None:
         """Validate Composio configuration."""
         if not settings.composio:
-            raise ConfigurationError(
-                "Composio configuration not found. Check COMPOSIO_API_KEY environment variable.",
-                config_key="COMPOSIO_API_KEY"
-            )
+            print("Composio configuration not found. Check COMPOSIO_API_KEY environment variable.")
+            return
         
         if not settings.composio.api_key:
-            raise ConfigurationError(
-                "Composio API key not configured. Set COMPOSIO_API_KEY environment variable.",
-                config_key="COMPOSIO_API_KEY"
-            )
+            print("Composio API key not configured. Set COMPOSIO_API_KEY environment variable.")
+            return
     
     def _initialize_client(self) -> None:
         """Initialize the Composio client"""
         try:
-            from composio_client import Composio
+
             self._client = Composio(
                 api_key=settings.composio.api_key,
                 base_url=settings.composio.base_url
             )
         except ImportError as e:
             self.logger.error(f"Composio package not installed: {e}")
-            raise ConfigurationError(
-                "composio-client package not installed. Run: pip install composio-client",
-                config_key="COMPOSIO_PACKAGE"
-            )
+            print("composio-client package not installed. Run: pip install composio-client")
+            return
         except Exception as e:
             self.logger.error(f"Failed to initialize Composio client: {e}")
-            raise ComposioError(f"Failed to initialize Composio client: {str(e)}")
+            print(f"Failed to initialize Composio client: {str(e)}")
+            return
     
     async def initiate_connection(
         self, 
@@ -51,7 +45,8 @@ class ComposioService(SingletonService):
     ) -> Dict[str, Any]:
         """Initiate connection with a provider (OAuth flow)"""
         if not self.initialized:
-            raise ComposioError("Composio service not initialized")
+            print("Composio service not initialized")
+            return
         
         try:
             # Create connection request
@@ -71,7 +66,8 @@ class ComposioService(SingletonService):
             }
         except Exception as e:
             self.logger.error(f"Failed to initiate connection: {e}")
-            raise ComposioError(f"Failed to initiate connection: {str(e)}", operation="initiate_connection")
+            print(f"Failed to initiate connection: {str(e)}")
+            return
     
     async def wait_for_connection(
         self, 
@@ -80,7 +76,8 @@ class ComposioService(SingletonService):
     ) -> Dict[str, Any]:
         """Wait for a connection to be established"""
         if not self.initialized:
-            raise ComposioError("Composio service not initialized")
+            print("Composio service not initialized")
+            return
         
         try:
             # Wait for connection to be established
@@ -97,12 +94,14 @@ class ComposioService(SingletonService):
             }
         except Exception as e:
             self.logger.error(f"Composio operation failed: {e}")
-            raise ComposioError(f"Failed waiting for connection: {str(e)}")
+            print(f"Failed waiting for connection: {str(e)}")
+            return
     
     async def list_connected_accounts(self, user_id: str) -> List[Dict[str, Any]]:
         """List all connected accounts for a user"""
         if not self.initialized:
-            raise ComposioError("Composio service not initialized")
+            print("Composio service not initialized")
+            return
         
         try:
             # Get connected accounts for the user
@@ -120,12 +119,14 @@ class ComposioService(SingletonService):
             return result
         except Exception as e:
             self.logger.error(f"Composio operation failed: {e}")
-            raise ComposioError(f"Failed to list connected accounts: {str(e)}")
+            print(f"Failed to list connected accounts: {str(e)}")
+            return
     
     async def get_connected_account(self, account_id: str) -> Dict[str, Any]:
         """Get a specific connected account"""
         if not self.initialized:
-            raise ComposioError("Composio service not initialized")
+            print("Composio service not initialized")
+            return
         
         try:
             account = self._client.connected_accounts.get_by_id(account_id=account_id)
@@ -139,55 +140,64 @@ class ComposioService(SingletonService):
             }
         except Exception as e:
             self.logger.error(f"Composio operation failed: {e}")
-            raise ComposioError(f"Failed to get connected account: {str(e)}")
+            print(f"Failed to get connected account: {str(e)}")
+            return
     
     async def enable_connected_account(self, account_id: str) -> bool:
         """Enable a connected account"""
         if not self.initialized:
-            raise ComposioError("Composio service not initialized")
+            print("Composio service not initialized")
+            return
         
         try:
             self.client.connected_accounts.enable(account_id=account_id)
             return True
         except Exception as e:
             self.logger.error(f"Composio operation failed: {e}")
-            raise ComposioError(f"Failed to enable connected account: {str(e)}")
+            print(f"Failed to enable connected account: {str(e)}")
+            return
     
     async def disable_connected_account(self, account_id: str) -> bool:
         """Disable a connected account"""
         if not self.initialized:
-            raise ComposioError("Composio service not initialized")
+            print("Composio service not initialized")
+            return
         
         try:
             self.client.connected_accounts.disable(account_id=account_id)
             return True
         except Exception as e:
             self.logger.error(f"Composio operation failed: {e}")
-            raise ComposioError(f"Failed to disable connected account: {str(e)}")
+            print(f"Failed to disable connected account: {str(e)}")
+            return
     
     async def refresh_connected_account(self, account_id: str) -> bool:
         """Refresh credentials for a connected account"""
         if not self.initialized:
-            raise ComposioError("Composio service not initialized")
+            print("Composio service not initialized")
+            return
         
         try:
             self.client.connected_accounts.refresh(account_id=account_id)
             return True
         except Exception as e:
             self.logger.error(f"Composio operation failed: {e}")
-            raise ComposioError(f"Failed to refresh connected account: {str(e)}")
+            print(f"Failed to refresh connected account: {str(e)}")
+            return
     
     async def delete_connected_account(self, account_id: str) -> bool:
         """Delete a connected account"""
         if not self.initialized:
-            raise ComposioError("Composio service not initialized")
+            print("Composio service not initialized")
+            return
         
         try:
             self.client.connected_accounts.delete(account_id=account_id)
             return True
         except Exception as e:
             self.logger.error(f"Composio operation failed: {e}")
-            raise ComposioError(f"Failed to delete connected account: {str(e)}")
+            print(f"Failed to delete connected account: {str(e)}")
+            return
     
     async def execute_tool(
         self, 
@@ -198,7 +208,8 @@ class ComposioService(SingletonService):
     ) -> Dict[str, Any]:
         """Execute a tool/action"""
         if not self.initialized:
-            raise ComposioError("Composio service not initialized")
+            print("Composio service not initialized")
+            return
         
         try:
             # Execute the action
@@ -215,7 +226,8 @@ class ComposioService(SingletonService):
             }
         except Exception as e:
             self.logger.error(f"Composio operation failed: {e}")
-            raise ComposioError(f"Failed to execute tool {action_name}: {str(e)}")
+            print(f"Failed to execute tool {action_name}: {str(e)}")
+            return
 
     # Auth Config Management Methods (based on Composio API v3)
     async def list_auth_configs(
@@ -229,7 +241,8 @@ class ComposioService(SingletonService):
     ) -> Dict[str, Any]:
         """List authentication configurations with optional filters"""
         if not self.initialized:
-            raise ComposioError("Composio service not initialized")
+            print("Composio service not initialized")
+            return
         
         try:
             params = {}
@@ -256,12 +269,14 @@ class ComposioService(SingletonService):
             }
         except Exception as e:
             self.logger.error(f"Failed to list auth configs: {e}")
-            raise ComposioError(f"Failed to list auth configs: {str(e)}", operation="list_auth_configs")
+            print(f"Failed to list auth configs: {str(e)}")
+            return
 
     async def get_auth_config(self, auth_config_id: str) -> Dict[str, Any]:
         """Get a specific authentication configuration"""
         if not self.initialized:
-            raise ComposioError("Composio service not initialized")
+            print("Composio service not initialized")
+            return
         
         try:
             auth_config = self._client.auth_configs.get(auth_config_id)
@@ -280,7 +295,8 @@ class ComposioService(SingletonService):
             }
         except Exception as e:
             self.logger.error(f"Failed to get auth config {auth_config_id}: {e}")
-            raise RuntimeError(f"Failed to get auth config: {str(e)}")
+            print(f"Failed to get auth config: {str(e)}")
+            return
 
     async def create_auth_config(
         self,
@@ -292,7 +308,8 @@ class ComposioService(SingletonService):
     ) -> Dict[str, Any]:
         """Create a new authentication configuration"""
         if not self.initialized:
-            raise ComposioError("Composio service not initialized")
+            print("Composio service not initialized")
+            return
         
         try:
             config_data = {
@@ -316,7 +333,8 @@ class ComposioService(SingletonService):
             }
         except Exception as e:
             self.logger.error(f"Failed to create auth config: {e}")
-            raise RuntimeError(f"Failed to create auth config: {str(e)}")
+            print(f"Failed to create auth config: {str(e)}")
+            return
 
     async def update_auth_config(
         self,
@@ -327,7 +345,8 @@ class ComposioService(SingletonService):
     ) -> Dict[str, Any]:
         """Update an existing authentication configuration"""
         if not self.initialized:
-            raise ComposioError("Composio service not initialized")
+            print("Composio service not initialized")
+            return
         
         try:
             update_data = {}
@@ -347,12 +366,14 @@ class ComposioService(SingletonService):
             }
         except Exception as e:
             self.logger.error(f"Failed to update auth config {auth_config_id}: {e}")
-            raise RuntimeError(f"Failed to update auth config: {str(e)}")
+            print(f"Failed to update auth config: {str(e)}")
+            return
 
     async def delete_auth_config(self, auth_config_id: str) -> bool:
         """Delete an authentication configuration"""
         if not self.initialized:
-            raise ComposioError("Composio service not initialized")
+            print("Composio service not initialized")
+            return
         
         try:
             self.client.auth_configs.delete(auth_config_id)
@@ -360,7 +381,8 @@ class ComposioService(SingletonService):
             return True
         except Exception as e:
             self.logger.error(f"Failed to delete auth config {auth_config_id}: {e}")
-            raise RuntimeError(f"Failed to delete auth config: {str(e)}")
+            print(f"Failed to delete auth config: {str(e)}")
+            return
 
     async def get_available_toolkits(
         self,
@@ -369,7 +391,8 @@ class ComposioService(SingletonService):
     ) -> List[Dict[str, Any]]:
         """Get available toolkits/apps that can be integrated"""
         if not self.initialized:
-            raise ComposioError("Composio service not initialized")
+            print("Composio service not initialized")
+            return
         
         try:
             params = {}
@@ -394,7 +417,8 @@ class ComposioService(SingletonService):
             return result
         except Exception as e:
             self.logger.error(f"Failed to get available toolkits: {e}")
-            raise RuntimeError(f"Failed to get available toolkits: {str(e)}")
+            print(f"Failed to get available toolkits: {str(e)}")
+            return
 
     async def get_toolkit_actions(
         self,
@@ -403,7 +427,8 @@ class ComposioService(SingletonService):
     ) -> List[Dict[str, Any]]:
         """Get available actions for a specific toolkit"""
         if not self.initialized:
-            raise ComposioError("Composio service not initialized")
+            print("Composio service not initialized")
+            return
         
         try:
             actions = self._client.actions.list(app_name=toolkit_slug, limit=limit)
@@ -422,7 +447,8 @@ class ComposioService(SingletonService):
             return result
         except Exception as e:
             self.logger.error(f"Failed to get toolkit actions for {toolkit_slug}: {e}")
-            raise RuntimeError(f"Failed to get toolkit actions: {str(e)}")
+            print(f"Failed to get toolkit actions: {str(e)}")
+            return
 
     async def enhanced_initiate_connection(
         self,
@@ -434,7 +460,8 @@ class ComposioService(SingletonService):
     ) -> Dict[str, Any]:
         """Enhanced connection initiation with auth config support"""
         if not self.initialized:
-            raise ComposioError("Composio service not initialized")
+            print("Composio service not initialized")
+            return
         
         try:
             connection_data = {
@@ -459,7 +486,8 @@ class ComposioService(SingletonService):
             }
         except Exception as e:
             self.logger.error(f"Failed to initiate enhanced connection: {e}")
-            raise RuntimeError(f"Failed to initiate enhanced connection: {str(e)}")
+            print(f"Failed to initiate enhanced connection: {str(e)}")
+            return
 
 # Create singleton instance
 composio_service = ComposioService()

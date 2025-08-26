@@ -1,7 +1,6 @@
 import os
 from typing import AsyncGenerator
 from dotenv import load_dotenv
-from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.messages import HumanMessage, AIMessage
 from langgraph.graph import StateGraph, MessagesState
 from langgraph.prebuilt import ToolNode, tools_condition
@@ -12,19 +11,9 @@ load_dotenv()
 
 class Agent:
     def __init__(self):
-        # Initialize the LLM with Gemini
-        api_key = os.getenv("GEMINI_API_KEY")
-        if not api_key:
-            raise ValueError("GEMINI_API_KEY not found in environment variables")
-        
-        self.llm = ChatGoogleGenerativeAI(
-            model="gemini-1.5-flash-latest",
-            google_api_key=api_key,
-            temperature=0
-        )
-        
-        # Bind the tools to the LLM
-        self.llm_with_tools = self.llm.bind_tools([add])
+        # Mock LLM for now - no Gemini dependency
+        self.llm = None
+        self.llm_with_tools = None
         
         # Create the graph
         self.graph = self._create_graph()
@@ -51,27 +40,39 @@ class Agent:
         return workflow.compile()
     
     def _call_model(self, state: MessagesState):
+        # Mock model response - no actual LLM call
         messages = state['messages']
-        response = self.llm_with_tools.invoke(messages)
+        if messages:
+            last_message = messages[-1]
+            if isinstance(last_message, HumanMessage):
+                response = AIMessage(content=f"Mock response to: {last_message.content}. This is a placeholder until AI functionality is implemented.")
+            else:
+                response = AIMessage(content="Mock AI response. This is a placeholder until AI functionality is implemented.")
+        else:
+            response = AIMessage(content="Hello! This is a mock AI agent response.")
+        
         return {"messages": [response]}
     
-    def invoke(self, message: str):
-        """Invoke the agent with a message."""
-        messages = [HumanMessage(content=message)]
-        result = self.graph.invoke({"messages": messages})
-        # Return only the final AI message content
-        for msg in reversed(result['messages']):
-            if isinstance(msg, AIMessage) and msg.content:
-                return msg.content
-        return ""
-    
-    async def astream(self, message: str) -> AsyncGenerator[str, None]:
-        """Stream the agent's response."""
-        messages = [HumanMessage(content=message)]
-        async for chunk in self.graph.astream({"messages": messages}):
-            # Look for agent responses
-            if "agent" in chunk:
-                agent_messages = chunk["agent"].get("messages", [])
-                for msg in agent_messages:
-                    if hasattr(msg, 'content') and msg.content:
-                        yield msg.content
+    async def astream(self, messages):
+        """Stream responses from the agent."""
+        # Mock streaming response
+        mock_response = "This is a mock streaming response from the AI agent. AI functionality will be implemented soon."
+        
+        # Simulate streaming by yielding chunks
+        words = mock_response.split()
+        for word in words:
+            yield {
+                "agent": {
+                    "messages": [AIMessage(content=word + " ")]
+                }
+            }
+        
+        # Final completion message
+        yield {
+            "agent": {
+                "messages": [AIMessage(content="[STREAMING_COMPLETE]")]
+            }
+        }
+
+# Global agent instance
+agent = Agent()

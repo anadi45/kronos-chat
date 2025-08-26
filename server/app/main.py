@@ -7,14 +7,9 @@ from fastapi import FastAPI
 
 from .core.config import get_settings
 from .core.database import init_db, check_db_connection
-from .core.exceptions import setup_exception_handlers
-from .core.logging import setup_logging, get_logger
 from .core.middleware import setup_middleware
 from .api.v1.api import api_router
 
-# Initialize logging first
-setup_logging()
-logger = get_logger(__name__)
 
 # Get settings
 settings = get_settings()
@@ -27,9 +22,9 @@ async def lifespan(app: FastAPI):
     Manages startup and shutdown events.
     """
     # Startup
-    logger.info(f"Starting {settings.app.name} v{settings.app.version}")
-    logger.info(f"Environment: {settings.app.environment}")
-    logger.info(f"Debug mode: {settings.app.debug}")
+    print(f"Starting {settings.app.name} v{settings.app.version}")
+    print(f"Environment: {settings.app.environment}")
+    print(f"Debug mode: {settings.app.debug}")
     
     # Initialize database
     try:
@@ -37,11 +32,11 @@ async def lifespan(app: FastAPI):
         
         # Check database connection
         if check_db_connection():
-            logger.info("Database connection verified")
+            print("Database connection verified")
         else:
-            logger.error("Database connection failed")
+            print("Database connection failed")
     except Exception as e:
-        logger.error(f"Database initialization failed: {e}")
+        print(f"Database initialization failed: {e}")
     
     # Initialize services
     try:
@@ -50,32 +45,25 @@ async def lifespan(app: FastAPI):
             from .services import composio_service
             try:
                 composio_service.initialize()
-                logger.info("Composio service initialized")
+                print("Composio service initialized")
             except Exception as e:
-                logger.warning(f"Composio service initialization failed: {e}")
+                print(f"Composio service initialization failed: {e}")
         
-        # Initialize Gemini service if configured
-        if settings.gemini:
-            from .services import gemini_service
-            try:
-                gemini_service.initialize()
-                logger.info("Gemini service initialized")
-            except Exception as e:
-                logger.warning(f"Gemini service initialization failed: {e}")
+
                 
     except Exception as e:
-        logger.error(f"Service initialization failed: {e}")
+        print(f"Service initialization failed: {e}")
     
-    logger.info("Application startup complete")
+    print("Application startup complete")
     
     yield
     
     # Shutdown
-    logger.info("Application shutdown initiated")
+    print("Application shutdown initiated")
     
     # Cleanup resources here if needed
     
-    logger.info("Application shutdown complete")
+    print("Application shutdown complete")
 
 
 def create_app() -> FastAPI:
@@ -96,11 +84,6 @@ def create_app() -> FastAPI:
         lifespan=lifespan
     )
     
-    # Setup exception handlers
-    setup_exception_handlers(app)
-    
-    # Setup middleware
-    setup_middleware(app)
     
     # Include API router
     app.include_router(api_router, prefix=settings.app.api_prefix)
@@ -121,7 +104,7 @@ def create_app() -> FastAPI:
     @app.get("/health", tags=["health"])
     async def health_check():
         """Comprehensive health check endpoint."""
-        from .core.deps import check_database_health, check_composio_health, check_gemini_health
+        from .core.deps import check_database_health, check_composio_health
         
         health_status = {
             "status": "healthy",
@@ -147,14 +130,10 @@ def create_app() -> FastAPI:
         # Check Composio
         health_status["composio"] = await check_composio_health()
         
-        # Check Gemini
-        health_status["gemini"] = await check_gemini_health()
-        
         # Determine overall status
         component_statuses = [
             health_status["database"]["status"],
-            health_status["composio"]["status"],
-            health_status["gemini"]["status"]
+            health_status["composio"]["status"]
         ]
         
         if any(status == "unhealthy" for status in component_statuses):
@@ -164,7 +143,7 @@ def create_app() -> FastAPI:
         
         return health_status
     
-    logger.info(f"FastAPI application created successfully")
+    print(f"FastAPI application created successfully")
     return app
 
 

@@ -12,10 +12,8 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.types import ASGIApp
 
 from .config import get_settings
-from .logging import get_logger, log_request
 
 settings = get_settings()
-logger = get_logger(__name__)
 
 
 class RequestLoggingMiddleware(BaseHTTPMiddleware):
@@ -30,7 +28,7 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
         start_time = time.time()
         
         # Log request start
-        logger.info(
+        print(
             f"Request started: {request.method} {request.url.path}",
             extra={
                 "request_id": request_id,
@@ -48,7 +46,7 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
         except Exception as e:
             # Log error
             duration = time.time() - start_time
-            logger.error(
+            print(
                 f"Request failed: {request.method} {request.url.path} - {str(e)} ({duration:.3f}s)",
                 exc_info=True,
                 extra={
@@ -68,7 +66,7 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
         response.headers["X-Request-ID"] = request_id
         
         # Log request completion
-        log_request(
+        print(
             method=request.method,
             url=request.url.path,
             status_code=response.status_code,
@@ -147,7 +145,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
             ]
             
             if len(recent_requests) >= self.calls:
-                logger.warning(
+                print(
                     f"Rate limit exceeded for {client_ip}",
                     extra={
                         "client_ip": client_ip,
@@ -195,4 +193,4 @@ def setup_middleware(app):
     # Add request logging middleware (should be last to capture everything)
     app.add_middleware(RequestLoggingMiddleware)
     
-    logger.info("Middleware configured successfully")
+    print("Middleware configured successfully")
