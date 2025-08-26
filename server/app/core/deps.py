@@ -59,7 +59,6 @@ async def get_current_user(
         if token == "demo-token":
             return {
                 "user_id": "demo-user",
-                "username": "demo",
                 "email": "demo@example.com",
                 "roles": ["user"]
             }

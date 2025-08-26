@@ -15,7 +15,7 @@ def create_migration():
         alembic_cfg = Config("alembic.ini")
         
         # Create migration
-        message = "enhance_user_model_with_additional_fields"
+        message = "enhance_user_model_without_username_fields"
         command.revision(
             alembic_cfg, 
             message=message,

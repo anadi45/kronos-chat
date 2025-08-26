@@ -4,6 +4,7 @@ User management endpoints.
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List
+import uuid
 
 from ....core.deps import get_database_session, validate_pagination
 from ....core.exceptions import NotFoundError, ValidationError
@@ -26,7 +27,7 @@ async def get_users(
 
 @router.get("/{user_id}", response_model=UserInDB)
 async def get_user(
-    user_id: int,
+    user_id: uuid.UUID,
     db: Session = Depends(get_database_session)
 ):
     """Get a specific user by ID."""
@@ -62,7 +63,7 @@ async def create_user(
 
 @router.put("/{user_id}", response_model=UserInDB)
 async def update_user(
-    user_id: int,
+    user_id: uuid.UUID,
     user: UserUpdate,
     db: Session = Depends(get_database_session)
 ):
@@ -83,7 +84,7 @@ async def update_user(
 
 @router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_user(
-    user_id: int,
+    user_id: uuid.UUID,
     db: Session = Depends(get_database_session)
 ):
     """Delete a user."""

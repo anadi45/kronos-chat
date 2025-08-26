@@ -13,7 +13,7 @@ router = APIRouter()
 
 class LoginRequest(BaseModel):
     """Login request model."""
-    username: str
+    email: str
     password: str
 
 
@@ -27,7 +27,6 @@ class LoginResponse(BaseModel):
 class UserInfo(BaseModel):
     """User information model."""
     user_id: str
-    username: str
     email: str
     roles: list[str]
 
@@ -45,7 +44,7 @@ async def login(
     user database validation, and JWT token generation.
     """
     # Mock authentication - replace with real implementation
-    if request.username == "demo" and request.password == "demo":
+    if request.email == "demo@example.com" and request.password == "demo":
         # In production, generate actual JWT token
         mock_token = "demo-token"
         
@@ -55,7 +54,7 @@ async def login(
             expires_in=settings.security.access_token_expire_minutes * 60
         )
     
-    raise AuthenticationError("Invalid username or password")
+    raise AuthenticationError("Invalid email or password")
 
 
 @router.get("/me", response_model=UserInfo)
@@ -70,7 +69,6 @@ async def get_current_user_info(
     # Mock user info - replace with real user data
     return UserInfo(
         user_id="demo-user",
-        username="demo",
         email="demo@example.com",
         roles=["user"]
     )
