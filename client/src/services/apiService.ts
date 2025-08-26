@@ -204,6 +204,36 @@ export interface IntegrationActionResponse {
   data?: Record<string, unknown>;
 }
 
+// Chat types
+export interface ChatMessage {
+  role: "user" | "assistant" | "system";
+  content: string;
+  timestamp?: string;
+}
+
+export interface ChatRequest {
+  message: string;
+  conversation_id?: string;
+  system_prompt?: string;
+  temperature?: number;
+  max_tokens?: number;
+}
+
+export interface ChatResponse {
+  message: string;
+  conversation_id: string;
+  timestamp: string;
+}
+
+export interface StreamChatRequest {
+  message: string;
+  conversation_history?: ChatMessage[];
+  conversation_id?: string;
+  system_prompt?: string;
+  temperature?: number;
+  max_tokens?: number;
+}
+
 export interface AuthConfigListResponse {
   items: AuthConfig[];
   total_pages: number;
@@ -529,6 +559,36 @@ class ApiService {
   }> {
     const response = await this.client.get("/integrations/health");
     return response.data;
+  }
+
+  // Chat Methods
+  async sendChatMessage(request: ChatRequest): Promise<ChatResponse> {
+    const response = await this.client.post("/chat/message", request);
+    return response.data;
+  }
+
+  async streamChatMessage(request: StreamChatRequest): Promise<ReadableStream> {
+    const response = await fetch(
+      `${this.client.defaults.baseURL}/chat/stream`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("access_token")}`,
+        },
+        body: JSON.stringify(request),
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    if (!response.body) {
+      throw new Error("No response body");
+    }
+
+    return response.body;
   }
 }
 

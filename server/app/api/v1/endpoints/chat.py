@@ -2,11 +2,15 @@
 Chat endpoints.
 """
 from fastapi import APIRouter, Depends
+from fastapi.responses import StreamingResponse
 from typing import List, Optional
 from pydantic import BaseModel
+import json
+import uuid
+from datetime import datetime
 
-from ....core.deps import get_optional_gemini_service, validate_user_id
-from ....core.exceptions import ValidationError
+from ....core.deps import get_optional_gemini_service, get_current_user
+from ....core.exceptions import ValidationError, ConfigurationError
 from ....services.gemini_service import GeminiService
 
 router = APIRouter()
@@ -22,7 +26,6 @@ class ChatMessage(BaseModel):
 class ChatRequest(BaseModel):
     """Chat request model."""
     message: str
-    user_id: str
     conversation_id: Optional[str] = None
     system_prompt: Optional[str] = None
     temperature: Optional[float] = None
@@ -34,6 +37,16 @@ class ChatResponse(BaseModel):
     message: str
     conversation_id: str
     timestamp: str
+    
+    
+class StreamChatRequest(BaseModel):
+    """Stream chat request model."""
+    message: str
+    conversation_history: Optional[List[ChatMessage]] = None
+    conversation_id: Optional[str] = None
+    system_prompt: Optional[str] = None
+    temperature: Optional[float] = None
+    max_tokens: Optional[int] = None
 
 
 class ConversationRequest(BaseModel):
@@ -66,55 +79,147 @@ async def get_chat(chat_id: str):
 @router.post("/message", response_model=ChatResponse)
 async def send_message(
     request: ChatRequest,
+    current_user: dict = Depends(get_current_user),
     gemini_service: Optional[GeminiService] = Depends(get_optional_gemini_service)
 ):
     """Send a chat message and get AI response."""
-    # Validate user ID
-    validate_user_id(request.user_id)
-    
     # Check if Gemini service is available
     if not gemini_service:
-        raise ValidationError(
+        raise ConfigurationError(
             "AI chat service not available. Gemini API key not configured.",
-            field="gemini_service"
+            config_key="GEMINI_API_KEY"
         )
     
     try:
         # Generate response using Gemini
+        system_prompt = request.system_prompt or "You are Kronos, a helpful AI assistant. You are knowledgeable, friendly, and concise in your responses."
+        
         response_text = await gemini_service.generate_text(
             prompt=request.message,
-            system_prompt=request.system_prompt,
+            system_prompt=system_prompt,
             temperature=request.temperature,
             max_tokens=request.max_tokens
         )
         
         # Generate conversation ID if not provided
-        conversation_id = request.conversation_id or f"conv_{request.user_id}_{__import__('uuid').uuid4().hex[:8]}"
+        conversation_id = request.conversation_id or f"conv_{current_user['user_id']}_{uuid.uuid4().hex[:8]}"
         
         return ChatResponse(
             message=response_text,
             conversation_id=conversation_id,
-            timestamp=__import__("datetime").datetime.utcnow().isoformat()
+            timestamp=datetime.utcnow().isoformat()
         )
         
     except Exception as e:
         raise ValidationError(f"Failed to generate response: {str(e)}", field="ai_response")
 
 
+@router.post("/stream")
+async def stream_chat(
+    request: StreamChatRequest,
+    current_user: dict = Depends(get_current_user),
+    gemini_service: Optional[GeminiService] = Depends(get_optional_gemini_service)
+):
+    """Stream chat response in real-time."""
+    # Check if Gemini service is available
+    if not gemini_service:
+        raise ConfigurationError(
+            "AI chat service not available. Gemini API key not configured.",
+            config_key="GEMINI_API_KEY"
+        )
+    
+    if not request.message.strip():
+        raise ValidationError("Message cannot be empty", field="message")
+    
+    async def event_generator():
+        """Generate streaming response events."""
+        try:
+            # Generate conversation ID if not provided
+            conversation_id = request.conversation_id or f"conv_{current_user['user_id']}_{uuid.uuid4().hex[:8]}"
+            
+            # Send conversation ID first
+            yield f"data: {json.dumps({'type': 'conversation_id', 'data': conversation_id})}\n\n"
+            
+            # Prepare system prompt and conversation context
+            system_prompt = request.system_prompt or "You are Kronos, a helpful AI assistant. You are knowledgeable, friendly, and concise in your responses."
+            
+            # If conversation history is provided, format it
+            if request.conversation_history:
+                # Convert conversation history to a single context prompt
+                conversation_context = []
+                for msg in request.conversation_history:
+                    if msg.role == "user":
+                        conversation_context.append(f"User: {msg.content}")
+                    elif msg.role == "assistant":
+                        conversation_context.append(f"Assistant: {msg.content}")
+                
+                # Add current message
+                conversation_context.append(f"User: {request.message}")
+                conversation_context.append("Assistant:")
+                
+                full_prompt = system_prompt + "\n\n" + "\n".join(conversation_context)
+            else:
+                full_prompt = request.message
+            
+            # Stream response using Gemini
+            async for chunk in gemini_service.generate_text_stream(
+                prompt=full_prompt,
+                system_prompt=system_prompt if not request.conversation_history else None,
+                temperature=request.temperature,
+                max_tokens=request.max_tokens
+            ):
+                # Format as server-sent events
+                chunk_data = {
+                    'type': 'content',
+                    'data': chunk,
+                    'conversation_id': conversation_id,
+                    'timestamp': datetime.utcnow().isoformat()
+                }
+                yield f"data: {json.dumps(chunk_data)}\n\n"
+            
+            # Send end-of-stream marker
+            end_data = {
+                'type': 'done',
+                'conversation_id': conversation_id,
+                'timestamp': datetime.utcnow().isoformat()
+            }
+            yield f"data: {json.dumps(end_data)}\n\n"
+            
+        except Exception as e:
+            # Send error as JSON
+            error_data = {
+                'type': 'error',
+                'error': str(e),
+                'timestamp': datetime.utcnow().isoformat()
+            }
+            yield f"data: {json.dumps(error_data)}\n\n"
+    
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/plain",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",  # Disable nginx buffering
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+            "Access-Control-Allow-Headers": "Content-Type, Authorization"
+        }
+    )
+
+
 @router.post("/conversation", response_model=ChatResponse)
 async def continue_conversation(
     request: ConversationRequest,
+    current_user: dict = Depends(get_current_user),
     gemini_service: Optional[GeminiService] = Depends(get_optional_gemini_service)
 ):
     """Continue a multi-turn conversation."""
-    # Validate user ID
-    validate_user_id(request.user_id)
-    
     # Check if Gemini service is available
     if not gemini_service:
-        raise ValidationError(
+        raise ConfigurationError(
             "AI chat service not available. Gemini API key not configured.",
-            field="gemini_service"
+            config_key="GEMINI_API_KEY"
         )
     
     # Validate messages
@@ -138,12 +243,12 @@ async def continue_conversation(
         )
         
         # Generate conversation ID
-        conversation_id = f"conv_{request.user_id}_{__import__('uuid').uuid4().hex[:8]}"
+        conversation_id = f"conv_{current_user['user_id']}_{uuid.uuid4().hex[:8]}"
         
         return ChatResponse(
             message=response_text,
             conversation_id=conversation_id,
-            timestamp=__import__("datetime").datetime.utcnow().isoformat()
+            timestamp=datetime.utcnow().isoformat()
         )
         
     except Exception as e:

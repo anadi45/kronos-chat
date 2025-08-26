@@ -5,6 +5,7 @@ import AuthConfigManager from './components/AuthConfigManager'
 import OAuthCallback from './components/OAuthCallback'
 import ToolExecutor from './components/ToolExecutor'
 import IntegrationDashboard from './components/IntegrationDashboard'
+import ChatInterface from './components/ChatInterface'
 import AuthWrapper from './components/AuthWrapper'
 import { UserProfile } from './services/apiService'
 
@@ -14,12 +15,14 @@ interface AppProps {
 }
 
 function App({ user, onLogout }: AppProps) {
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'connections' | 'auth-configs' | 'tools' | 'callback'>('dashboard')
+  const [activeTab, setActiveTab] = useState<'chat' | 'dashboard' | 'connections' | 'auth-configs' | 'tools' | 'callback'>('chat')
 
   const renderContent = () => {
     const userId = user?.id || "unknown";
     
     switch (activeTab) {
+      case 'chat':
+        return <ChatInterface userId={userId} />
       case 'dashboard':
         return <IntegrationDashboard userId={userId} />
       case 'connections':
@@ -31,12 +34,12 @@ function App({ user, onLogout }: AppProps) {
       case 'callback':
         return <OAuthCallback />
       default:
-        return <IntegrationDashboard userId={userId} />
+        return <ChatInterface userId={userId} />
     }
   }
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className={`${activeTab === 'chat' ? 'h-screen' : 'min-h-screen'} bg-gray-100 flex flex-col`}>
       {/* Header */}
       <header className="bg-white shadow">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -75,6 +78,7 @@ function App({ user, onLogout }: AppProps) {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex space-x-8">
             {[
+              { id: 'chat', label: 'AI Chat', icon: '💬' },
               { id: 'dashboard', label: 'Integration Dashboard', icon: '📊' },
               { id: 'connections', label: 'OAuth Connections', icon: '🔗' },
               { id: 'auth-configs', label: 'Auth Configurations', icon: '⚙️' },
@@ -99,29 +103,37 @@ function App({ user, onLogout }: AppProps) {
       </nav>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-        <div className="px-4 py-6 sm:px-0">
-          {renderContent()}
-        </div>
+      <main className={`${activeTab === 'chat' ? 'flex-1 flex flex-col overflow-hidden' : 'max-w-7xl mx-auto py-6 sm:px-6 lg:px-8'}`}>
+        {activeTab === 'chat' ? (
+          <div className="flex-1 flex flex-col overflow-hidden">
+            {renderContent()}
+          </div>
+        ) : (
+          <div className="px-4 py-6 sm:px-0">
+            {renderContent()}
+          </div>
+        )}
       </main>
 
-      {/* Footer */}
-      <footer className="bg-white border-t border-gray-200 mt-12">
-        <div className="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8">
-          <div className="text-center text-sm text-gray-600">
-            Enhanced with{' '}
-            <a
-              href="https://docs.composio.dev"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-blue-600 hover:text-blue-800"
-            >
-              Composio
-            </a>{' '}
-            for robust OAuth integration
+      {/* Footer - Hidden for chat interface */}
+      {activeTab !== 'chat' && (
+        <footer className="bg-white border-t border-gray-200 mt-12">
+          <div className="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8">
+            <div className="text-center text-sm text-gray-600">
+              Enhanced with{' '}
+              <a
+                href="https://docs.composio.dev"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-600 hover:text-blue-800"
+              >
+                Composio
+              </a>{' '}
+              for robust OAuth integration
+            </div>
           </div>
-        </div>
-      </footer>
+        </footer>
+      )}
     </div>
   )
 }
