@@ -3,6 +3,7 @@ Middleware for Kronos Chat Server.
 """
 import time
 import uuid
+import logging
 from typing import Callable
 
 from fastapi import Request, Response
@@ -14,6 +15,9 @@ from starlette.types import ASGIApp
 from .config import get_settings
 
 settings = get_settings()
+
+# Configure logger
+logger = logging.getLogger("kronos.middleware")
 
 
 class RequestLoggingMiddleware(BaseHTTPMiddleware):
@@ -29,7 +33,7 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
         
         # Log request start (skip detailed logging for OPTIONS requests)
         if request.method != "OPTIONS":
-            print(
+            logger.info(
                 f"Request started: {request.method} {request.url.path}",
                 extra={
                     "request_id": request_id,
@@ -47,16 +51,16 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
         except Exception as e:
             # Log error
             duration = time.time() - start_time
-            print(
+            logger.error(
                 f"Request failed: {request.method} {request.url.path} - {str(e)} ({duration:.3f}s)",
-                exc_info=True,
                 extra={
                     "request_id": request_id,
                     "method": request.method,
                     "path": request.url.path,
                     "duration": duration,
                     "error": str(e)
-                }
+                },
+                exc_info=True
             )
             raise
         
@@ -68,7 +72,7 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
         
         # Log request completion (skip detailed logging for OPTIONS requests)
         if request.method != "OPTIONS":
-            print(
+            logger.info(
                 f"Request completed: {request.method} {request.url.path} - {response.status_code} ({duration:.3f}s)",
                 extra={
                     "request_id": request_id,

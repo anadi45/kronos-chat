@@ -1,5 +1,5 @@
 """Authentication service for user management and JWT tokens."""
-
+import logging
 from datetime import datetime, timedelta
 from typing import Optional
 from jose import JWTError, jwt
@@ -11,6 +11,7 @@ from ..models.user import User
 from ..schemas.user import UserCreate, UserSignup, UserLogin, Token, TokenData
 from ..core.config import get_settings
 
+logger = logging.getLogger("kronos.services.auth")
 
 
 class AuthService:
@@ -55,11 +56,11 @@ class AuthService:
             )
             email: str = payload.get("sub")
             if email is None:
-                print("Invalid token payload")
+                logger.warning("Invalid token payload")
                 return
             token_data = TokenData(email=email)
         except JWTError:
-            print("Invalid token")
+            logger.warning("Invalid token")
             return
         return token_data
     
@@ -84,7 +85,7 @@ class AuthService:
         """Create a new user."""
         # Check if user already exists
         if self.get_user_by_email(db, user_signup.email):
-            print(f"Email already registered: {user_signup.email}")
+            logger.info(f"Email already registered: {user_signup.email}")
             return
         
         # Create user with hashed password
@@ -110,18 +111,18 @@ class AuthService:
             return db_user
         except IntegrityError:
             db.rollback()
-            print(f"Email already registered: {user_signup.email}")
+            logger.info(f"Email already registered: {user_signup.email}")
             return
     
     def login_user(self, db: Session, user_login: UserLogin) -> Token:
         """Login user and return JWT token."""
         user = self.authenticate_user(db, user_login.email, user_login.password)
         if not user:
-            print("Invalid email or password")
+            logger.info("Invalid email or password")
             return
         
         if not user.is_active:
-            print("Account is deactivated")
+            logger.info("Account is deactivated")
             return
         
         # Update last login

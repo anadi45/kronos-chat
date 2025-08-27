@@ -1,6 +1,7 @@
 """
 Base service class for Kronos Chat Server.
 """
+import logging
 from abc import ABC, ABCMeta, abstractmethod
 from typing import Optional, Any
 
@@ -12,6 +13,7 @@ class BaseService(ABC):
     def __init__(self):
         self._initialized = False
         self._client: Optional[Any] = None
+        self.logger = logging.getLogger(f"kronos.services.{self.__class__.__name__.lower()}")
     
     @property
     def initialized(self) -> bool:
@@ -44,16 +46,16 @@ class BaseService(ABC):
             self._validate_configuration()
             self._initialize_client()
             self._initialized = True
-            print(f"{self.__class__.__name__} initialized successfully")
+            self.logger.info(f"{self.__class__.__name__} initialized successfully")
         except Exception as e:
-            print(f"Failed to initialize {self.__class__.__name__}: {e}")
+            self.logger.error(f"Failed to initialize {self.__class__.__name__}: {e}")
             raise
     
     def reset(self) -> None:
         """Reset the service state."""
         self._initialized = False
         self._client = None
-        print(f"{self.__class__.__name__} reset")
+        self.logger.info(f"{self.__class__.__name__} reset")
 
 
 class SingletonServiceMeta(ABCMeta):

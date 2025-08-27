@@ -1,6 +1,8 @@
 """
 Main FastAPI application for Kronos Chat Server.
 """
+import logging
+import logging.config
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -14,6 +16,28 @@ from .api.v1.api import api_router
 # Get settings
 settings = get_settings()
 
+# Configure logging
+def setup_logging():
+    """Configure application logging."""
+    log_level = settings.app.log_level.upper()
+    
+    # Configure root logger
+    logging.basicConfig(
+        level=log_level,
+        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+        datefmt='%Y-%m-%d %H:%M:%S'
+    )
+    
+    # Configure specific loggers
+    logging.getLogger("kronos").setLevel(log_level)
+    logging.getLogger("uvicorn").setLevel(log_level)
+    logging.getLogger("sqlalchemy").setLevel("WARNING")  # Reduce SQLAlchemy noise
+
+setup_logging()
+
+# Get logger for this module
+logger = logging.getLogger("kronos.main")
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -22,9 +46,9 @@ async def lifespan(app: FastAPI):
     Manages startup and shutdown events.
     """
     # Startup
-    print(f"Starting {settings.app.name} v{settings.app.version}")
-    print(f"Environment: {settings.app.environment}")
-    print(f"Debug mode: {settings.app.debug}")
+    logger.info(f"Starting {settings.app.name} v{settings.app.version}")
+    logger.info(f"Environment: {settings.app.environment}")
+    logger.info(f"Debug mode: {settings.app.debug}")
     
     # Initialize database
     try:
@@ -32,11 +56,11 @@ async def lifespan(app: FastAPI):
         
         # Check database connection
         if check_db_connection():
-            print("Database connection verified")
+            logger.info("Database connection verified")
         else:
-            print("Database connection failed")
+            logger.error("Database connection failed")
     except Exception as e:
-        print(f"Database initialization failed: {e}")
+        logger.error(f"Database initialization failed: {e}")
     
     # Initialize services
     try:
@@ -45,25 +69,23 @@ async def lifespan(app: FastAPI):
             from .services import composio_service
             try:
                 composio_service.initialize()
-                print("Composio service initialized")
+                logger.info("Composio service initialized")
             except Exception as e:
-                print(f"Composio service initialization failed: {e}")
-        
-
+                logger.error(f"Composio service initialization failed: {e}")
                 
     except Exception as e:
-        print(f"Service initialization failed: {e}")
+        logger.error(f"Service initialization failed: {e}")
     
-    print("Application startup complete")
+    logger.info("Application startup complete")
     
     yield
     
     # Shutdown
-    print("Application shutdown initiated")
+    logger.info("Application shutdown initiated")
     
     # Cleanup resources here if needed
     
-    print("Application shutdown complete")
+    logger.info("Application shutdown complete")
 
 
 def create_app() -> FastAPI:
@@ -146,7 +168,7 @@ def create_app() -> FastAPI:
         
         return health_status
     
-    print(f"FastAPI application created successfully")
+    logger.info("FastAPI application created successfully")
     return app
 
 

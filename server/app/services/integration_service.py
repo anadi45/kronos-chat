@@ -1,6 +1,7 @@
 """
 Integration service for managing and aggregating integration data.
 """
+import logging
 from typing import List, Dict, Any, Optional
 from datetime import datetime, timedelta
 from collections import defaultdict
@@ -10,6 +11,8 @@ from ..schemas.integration import (
     IntegrationStatus, ConnectionHealth, IntegrationCategory, IntegrationStats
 )
 from ..services.composio_service import composio_service
+
+logger = logging.getLogger("kronos.services.integration")
 
 
 
@@ -146,6 +149,7 @@ class IntegrationService:
         """Get complete integration dashboard for a user."""
         try:
             if not self.composio.initialized:
+                logger.warning("Composio service not initialized")
                 return IntegrationDashboard(
                     user_id=user_id,
                     composio_health=False,
@@ -156,14 +160,14 @@ class IntegrationService:
             try:
                 toolkits = await self.composio.get_available_toolkits(limit=100)
             except Exception as e:
-                print(f"Failed to get toolkits: {e}")
+                logger.error(f"Failed to get toolkits: {e}")
                 toolkits = []
             
             # Get user's connections
             try:
                 connections = await self.composio.list_connected_accounts(user_id)
             except Exception as e:
-                print(f"Failed to get connections for user {user_id}: {e}")
+                logger.error(f"Failed to get connections for user {user_id}: {e}")
                 connections = []
             
             # Group connections by provider
@@ -267,7 +271,7 @@ class IntegrationService:
             )
             
         except Exception as e:
-            print(f"Failed to get integration dashboard: {e}")
+            logger.error(f"Failed to get integration dashboard: {e}")
             return IntegrationDashboard(
                 user_id=user_id,
                 composio_health=False,

@@ -13,7 +13,7 @@ from sqlalchemy.pool import StaticPool
 
 from .config import get_settings
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("kronos.database")
 
 # Database configuration
 settings = get_settings()
