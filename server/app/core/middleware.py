@@ -27,18 +27,19 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
         # Start timing
         start_time = time.time()
         
-        # Log request start
-        print(
-            f"Request started: {request.method} {request.url.path}",
-            extra={
-                "request_id": request_id,
-                "method": request.method,
-                "path": request.url.path,
-                "query_params": str(request.query_params),
-                "client_ip": request.client.host if request.client else None,
-                "user_agent": request.headers.get("user-agent")
-            }
-        )
+        # Log request start (skip detailed logging for OPTIONS requests)
+        if request.method != "OPTIONS":
+            print(
+                f"Request started: {request.method} {request.url.path}",
+                extra={
+                    "request_id": request_id,
+                    "method": request.method,
+                    "path": request.url.path,
+                    "query_params": str(request.query_params),
+                    "client_ip": request.client.host if request.client else None,
+                    "user_agent": request.headers.get("user-agent")
+                }
+            )
         
         # Process request
         try:
@@ -65,13 +66,18 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
         # Add request ID to response headers
         response.headers["X-Request-ID"] = request_id
         
-        # Log request completion
-        print(
-            method=request.method,
-            url=request.url.path,
-            status_code=response.status_code,
-            duration=duration
-        )
+        # Log request completion (skip detailed logging for OPTIONS requests)
+        if request.method != "OPTIONS":
+            print(
+                f"Request completed: {request.method} {request.url.path} - {response.status_code} ({duration:.3f}s)",
+                extra={
+                    "request_id": request_id,
+                    "method": request.method,
+                    "path": request.url.path,
+                    "status_code": response.status_code,
+                    "duration": duration
+                }
+            )
         
         # Add timing header
         response.headers["X-Process-Time"] = f"{duration:.3f}"
@@ -83,6 +89,10 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
     """Middleware to add security headers."""
     
     async def dispatch(self, request: Request, call_next: Callable) -> Response:
+        # Skip security headers for preflight requests
+        if request.method == "OPTIONS":
+            return await call_next(request)
+        
         response = await call_next(request)
         
         # Add security headers
@@ -120,8 +130,8 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         self.clients = {}
     
     async def dispatch(self, request: Request, call_next: Callable) -> Response:
-        # Skip rate limiting for health checks and docs
-        if request.url.path in ["/health", "/docs", "/redoc", "/openapi.json"]:
+        # Skip rate limiting for health checks, docs, and preflight requests
+        if request.url.path in ["/health", "/docs", "/redoc", "/openapi.json"] or request.method == "OPTIONS":
             return await call_next(request)
         
         # Get client IP
@@ -170,27 +180,31 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
 def setup_middleware(app):
     """Add middleware to FastAPI app."""
     
-    # Add CORS middleware
+    # NOTE: Middleware is executed in reverse order of addition (last added = first executed)
+    # So we add them in reverse order of desired execution
+    
+    # Add request logging middleware (executed last - logs final response)
+    app.add_middleware(RequestLoggingMiddleware)
+    
+    # Add rate limiting in production (executed before logging)
+    if settings.app.is_production:
+        app.add_middleware(RateLimitMiddleware, calls=100, period=60)
+    
+    # Add security headers middleware (executed before rate limiting)
+    app.add_middleware(SecurityHeadersMiddleware)
+    
+    # Add compression middleware (executed before security headers)
+    app.add_middleware(GZipMiddleware, minimum_size=1000)
+    
+    # Add CORS middleware (executed FIRST - most important for preflight requests)
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.security.allowed_hosts,
         allow_credentials=True,
-        allow_methods=["*"],
+        allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"],
         allow_headers=["*"],
-        expose_headers=["X-Request-ID", "X-Process-Time"]
+        expose_headers=["X-Request-ID", "X-Process-Time"],
+        max_age=3600  # Cache preflight response for 1 hour
     )
-    
-    # Add compression middleware
-    app.add_middleware(GZipMiddleware, minimum_size=1000)
-    
-    # Add custom middleware (order matters - last added is executed first)
-    app.add_middleware(SecurityHeadersMiddleware)
-    
-    # Add rate limiting in production
-    if settings.app.is_production:
-        app.add_middleware(RateLimitMiddleware, calls=100, period=60)
-    
-    # Add request logging middleware (should be last to capture everything)
-    app.add_middleware(RequestLoggingMiddleware)
     
     print("Middleware configured successfully")

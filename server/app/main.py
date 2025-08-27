@@ -85,6 +85,9 @@ def create_app() -> FastAPI:
     )
     
     
+    # Setup middleware
+    setup_middleware(app)
+    
     # Include API router
     app.include_router(api_router, prefix=settings.app.api_prefix)
     
