@@ -19,8 +19,8 @@ from app.models.user import User
 # access to the values within the .ini file in use.
 config = context.config
 
-# The database URL is now set in alembic.ini
-# config.set_main_option('sqlalchemy.url', settings.database_url)
+# The database URL is now set from the application's database engine
+# We don't need to set it here as we're using the application's engine directly
 
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.
