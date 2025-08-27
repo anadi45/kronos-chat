@@ -197,7 +197,7 @@ async def get_connection(
         account = await composio_service.get_connected_account(account_id)
         return ConnectionStatusResponse(**account)
     except Exception as e:
-        raise ComposioError(f"Failed to get connection: {str(e)}", operation="get_connection")
+        raise e
 
 
 @router.post("/connections/{account_id}/enable")
@@ -212,7 +212,8 @@ async def enable_connection(
         success = await composio_service.enable_connected_account(account_id)
         return {"success": success, "message": "Account enabled successfully"}
     except Exception as e:
-        raise ComposioError(f"Failed to enable connection: {str(e)}", operation="enable_connection")
+        print(f"Failed to enable connection: {str(e)}")
+        return
 
 
 @router.post("/connections/{account_id}/disable")
@@ -227,7 +228,8 @@ async def disable_connection(
         success = await composio_service.disable_connected_account(account_id)
         return {"success": success, "message": "Account disabled successfully"}
     except Exception as e:
-        raise ComposioError(f"Failed to disable connection: {str(e)}", operation="disable_connection")
+        print(f"Failed to disable connection: {str(e)}")
+        return
 
 
 @router.post("/connections/{account_id}/refresh")
@@ -242,7 +244,8 @@ async def refresh_connection(
         success = await composio_service.refresh_connected_account(account_id)
         return {"success": success, "message": "Account refreshed successfully"}
     except Exception as e:
-        raise ComposioError(f"Failed to refresh connection: {str(e)}", operation="refresh_connection")
+        print(f"Failed to refresh connection: {str(e)}")
+        return
 
 
 @router.delete("/connections/{account_id}")
@@ -257,7 +260,8 @@ async def delete_connection(
         success = await composio_service.delete_connected_account(account_id)
         return {"success": success, "message": "Account deleted successfully"}
     except Exception as e:
-        raise ComposioError(f"Failed to delete connection: {str(e)}", operation="delete_connection")
+        print(f"Failed to delete connection: {str(e)}")
+        return
 
 
 @router.post("/tools/execute", response_model=ToolExecuteResponse)
@@ -306,7 +310,8 @@ async def list_auth_configs(
         )
         return AuthConfigListResponse(**result)
     except Exception as e:
-        raise ComposioError(f"Failed to list auth configs: {str(e)}", operation="list_auth_configs")
+        print(f"Failed to list auth configs: {str(e)}")
+        return
 
 
 @router.get("/auth-configs/{auth_config_id}", response_model=AuthConfigResponse)
@@ -321,7 +326,8 @@ async def get_auth_config(
         result = await composio_service.get_auth_config(auth_config_id)
         return AuthConfigResponse(**result)
     except Exception as e:
-        raise ComposioError(f"Failed to get auth config: {str(e)}", operation="get_auth_config")
+        print(f"Failed to get auth config: {str(e)}")
+        return
 
 
 @router.post("/auth-configs", response_model=AuthConfigResponse)
@@ -355,7 +361,8 @@ async def create_auth_config(
             last_updated_at=None
         )
     except Exception as e:
-        raise ComposioError(f"Failed to create auth config: {str(e)}", operation="create_auth_config")
+        print(f"Failed to create auth config: {str(e)}")
+        return
 
 
 @router.put("/auth-configs/{auth_config_id}", response_model=AuthConfigResponse)
@@ -378,7 +385,8 @@ async def update_auth_config(
         updated_config = await composio_service.get_auth_config(auth_config_id)
         return AuthConfigResponse(**updated_config)
     except Exception as e:
-        raise ComposioError(f"Failed to update auth config: {str(e)}", operation="update_auth_config")
+        print(f"Failed to update auth config: {str(e)}")
+        return
 
 
 @router.delete("/auth-configs/{auth_config_id}")
@@ -393,7 +401,8 @@ async def delete_auth_config(
         success = await composio_service.delete_auth_config(auth_config_id)
         return {"success": success, "message": "Auth config deleted successfully"}
     except Exception as e:
-        raise ComposioError(f"Failed to delete auth config: {str(e)}", operation="delete_auth_config")
+        print(f"Failed to delete auth config: {str(e)}")
+        return
 
 
 @router.get("/toolkits", response_model=List[ToolkitResponse])
@@ -409,7 +418,8 @@ async def get_available_toolkits(
         toolkits = await composio_service.get_available_toolkits(search=search, limit=limit)
         return [ToolkitResponse(**toolkit) for toolkit in toolkits]
     except Exception as e:
-        raise ComposioError(f"Failed to get toolkits: {str(e)}", operation="get_toolkits")
+        print(f"Failed to get toolkits: {str(e)}")
+        return
 
 
 @router.get("/toolkits/{toolkit_slug}/actions", response_model=List[ActionResponse])
@@ -425,7 +435,8 @@ async def get_toolkit_actions(
         actions = await composio_service.get_toolkit_actions(toolkit_slug=toolkit_slug, limit=limit)
         return [ActionResponse(**action) for action in actions]
     except Exception as e:
-        raise ComposioError(f"Failed to get toolkit actions: {str(e)}", operation="get_toolkit_actions")
+        print(f"Failed to get toolkit actions: {str(e)}")
+        return
 
 
 @router.post("/connections/initiate-enhanced", response_model=ConnectionInitiateResponse)
@@ -460,4 +471,5 @@ async def initiate_enhanced_connection(
             status=result["status"]
         )
     except Exception as e:
-        raise ComposioError(f"Failed to initiate enhanced connection: {str(e)}", operation="initiate_enhanced_connection")
+        print(f"Failed to initiate enhanced connection: {str(e)}")
+        return

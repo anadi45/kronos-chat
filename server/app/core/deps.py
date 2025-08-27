@@ -44,7 +44,10 @@ async def get_current_user(
         AuthenticationError: If authentication fails
     """
     if not credentials:
-        raise AuthenticationError("Missing authentication token")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Missing authentication token"
+        )
     
     try:
         from ..services.auth_service import auth_service
@@ -55,10 +58,16 @@ async def get_current_user(
         # Get user from database
         user = auth_service.get_user_by_email(db, token_data.email)
         if not user:
-            raise AuthenticationError("User not found")
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="User not found"
+            )
         
         if not user.is_active:
-            raise AuthenticationError("User account is deactivated")
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="User account is deactivated"
+            )
         
         return {
             "user_id": str(user.id),
@@ -69,10 +78,11 @@ async def get_current_user(
         }
         
     except Exception as e:
-        logger.error(f"Authentication error: {e}")
-        if isinstance(e, AuthenticationError):
-            raise e
-        raise AuthenticationError("Authentication failed")
+        print(f"Authentication error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Authentication failed"
+        )
 
 
 async def get_current_admin_user(
@@ -91,8 +101,10 @@ async def get_current_admin_user(
         AuthorizationError: If user is not an admin
     """
     if "admin" not in current_user.get("roles", []):
-        from .exceptions import AuthorizationError
-        raise AuthorizationError("Admin access required")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admin access required"
+        )
     
     return current_user
 
@@ -103,9 +115,9 @@ def get_composio_service():
     from ..services.composio_service import composio_service
     
     if not composio_service.initialized:
-        raise ConfigurationError(
-            "Composio service not initialized. Check COMPOSIO_API_KEY configuration.",
-            config_key="COMPOSIO_API_KEY"
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Composio service not initialized. Check COMPOSIO_API_KEY configuration."
         )
     
     return composio_service
@@ -115,8 +127,7 @@ def get_optional_composio_service():
     """Get Composio service instance if available, None otherwise."""
     try:
         return get_composio_service()
-    except ConfigurationError:
-        logger.warning("Composio service not available")
+    except HTTPException:
         return None
 
 
@@ -138,12 +149,16 @@ def validate_user_id(user_id: str) -> str:
         ValidationError: If user ID is invalid
     """
     if not user_id or len(user_id) < 3:
-        from .exceptions import ValidationError
-        raise ValidationError("User ID must be at least 3 characters long", field="user_id")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="User ID must be at least 3 characters long"
+        )
     
     if len(user_id) > 50:
-        from .exceptions import ValidationError
-        raise ValidationError("User ID must be less than 50 characters", field="user_id")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="User ID must be less than 50 characters"
+        )
     
     return user_id
 
@@ -166,16 +181,22 @@ def validate_pagination(
         ValidationError: If parameters are invalid
     """
     if skip < 0:
-        from .exceptions import ValidationError
-        raise ValidationError("Skip must be non-negative", field="skip")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Skip must be non-negative"
+        )
     
     if limit <= 0:
-        from .exceptions import ValidationError
-        raise ValidationError("Limit must be positive", field="limit")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Limit must be positive"
+        )
     
     if limit > 1000:
-        from .exceptions import ValidationError
-        raise ValidationError("Limit must not exceed 1000", field="limit")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Limit must not exceed 1000"
+        )
     
     return skip, limit
 
@@ -198,7 +219,7 @@ async def check_database_health(
         db.execute("SELECT 1")
         return True
     except Exception as e:
-        logger.error(f"Database health check failed: {e}")
+        print(f"Database health check failed: {e}")
         return False
 
 
@@ -216,7 +237,7 @@ async def check_composio_health() -> dict:
             "configured": True,
             "initialized": composio_service.initialized
         }
-    except ConfigurationError:
+    except HTTPException:
         return {
             "status": "unavailable",
             "configured": False,
@@ -224,7 +245,7 @@ async def check_composio_health() -> dict:
             "message": "Composio API key not configured"
         }
     except Exception as e:
-        logger.error(f"Composio health check failed: {e}")
+        print(f"Composio health check failed: {e}")
         return {
             "status": "unhealthy",
             "configured": True,
