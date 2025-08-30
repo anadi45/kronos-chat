@@ -20,30 +20,32 @@ services:
       retries: 5
     restart: unless-stopped
 
-  # FastAPI Server
-  server:
+  # NestJS API Server
+  api:
     build:
-      context: ./server
-      dockerfile: Dockerfile
-    container_name: kronos-server
+      context: .
+      dockerfile: apps/server/Dockerfile
+    container_name: kronos-api
     environment:
-      - DATABASE_URL=postgresql://kronos_user:kronos_password@postgres:5432/kronos_chat
-      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - NODE_ENV=production
+      - DATABASE_HOST=postgres
+      - DATABASE_PORT=5432
+      - DATABASE_USERNAME=kronos_user
+      - DATABASE_PASSWORD=kronos_password
+      - DATABASE_NAME=kronos_chat
+      - DATABASE_LOGGING=false
+      - JWT_SECRET=${JWT_SECRET:-your-secret-key-here-change-in-production}
+      - JWT_EXPIRES_IN=30m
       - COMPOSIO_API_KEY=${COMPOSIO_API_KEY}
-      - COMPOSIO_BASE_URL=${COMPOSIO_BASE_URL:-https://backend.composio.dev}
-      - COMPOSIO_CONNECTION_TIMEOUT=${COMPOSIO_CONNECTION_TIMEOUT:-60}
-      - SECRET_KEY=${SECRET_KEY:-your-secret-key-here}
-      - DEBUG=false
-    volumes:
-      - ./server:/app
-      - /app/__pycache__
+      - PORT=3000
+      - API_PREFIX=/api/v1
     ports:
-      - "8000:8000"
+      - "8000:3000"
     depends_on:
       postgres:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/v1/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -53,7 +55,7 @@ services:
   # React Client
   client:
     build:
-      context: ./client
+      context: ./apps/client
       dockerfile: Dockerfile
       args:
         - VITE_COMPOSIO_API_KEY=${VITE_COMPOSIO_API_KEY}
@@ -62,7 +64,7 @@ services:
     ports:
       - "3000:80"
     depends_on:
-      - server
+      - api
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost/"]
       interval: 30s

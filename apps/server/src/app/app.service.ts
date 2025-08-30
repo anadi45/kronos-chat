@@ -1,0 +1,32 @@
+import { Injectable } from '@nestjs/common';
+
+@Injectable()
+export class AppService {
+  getAppInfo() {
+    return {
+      name: 'Kronos Chat API',
+      version: '1.0.0',
+      description:
+        'A NestJS backend for the Kronos chat application with Composio integration',
+      environment: process.env.NODE_ENV || 'development',
+      docs_url: process.env.NODE_ENV !== 'production' ? '/api/docs' : null,
+    };
+  }
+
+  getHealthCheck() {
+    return {
+      status: 'healthy',
+      timestamp: new Date().toISOString(),
+      version: '1.0.0',
+      environment: process.env.NODE_ENV || 'development',
+      database: {
+        status: 'healthy', // TODO: Add actual database health check
+        configured: true,
+      },
+      composio: {
+        status: process.env.COMPOSIO_API_KEY ? 'configured' : 'not_configured',
+        configured: !!process.env.COMPOSIO_API_KEY,
+      },
+    };
+  }
+}
