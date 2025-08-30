@@ -5,83 +5,70 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import {
-  IsEmail,
-  IsOptional,
-  IsString,
-  IsBoolean,
-  MaxLength,
-} from 'class-validator';
+import { IsEmail, IsOptional, IsString, IsBoolean } from 'class-validator';
 
 @Entity('users')
 export class User {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ type: 'varchar', length: 255, unique: true, nullable: false })
+  @Column({ type: 'varchar', unique: true, nullable: false })
   @IsEmail()
   email: string;
 
-  @Column({ type: 'varchar', length: 255, nullable: false })
+  @Column({ name: 'password_hash', type: 'varchar', nullable: false })
   @IsString()
-  password_hash: string;
+  passwordHash: string;
 
-  @Column({ type: 'varchar', length: 100, nullable: true })
-  @IsOptional()
+  @Column({ name: 'first_name', type: 'varchar', nullable: false })
   @IsString()
-  @MaxLength(100)
-  first_name?: string;
+  firstName: string;
 
-  @Column({ type: 'varchar', length: 100, nullable: true })
-  @IsOptional()
+  @Column({ name: 'last_name', type: 'varchar', nullable: false })
   @IsString()
-  @MaxLength(100)
-  last_name?: string;
+  lastName: string;
 
-  @Column({ type: 'boolean', default: true, nullable: false })
+  @Column({
+    name: 'is_active',
+    type: 'boolean',
+    default: true,
+    nullable: false,
+  })
   @IsBoolean()
-  is_active: boolean;
+  isActive: boolean;
 
-  @Column({ type: 'varchar', length: 2048, nullable: true })
+  @Column({ name: 'profile_image_url', type: 'text', nullable: true })
   @IsOptional()
   @IsString()
-  @MaxLength(2048)
-  profile_image_url?: string;
+  profileImageUrl?: string;
 
-  @Column({ type: 'timestamp with time zone', nullable: true })
-  last_login?: Date;
+  @Column({ name: 'last_login', type: 'timestamptz', nullable: false })
+  lastLogin: Date;
 
-  @CreateDateColumn({ type: 'timestamp with time zone' })
-  created_at: Date;
+  @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
+  createdAt: Date;
 
-  @UpdateDateColumn({ type: 'timestamp with time zone' })
-  updated_at: Date;
+  @UpdateDateColumn({ name: 'updated_at', type: 'timestamptz' })
+  updatedAt: Date;
 
-  // Property to get full name from first and last name
-  get full_name(): string | null {
-    if (this.first_name && this.last_name) {
-      return `${this.first_name} ${this.last_name}`;
-    } else if (this.first_name) {
-      return this.first_name;
-    } else if (this.last_name) {
-      return this.last_name;
-    }
-    return null;
+  // Computed full name
+  get fullName(): string {
+    return `${this.firstName} ${this.lastName}`.trim();
   }
 
-  // Convert user entity to dictionary for JSON serialization
+  // Serialize to plain object
   toDict() {
     return {
       id: this.id,
       email: this.email,
-      first_name: this.first_name,
-      last_name: this.last_name,
-      is_active: this.is_active,
-      profile_image_url: this.profile_image_url,
-      last_login: this.last_login?.toISOString() || null,
-      created_at: this.created_at?.toISOString() || null,
-      updated_at: this.updated_at?.toISOString() || null,
-      full_name: this.full_name,
+      firstName: this.firstName,
+      lastName: this.lastName,
+      isActive: this.isActive,
+      profileImageUrl: this.profileImageUrl,
+      lastLogin: this.lastLogin?.toISOString() || null,
+      createdAt: this.createdAt?.toISOString() || null,
+      updatedAt: this.updatedAt?.toISOString() || null,
+      fullName: this.fullName,
     };
   }
 }

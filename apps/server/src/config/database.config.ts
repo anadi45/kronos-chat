@@ -12,8 +12,7 @@ export const getDatabaseConfig = (
   password: configService.get<string>('DATABASE_PASSWORD', 'kronos_password'),
   database: configService.get<string>('DATABASE_NAME', 'kronos_chat'),
   entities: [User],
-  synchronize:
-    configService.get<string>('NODE_ENV', 'development') === 'development',
+  synchronize: false, // Always use migrations instead of sync
   logging: configService.get<boolean>('DATABASE_LOGGING', false),
   ssl:
     configService.get<string>('NODE_ENV') === 'production'
@@ -21,4 +20,5 @@ export const getDatabaseConfig = (
       : false,
   migrations: ['dist/migrations/*.js'],
   migrationsTableName: 'migrations',
+  migrationsRun: false, // Don't auto-run migrations
 });
