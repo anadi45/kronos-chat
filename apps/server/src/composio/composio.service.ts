@@ -1,51 +1,12 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-
-export interface ConnectedAccount {
-  account_id: string;
-  status: string;
-  provider: string;
-  created_at?: string;
-  updated_at?: string;
-}
-
-export interface ConnectionRequest {
-  connection_id: string;
-  redirect_url: string;
-  status: string;
-}
-
-export interface AuthConfig {
-  id: string;
-  uuid: string;
-  name: string;
-  type: string;
-  toolkit: any;
-  status: string;
-  no_of_connections: number;
-  auth_scheme: string;
-  is_composio_managed: boolean;
-  created_at?: string;
-  last_updated_at?: string;
-}
-
-export interface Toolkit {
-  slug: string;
-  name: string;
-  description: string;
-  logo: string;
-  categories: string[];
-  auth_schemes: string[];
-}
-
-export interface ToolkitAction {
-  name: string;
-  display_name: string;
-  description: string;
-  parameters: any;
-  response: any;
-  app_name: string;
-}
+import type {
+  ConnectedAccount,
+  ConnectionRequest,
+  AuthConfig,
+  Toolkit,
+  ToolkitAction,
+} from '@kronos/shared-types';
 
 @Injectable()
 export class ComposioService {
@@ -116,8 +77,8 @@ export class ComposioService {
       );
 
       return {
-        connection_id: connectionRequest.id,
-        redirect_url: connectionRequest.redirectUrl,
+        connectionId: connectionRequest.id,
+        redirectUrl: connectionRequest.redirectUrl,
         status: 'initiated',
       };
     } catch (error) {
@@ -139,10 +100,10 @@ export class ComposioService {
       });
 
       return {
-        account_id: connectedAccount.id,
+        accountId: connectedAccount.id,
         status: connectedAccount.status,
         provider: connectedAccount.appName || '',
-        created_at: connectedAccount.createdAt,
+        createdAt: connectedAccount.createdAt,
       };
     } catch (error) {
       this.logger.error(`Failed to wait for connection: ${error.message}`);
@@ -162,10 +123,10 @@ export class ComposioService {
         : response.items || [];
 
       return accounts.map((account: any) => ({
-        account_id: account.id,
+        accountId: account.id,
         status: account.status,
         provider: account.appName || '',
-        created_at: account.createdAt,
+        createdAt: account.createdAt,
       }));
     } catch (error) {
       this.logger.error(`Failed to list connected accounts: ${error.message}`);
@@ -184,11 +145,11 @@ export class ComposioService {
       });
 
       return {
-        account_id: account.id,
+        accountId: account.id,
         status: account.status,
         provider: account.appName || '',
-        created_at: account.createdAt,
-        updated_at: account.updatedAt,
+        createdAt: account.createdAt,
+        updatedAt: account.updatedAt,
       };
     } catch (error) {
       this.logger.error(`Failed to get connected account: ${error.message}`);
@@ -286,10 +247,10 @@ export class ComposioService {
     cursor?: string
   ): Promise<{
     items: AuthConfig[];
-    total_pages: number;
-    current_page: number;
-    total_items: number;
-    next_cursor?: string;
+    totalPages: number;
+    currentPage: number;
+    totalItems: number;
+    nextCursor?: string;
   } | null> {
     this.ensureInitialized();
 
@@ -308,10 +269,10 @@ export class ComposioService {
 
       return {
         items: authConfigs.items || authConfigs,
-        total_pages: authConfigs.total_pages || 1,
-        current_page: authConfigs.current_page || 1,
-        total_items: authConfigs.total_items || 0,
-        next_cursor: authConfigs.next_cursor,
+        totalPages: authConfigs.total_pages || 1,
+        currentPage: authConfigs.current_page || 1,
+        totalItems: authConfigs.total_items || 0,
+        nextCursor: authConfigs.next_cursor,
       };
     } catch (error) {
       this.logger.error(`Failed to list auth configs: ${error.message}`);
@@ -339,7 +300,7 @@ export class ComposioService {
         description: toolkit.description || '',
         logo: toolkit.logo || '',
         categories: toolkit.categories || [],
-        auth_schemes: toolkit.auth_schemes || [],
+        authSchemes: toolkit.auth_schemes || [],
       }));
     } catch (error) {
       this.logger.error(`Failed to get available toolkits: ${error.message}`);
@@ -363,11 +324,11 @@ export class ComposioService {
 
       return actionItems.map((action: any) => ({
         name: action.name || '',
-        display_name: action.display_name || '',
+        displayName: action.display_name || '',
         description: action.description || '',
         parameters: action.parameters || {},
         response: action.response || {},
-        app_name: action.app_name || toolkitSlug,
+        appName: action.app_name || toolkitSlug,
       }));
     } catch (error) {
       this.logger.error(
@@ -401,8 +362,8 @@ export class ComposioService {
       );
 
       return {
-        connection_id: connection.id,
-        redirect_url: connection.redirectUrl || '',
+        connectionId: connection.id,
+        redirectUrl: connection.redirectUrl || '',
         status: connection.connectionStatus || 'initiated',
       };
     } catch (error) {

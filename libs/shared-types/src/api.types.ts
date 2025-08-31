@@ -10,7 +10,7 @@ export interface PaginatedResponse<T = any> {
   total: number;
   page: number;
   limit: number;
-  total_pages: number;
+  totalPages: number;
 }
 
 export interface HealthCheckResponse {
@@ -34,5 +34,5 @@ export interface AppInfo {
   version: string;
   description: string;
   environment: string;
-  docs_url?: string;
+  docsUrl?: string;
 }

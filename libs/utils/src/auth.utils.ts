@@ -23,6 +23,6 @@ export const getPasswordStrength = (
 };
 
 export const sanitizeUserData = (user: any) => {
-  const { password_hash, ...sanitizedUser } = user;
+  const { passwordHash, ...sanitizedUser } = user;
   return sanitizedUser;
 };

@@ -2,20 +2,7 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { UsersService } from '../users/users.service';
 import { LoginDto, UserResponseDto } from '../dto/user.dto';
-
-export interface JwtPayload {
-  sub: string;
-  email: string;
-  iat?: number;
-  exp?: number;
-}
-
-export interface LoginResponse {
-  accessToken: string;
-  user: UserResponseDto;
-  tokenType: string;
-  expiresIn: number;
-}
+import type { JwtPayload, LoginResponse } from '@kronos/shared-types';
 
 @Injectable()
 export class AuthService {

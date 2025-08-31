@@ -1,14 +1,15 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { apiService, type ChatMessage, type StreamChatRequest } from '../services/apiService';
+import { apiService } from '../services/apiService';
+import type { ChatMessage, StreamChatRequest } from '@kronos/shared-types';
 
 interface ChatInterfaceProps {
   userId?: string;
 }
 
 interface StreamChunk {
-  type: 'conversation_id' | 'content' | 'done' | 'error';
+  type: 'conversationId' | 'content' | 'done' | 'error';
   data?: string;
-  conversation_id?: string;
+  conversationId?: string;
   timestamp?: string;
   error?: string;
 }
@@ -66,9 +67,9 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
       // Create stream request
       const streamRequest: StreamChatRequest = {
         message: userMessage.content,
-        conversation_history: messages,
-        conversation_id: currentConversationId || undefined,
-        system_prompt: "You are Kronos, a helpful AI assistant. You are knowledgeable, friendly, and provide clear, concise responses."
+        conversationHistory: messages,
+        conversationId: currentConversationId || undefined,
+        systemPrompt: "You are Kronos, a helpful AI assistant. You are knowledgeable, friendly, and provide clear, concise responses."
       };
 
       // Create abort controller for this request
@@ -103,7 +104,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
                 const parsed: StreamChunk = JSON.parse(data);
                 
                 switch (parsed.type) {
-                  case 'conversation_id':
+                  case 'conversationId':
                     conversationId = parsed.data || '';
                     setCurrentConversationId(conversationId);
                     break;

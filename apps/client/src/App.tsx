@@ -51,7 +51,7 @@ function App({ user, onLogout }: AppProps) {
                   <div className="text-sm">
                     <span className="text-gray-600">Welcome, </span>
                     <span className="font-medium text-gray-900">
-                      {user.first_name || user.email}
+                      {user.firstName || user.email}
                     </span>
                   </div>
                   <button

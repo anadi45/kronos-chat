@@ -1,24 +1,36 @@
 export interface ChatMessage {
-  role: 'user' | 'assistant';
+  role: 'user' | 'assistant' | 'system';
   content: string;
-  timestamp: string;
+  timestamp?: string;
 }
 
 export interface ChatRequest {
   message: string;
-  conversation_id?: string;
+  conversationId?: string;
+  systemPrompt?: string;
+  temperature?: number;
+  maxTokens?: number;
 }
 
 export interface ChatResponse {
   message: string;
-  conversation_id: string;
+  conversationId: string;
   timestamp: string;
+}
+
+export interface StreamChatRequest {
+  message: string;
+  conversationHistory?: ChatMessage[];
+  conversationId?: string;
+  systemPrompt?: string;
+  temperature?: number;
+  maxTokens?: number;
 }
 
 export interface Conversation {
   id: string;
   title?: string;
-  created_at: string;
-  updated_at: string;
+  createdAt: string;
+  updatedAt: string;
   messages: ChatMessage[];
 }

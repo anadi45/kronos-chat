@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { apiService, type AuthConfig, type Toolkit, type AuthConfigRequest } from '../services/apiService';
+import { apiService } from '../services/apiService';
+import type { AuthConfig, Toolkit, AuthConfigRequest } from '@kronos/shared-types';
 
 interface AuthConfigManagerProps {
   userId: string;
@@ -17,8 +18,8 @@ const AuthConfigManager: React.FC<AuthConfigManagerProps> = ({ userId: _, onAuth
   // Form state for creating new auth config
   const [newConfig, setNewConfig] = useState<AuthConfigRequest>({
     name: '',
-    toolkit_slug: '',
-    auth_scheme: 'OAUTH2'
+    toolkitSlug: '',
+    authScheme: 'OAUTH2'
   });
 
   useEffect(() => {
@@ -53,7 +54,7 @@ const AuthConfigManager: React.FC<AuthConfigManagerProps> = ({ userId: _, onAuth
   };
 
   const handleCreateConfig = async () => {
-    if (!newConfig.name || !newConfig.toolkit_slug) {
+    if (!newConfig.name || !newConfig.toolkitSlug) {
       setError('Name and toolkit are required');
       return;
     }
@@ -63,7 +64,7 @@ const AuthConfigManager: React.FC<AuthConfigManagerProps> = ({ userId: _, onAuth
       setError(null);
       await apiService.createAuthConfig(newConfig);
       setShowCreateForm(false);
-      setNewConfig({ name: '', toolkit_slug: '', auth_scheme: 'OAUTH2' });
+      setNewConfig({ name: '', toolkitSlug: '', authScheme: 'OAUTH2' });
       await loadAuthConfigs();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create auth config');
@@ -184,8 +185,8 @@ const AuthConfigManager: React.FC<AuthConfigManagerProps> = ({ userId: _, onAuth
                     Toolkit
                   </label>
                   <select
-                    value={newConfig.toolkit_slug}
-                    onChange={(e) => setNewConfig({ ...newConfig, toolkit_slug: e.target.value })}
+                    value={newConfig.toolkitSlug}
+                    onChange={(e) => setNewConfig({ ...newConfig, toolkitSlug: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="">Select a toolkit...</option>
@@ -202,8 +203,8 @@ const AuthConfigManager: React.FC<AuthConfigManagerProps> = ({ userId: _, onAuth
                     Auth Scheme
                   </label>
                   <select
-                    value={newConfig.auth_scheme}
-                    onChange={(e) => setNewConfig({ ...newConfig, auth_scheme: e.target.value })}
+                    value={newConfig.authScheme}
+                    onChange={(e) => setNewConfig({ ...newConfig, authScheme: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="OAUTH2">OAuth 2.0</option>
@@ -273,20 +274,20 @@ const AuthConfigManager: React.FC<AuthConfigManagerProps> = ({ userId: _, onAuth
                 
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-gray-600">Auth Scheme:</span>
-                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${getAuthSchemeColor(config.auth_scheme)}`}>
-                    {config.auth_scheme}
+                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${getAuthSchemeColor(config.authScheme)}`}>
+                    {config.authScheme}
                   </span>
                 </div>
 
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-gray-600">Connections:</span>
-                  <span className="text-sm font-medium">{config.no_of_connections}</span>
+                  <span className="text-sm font-medium">{config.noOfConnections}</span>
                 </div>
 
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-gray-600">Managed:</span>
                   <span className="text-sm">
-                    {config.is_composio_managed ? '✅ Composio' : '🔧 Custom'}
+                    {config.isComposioManaged ? '✅ Composio' : '🔧 Custom'}
                   </span>
                 </div>
               </div>
@@ -300,7 +301,7 @@ const AuthConfigManager: React.FC<AuthConfigManagerProps> = ({ userId: _, onAuth
                     Select
                   </button>
                 )}
-                {!config.is_composio_managed && (
+                {!config.isComposioManaged && (
                   <button
                     onClick={() => handleDeleteConfig(config.id)}
                     className="px-3 py-2 bg-red-600 text-white text-sm rounded hover:bg-red-700"
