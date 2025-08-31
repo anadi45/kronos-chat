@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { apiService, type UserSignup } from '../services/apiService';
+import { apiService } from '../services/apiService';
+import {type UserSignup } from '@kronos/shared-types';
 
 interface SignupFormProps {
   onSuccess?: () => void;
@@ -10,9 +11,9 @@ const SignupForm: React.FC<SignupFormProps> = ({ onSuccess, onSwitchToLogin }) =
   const [formData, setFormData] = useState<UserSignup>({
     email: '',
     password: '',
-    confirm_password: '',
-    first_name: '',
-    last_name: '',
+    confirmPassword: '',
+    firstName: '',
+    lastName: '',
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -29,7 +30,7 @@ const SignupForm: React.FC<SignupFormProps> = ({ onSuccess, onSwitchToLogin }) =
     if (formData.password.length < 8) {
       return 'Password must be at least 8 characters long';
     }
-    if (formData.password !== formData.confirm_password) {
+    if (formData.password !== formData.confirmPassword) {
       return 'Passwords do not match';
     }
     return null;
@@ -77,30 +78,30 @@ const SignupForm: React.FC<SignupFormProps> = ({ onSuccess, onSwitchToLogin }) =
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label htmlFor="first_name" className="block text-sm font-medium text-gray-700">
+                <label htmlFor="firstName" className="block text-sm font-medium text-gray-700">
                   First Name
                 </label>
                 <input
-                  id="first_name"
-                  name="first_name"
+                  id="firstName"
+                  name="firstName"
                   type="text"
                   className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                   placeholder="First Name"
-                  value={formData.first_name}
+                  value={formData.firstName}
                   onChange={handleInputChange}
                 />
               </div>
               <div>
-                <label htmlFor="last_name" className="block text-sm font-medium text-gray-700">
+                <label htmlFor="lastName" className="block text-sm font-medium text-gray-700">
                   Last Name
                 </label>
                 <input
-                  id="last_name"
-                  name="last_name"
+                  id="lastName"
+                  name="lastName"
                   type="text"
                   className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                   placeholder="Last Name"
-                  value={formData.last_name}
+                  value={formData.lastName}
                   onChange={handleInputChange}
                 />
               </div>
@@ -138,18 +139,18 @@ const SignupForm: React.FC<SignupFormProps> = ({ onSuccess, onSwitchToLogin }) =
               />
             </div>
             <div>
-              <label htmlFor="confirm_password" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">
                 Confirm Password
               </label>
               <input
-                id="confirm_password"
-                name="confirm_password"
+                id="confirmPassword"
+                name="confirmPassword"
                 type="password"
                 autoComplete="new-password"
                 required
                 className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                 placeholder="Confirm password"
-                value={formData.confirm_password}
+                value={formData.confirmPassword}
                 onChange={handleInputChange}
               />
             </div>

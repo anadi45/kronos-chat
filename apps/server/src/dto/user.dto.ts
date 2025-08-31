@@ -5,7 +5,35 @@ import {
   IsBoolean,
   MinLength,
   MaxLength,
+  ValidateIf,
+  registerDecorator,
+  ValidationOptions,
+  ValidationArguments,
 } from 'class-validator';
+
+// Custom validation decorator to check if two fields match
+function Match(property: string, validationOptions?: ValidationOptions) {
+  return function (object: any, propertyName: string) {
+    registerDecorator({
+      name: 'match',
+      target: object.constructor,
+      propertyName: propertyName,
+      constraints: [property],
+      options: validationOptions,
+      validator: {
+        validate(value: any, args: ValidationArguments) {
+          const [relatedPropertyName] = args.constraints;
+          const relatedValue = (args.object as any)[relatedPropertyName];
+          return value === relatedValue;
+        },
+        defaultMessage(args: ValidationArguments) {
+          const [relatedPropertyName] = args.constraints;
+          return `${args.property} must match ${relatedPropertyName}`;
+        },
+      },
+    });
+  };
+}
 
 export class CreateUserDto {
   @IsEmail()
@@ -14,6 +42,11 @@ export class CreateUserDto {
   @IsString()
   @MinLength(8, { message: 'Password must be at least 8 characters long' })
   password: string;
+
+  @IsString()
+  @MinLength(8, { message: 'Password must be at least 8 characters long' })
+  @Match('password', { message: 'Passwords must match' })
+  confirmPassword: string;
 
   @IsString()
   @MaxLength(100)

@@ -16,14 +16,12 @@ import type {
   UserLogin,
   AuthToken,
   UserProfile,
-  IntegrationConnection,
   IntegrationSummary,
   IntegrationDashboard,
   IntegrationCategory,
   IntegrationStats,
   IntegrationActionRequest,
   IntegrationActionResponse,
-  ChatMessage,
   ChatRequest,
   ChatResponse,
   StreamChatRequest,
@@ -31,7 +29,7 @@ import type {
 
 // API Configuration
 const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1';
+  import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api/v1';
 
 /**
  * API Service for Kronos Chat Backend
@@ -87,7 +85,7 @@ class ApiService {
 
   // Authentication Methods
   async signup(userData: UserSignup): Promise<UserProfile> {
-    const response = await this.client.post('/auth/signup', userData);
+    const response = await this.client.post('/auth/register', userData);
     return response.data;
   }
 
