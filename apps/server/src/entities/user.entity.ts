@@ -20,13 +20,15 @@ export class User {
   @IsString()
   passwordHash: string;
 
-  @Column({ name: 'first_name', type: 'varchar', nullable: false })
+  @Column({ name: 'first_name', type: 'varchar', nullable: true })
+  @IsOptional()
   @IsString()
-  firstName: string;
+  firstName?: string;
 
-  @Column({ name: 'last_name', type: 'varchar', nullable: false })
+  @Column({ name: 'last_name', type: 'varchar', nullable: true })
+  @IsOptional()
   @IsString()
-  lastName: string;
+  lastName?: string;
 
   @Column({
     name: 'is_active',
@@ -42,8 +44,8 @@ export class User {
   @IsString()
   profileImageUrl?: string;
 
-  @Column({ name: 'last_login', type: 'timestamptz', nullable: false })
-  lastLogin: Date;
+  @Column({ name: 'last_login', type: 'timestamptz', nullable: true })
+  lastLogin?: Date;
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt: Date;
@@ -53,7 +55,9 @@ export class User {
 
   // Computed full name
   get fullName(): string {
-    return `${this.firstName} ${this.lastName}`.trim();
+    const firstName = this.firstName || '';
+    const lastName = this.lastName || '';
+    return `${firstName} ${lastName}`.trim();
   }
 
   // Serialize to plain object

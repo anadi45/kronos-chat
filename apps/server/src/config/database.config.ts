@@ -14,10 +14,7 @@ export const getDatabaseConfig = (
   entities: [User],
   synchronize: false, // Always use migrations instead of sync
   logging: configService.get<boolean>('DATABASE_LOGGING', false),
-  ssl:
-    configService.get<string>('NODE_ENV') === 'production'
-      ? { rejectUnauthorized: false }
-      : false,
+  ssl: { rejectUnauthorized: false },
   migrations: ['dist/migrations/*.js'],
   migrationsTableName: 'migrations',
   migrationsRun: false, // Don't auto-run migrations

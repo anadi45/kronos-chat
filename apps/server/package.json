@@ -10,7 +10,7 @@
     "migration:create": "npx typeorm-ts-node-commonjs migration:create -d src/migrations"
   },
   "nx": {
-    "name": "api",
+    "name": "server",
     "targets": {
       "build": {
         "executor": "nx:run-commands",
@@ -19,7 +19,7 @@
           "args": [
             "--node-env=production"
           ],
-          "cwd": "packages/api"
+          "cwd": "apps/server"
         },
         "configurations": {
           "development": {
@@ -36,8 +36,8 @@
         "cache": true,
         "executor": "@nx/js:prune-lockfile",
         "outputs": [
-          "{workspaceRoot}/packages/api/dist/package.json",
-          "{workspaceRoot}/packages/api/dist/package-lock.json"
+          "{workspaceRoot}/dist/apps/server/package.json",
+          "{workspaceRoot}/dist/apps/server/package-lock.json"
         ],
         "options": {
           "buildTarget": "build"
@@ -49,7 +49,7 @@
         ],
         "cache": true,
         "outputs": [
-          "{workspaceRoot}/packages/api/dist/workspace_modules"
+          "{workspaceRoot}/dist/apps/server/workspace_modules"
         ],
         "executor": "@nx/js:copy-workspace-modules",
         "options": {
@@ -71,15 +71,15 @@
           "build"
         ],
         "options": {
-          "buildTarget": "api:build",
+          "buildTarget": "server:build",
           "runBuildTargetDependencies": false
         },
         "configurations": {
           "development": {
-            "buildTarget": "api:build:development"
+            "buildTarget": "server:build"
           },
           "production": {
-            "buildTarget": "api:build:production"
+            "buildTarget": "server:build"
           }
         }
       },
