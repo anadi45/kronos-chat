@@ -34,6 +34,7 @@ export class UsersService {
     const user = this.userRepository.create({
       ...createUserDto,
       passwordHash,
+      lastLogin: new Date(),
     });
 
     const savedUser = await this.userRepository.save(user);
