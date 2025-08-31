@@ -9,7 +9,7 @@ export class AppService {
       description:
         'A NestJS backend for the Kronos chat application with Composio integration',
       environment: process.env.NODE_ENV || 'development',
-      docs_url: process.env.NODE_ENV !== 'production' ? '/api/docs' : null,
+      docsUrl: process.env.NODE_ENV !== 'production' ? '/api/docs' : null,
     };
   }
 

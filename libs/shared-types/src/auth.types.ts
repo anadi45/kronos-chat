@@ -13,16 +13,48 @@ export interface JwtPayload {
 }
 
 export interface LoginResponse {
-  access_token: string;
+  accessToken: string;
   user: User;
-  token_type: string;
-  expires_in: number;
+  tokenType: string;
+  expiresIn: number;
 }
 
 export interface AuthUser {
   id: string;
   email: string;
-  first_name?: string;
-  last_name?: string;
-  is_active: boolean;
+  firstName?: string;
+  lastName?: string;
+  isActive: boolean;
+}
+
+// Additional auth types for client
+export interface UserSignup {
+  email: string;
+  password: string;
+  confirmPassword: string;
+  firstName: string;
+  lastName: string;
+}
+
+export interface UserLogin {
+  email: string;
+  password: string;
+}
+
+export interface AuthToken {
+  accessToken: string;
+  tokenType: string;
+  expiresIn: number;
+}
+
+export interface UserProfile {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  isActive: boolean;
+  profileImageUrl: string;
+  lastLogin: string;
+  createdAt: string;
+  updatedAt: string;
 }

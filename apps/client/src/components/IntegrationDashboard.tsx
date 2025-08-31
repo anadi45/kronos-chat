@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { 
-  apiService, 
-  type IntegrationDashboard as IDashboard, 
-  type IntegrationSummary, 
-  type IntegrationActionRequest,
-  type IntegrationStats 
-} from '../services/apiService';
+import { apiService } from '../services/apiService';
+import type { 
+  IntegrationDashboard as IDashboard, 
+  IntegrationSummary, 
+  IntegrationActionRequest,
+  IntegrationStats 
+} from '@kronos/shared-types';
 
 interface IntegrationDashboardProps {
   userId?: string;
@@ -54,15 +54,15 @@ const IntegrationDashboard: React.FC<IntegrationDashboardProps> = ({ userId: _ }
       const actionRequest: IntegrationActionRequest = {
         provider,
         action,
-        connection_id: connectionId,
-        parameters: action === 'connect' ? { redirect_url: `${window.location.origin}/oauth/callback` } : undefined
+        connectionId: connectionId,
+        parameters: action === 'connect' ? { redirectUrl: `${window.location.origin}/oauth/callback` } : undefined
       };
 
       const response = await apiService.performIntegrationAction(actionRequest);
 
       if (response.success) {
-        if (response.redirect_url) {
-          window.location.href = response.redirect_url;
+        if (response.redirectUrl) {
+          window.location.href = response.redirectUrl;
         } else {
           await loadData(); // Refresh data
         }
@@ -92,7 +92,7 @@ const IntegrationDashboard: React.FC<IntegrationDashboardProps> = ({ userId: _ }
     if (searchTerm) {
       const search = searchTerm.toLowerCase();
       integrations = integrations.filter(i =>
-        i.display_name.toLowerCase().includes(search) ||
+        i.displayName.toLowerCase().includes(search) ||
         i.provider.toLowerCase().includes(search) ||
         (i.description || '').toLowerCase().includes(search)
       );
@@ -100,7 +100,7 @@ const IntegrationDashboard: React.FC<IntegrationDashboardProps> = ({ userId: _ }
 
     // Filter by connection status
     if (showConnectedOnly) {
-      integrations = integrations.filter(i => i.total_connections > 0);
+      integrations = integrations.filter(i => i.totalConnections > 0);
     }
 
     return integrations;
@@ -133,8 +133,8 @@ const IntegrationDashboard: React.FC<IntegrationDashboardProps> = ({ userId: _ }
   };
 
   const getHealthPercentage = () => {
-    if (!dashboard || dashboard.total_connections === 0) return 100;
-    return Math.round((dashboard.healthy_connections / dashboard.total_connections) * 100);
+    if (!dashboard || dashboard.totalConnections === 0) return 100;
+    return Math.round((dashboard.healthyConnections / dashboard.totalConnections) * 100);
   };
 
   if (loading) {
@@ -181,24 +181,24 @@ const IntegrationDashboard: React.FC<IntegrationDashboardProps> = ({ userId: _ }
           <div className="text-right">
             <div className="text-sm text-gray-500">Last updated</div>
             <div className="text-sm font-medium">
-              {new Date(dashboard.last_updated).toLocaleString()}
+              {new Date(dashboard.lastUpdated).toLocaleString()}
             </div>
           </div>
         </div>
 
         {/* System Health */}
         <div className={`p-4 rounded-lg border mb-6 ${
-          dashboard.composio_health 
+          dashboard.composioHealth 
             ? 'bg-green-50 border-green-200' 
             : 'bg-red-50 border-red-200'
         }`}>
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
               <span className="text-lg">
-                {dashboard.composio_health ? '✅' : '❌'}
+                {dashboard.composioHealth ? '✅' : '❌'}
               </span>
               <span className="font-medium">
-                {dashboard.composio_health ? 'System Healthy' : 'System Issues Detected'}
+                {dashboard.composioHealth ? 'System Healthy' : 'System Issues Detected'}
               </span>
             </div>
             <div className="text-sm">
@@ -210,19 +210,19 @@ const IntegrationDashboard: React.FC<IntegrationDashboardProps> = ({ userId: _ }
         {/* Quick Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-            <div className="text-2xl font-bold text-blue-600">{dashboard.total_integrations}</div>
+            <div className="text-2xl font-bold text-blue-600">{dashboard.totalIntegrations}</div>
             <div className="text-sm text-blue-700">Available Services</div>
           </div>
           <div className="bg-green-50 p-4 rounded-lg border border-green-200">
-            <div className="text-2xl font-bold text-green-600">{dashboard.connected_integrations}</div>
+            <div className="text-2xl font-bold text-green-600">{dashboard.connectedIntegrations}</div>
             <div className="text-sm text-green-700">Connected Services</div>
           </div>
           <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
-            <div className="text-2xl font-bold text-purple-600">{dashboard.total_connections}</div>
+            <div className="text-2xl font-bold text-purple-600">{dashboard.totalConnections}</div>
             <div className="text-sm text-purple-700">Total Connections</div>
           </div>
           <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
-            <div className="text-2xl font-bold text-yellow-600">{dashboard.healthy_connections}</div>
+            <div className="text-2xl font-bold text-yellow-600">{dashboard.healthyConnections}</div>
             <div className="text-sm text-yellow-700">Healthy Connections</div>
           </div>
         </div>
@@ -283,8 +283,8 @@ const IntegrationDashboard: React.FC<IntegrationDashboardProps> = ({ userId: _ }
               <div className="flex items-start justify-between mb-4">
                 <div className="flex items-center space-x-3">
                   <img
-                    src={integration.logo_url || '/default-app-icon.png'}
-                    alt={integration.display_name}
+                    src={integration.logoUrl || '/default-app-icon.png'}
+                    alt={integration.displayName}
                     className="w-12 h-12 rounded-lg"
                     onError={(e) => {
                       e.currentTarget.src = '/default-app-icon.png';
@@ -292,7 +292,7 @@ const IntegrationDashboard: React.FC<IntegrationDashboardProps> = ({ userId: _ }
                   />
                   <div>
                     <h3 className="text-lg font-semibold text-gray-900">
-                      {integration.display_name}
+                      {integration.displayName}
                     </h3>
                     <div className="flex items-center space-x-2 mt-1">
                       <span className={`px-2 py-1 rounded-full text-xs font-medium border ${getStatusColor(integration.health)}`}>
@@ -331,35 +331,35 @@ const IntegrationDashboard: React.FC<IntegrationDashboardProps> = ({ userId: _ }
               <div className="grid grid-cols-3 gap-2 text-center mb-4">
                 <div>
                   <div className="text-lg font-semibold text-gray-900">
-                    {integration.total_connections}
+                    {integration.totalConnections}
                   </div>
                   <div className="text-xs text-gray-500">Total</div>
                 </div>
                 <div>
                   <div className="text-lg font-semibold text-green-600">
-                    {integration.active_connections}
+                    {integration.activeConnections}
                   </div>
                   <div className="text-xs text-gray-500">Active</div>
                 </div>
                 <div>
                   <div className="text-lg font-semibold text-red-600">
-                    {integration.error_connections}
+                    {integration.errorConnections}
                   </div>
                   <div className="text-xs text-gray-500">Errors</div>
                 </div>
               </div>
 
               {/* Health Message */}
-              {integration.health_message && (
+              {integration.healthMessage && (
                 <div className="text-xs text-gray-600 mb-4">
-                  {integration.health_message}
+                  {integration.healthMessage}
                 </div>
               )}
             </div>
 
             {/* Actions */}
             <div className="border-t p-4">
-              {integration.total_connections === 0 ? (
+              {integration.totalConnections === 0 ? (
                 <button
                   onClick={() => handleAction(integration.provider, 'connect')}
                   disabled={actionLoading === `${integration.provider}-connect`}

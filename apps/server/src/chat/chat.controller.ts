@@ -9,23 +9,7 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-
-export interface ChatMessage {
-  role: 'user' | 'assistant';
-  content: string;
-  timestamp: string;
-}
-
-export interface ChatRequest {
-  message: string;
-  conversation_id?: string;
-}
-
-export interface ChatResponse {
-  message: string;
-  conversation_id: string;
-  timestamp: string;
-}
+import type { ChatRequest, ChatResponse } from '@kronos/shared-types';
 
 @Controller('chat')
 @UseGuards(JwtAuthGuard)
@@ -39,7 +23,7 @@ export class ChatController {
     // Basic implementation - would integrate with actual AI service
     const response: ChatResponse = {
       message: `Echo: ${chatRequest.message}`,
-      conversation_id: chatRequest.conversation_id || `conv_${Date.now()}`,
+      conversationId: chatRequest.conversationId || `conv_${Date.now()}`,
       timestamp: new Date().toISOString(),
     };
 
@@ -51,7 +35,7 @@ export class ChatController {
     // Basic implementation - would fetch from database
     return {
       conversations: [],
-      user_id: req.user.id,
+      userId: req.user.id,
     };
   }
 
@@ -60,7 +44,7 @@ export class ChatController {
     // Basic implementation - would fetch from database
     return {
       messages: [],
-      conversation_id: req.params.conversationId,
+      conversationId: req.params.conversationId,
     };
   }
 }
