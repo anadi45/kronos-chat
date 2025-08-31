@@ -11,10 +11,10 @@ export interface JwtPayload {
 }
 
 export interface LoginResponse {
-  access_token: string;
+  accessToken: string;
   user: UserResponseDto;
-  token_type: string;
-  expires_in: number;
+  tokenType: string;
+  expiresIn: number;
 }
 
 @Injectable()
@@ -31,7 +31,7 @@ export class AuthService {
       throw new UnauthorizedException('Invalid email or password');
     }
 
-    if (!user.is_active) {
+    if (!user.isActive) {
       throw new UnauthorizedException('Account is disabled');
     }
 
@@ -53,14 +53,14 @@ export class AuthService {
       email: user.email,
     };
 
-    const access_token = this.jwtService.sign(payload);
+    const accessToken = this.jwtService.sign(payload);
     const userResponse = await this.usersService.findOne(user.id);
 
     return {
-      access_token,
+      accessToken,
       user: userResponse,
-      token_type: 'Bearer',
-      expires_in: 1800, // 30 minutes
+      tokenType: 'Bearer',
+      expiresIn: 1800, // 30 minutes
     };
   }
 
@@ -71,7 +71,7 @@ export class AuthService {
       throw new UnauthorizedException('User not found');
     }
 
-    if (!user.is_active) {
+    if (!user.isActive) {
       throw new UnauthorizedException('Account is disabled');
     }
 

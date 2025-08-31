@@ -28,12 +28,12 @@ export class UsersService {
 
     // Hash password
     const saltRounds = 12;
-    const password_hash = await bcrypt.hash(createUserDto.password, saltRounds);
+    const passwordHash = await bcrypt.hash(createUserDto.password, saltRounds);
 
     // Create user
     const user = this.userRepository.create({
       ...createUserDto,
-      password_hash,
+      passwordHash,
     });
 
     const savedUser = await this.userRepository.save(user);
@@ -42,7 +42,7 @@ export class UsersService {
 
   async findAll(): Promise<UserResponseDto[]> {
     const users = await this.userRepository.find({
-      order: { created_at: 'DESC' },
+      order: { createdAt: 'DESC' },
     });
     return users.map((user) => this.toResponseDto(user));
   }
@@ -96,7 +96,7 @@ export class UsersService {
 
   async updateLastLogin(id: string): Promise<void> {
     await this.userRepository.update(id, {
-      last_login: new Date(),
+      lastLogin: new Date(),
     });
   }
 
@@ -113,21 +113,21 @@ export class UsersService {
   }
 
   async validatePassword(user: User, password: string): Promise<boolean> {
-    return bcrypt.compare(password, user.password_hash);
+    return bcrypt.compare(password, user.passwordHash);
   }
 
   private toResponseDto(user: User): UserResponseDto {
     return {
       id: user.id,
       email: user.email,
-      first_name: user.first_name,
-      last_name: user.last_name,
-      is_active: user.is_active,
-      profile_image_url: user.profile_image_url,
-      last_login: user.last_login?.toISOString(),
-      created_at: user.created_at.toISOString(),
-      updated_at: user.updated_at.toISOString(),
-      full_name: user.full_name || undefined,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      isActive: user.isActive,
+      profileImageUrl: user.profileImageUrl,
+      lastLogin: user.lastLogin?.toISOString(),
+      createdAt: user.createdAt.toISOString(),
+      updatedAt: user.updatedAt.toISOString(),
+      fullName: user.fullName || undefined,
     };
   }
 }

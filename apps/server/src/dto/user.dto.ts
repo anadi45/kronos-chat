@@ -15,20 +15,18 @@ export class CreateUserDto {
   @MinLength(8, { message: 'Password must be at least 8 characters long' })
   password: string;
 
-  @IsOptional()
   @IsString()
   @MaxLength(100)
-  first_name?: string;
+  firstName: string;
 
-  @IsOptional()
   @IsString()
   @MaxLength(100)
-  last_name?: string;
+  lastName: string;
 
   @IsOptional()
   @IsString()
   @MaxLength(2048)
-  profile_image_url?: string;
+  profileImageUrl?: string;
 }
 
 export class UpdateUserDto {
@@ -39,21 +37,21 @@ export class UpdateUserDto {
   @IsOptional()
   @IsString()
   @MaxLength(100)
-  first_name?: string;
+  firstName?: string;
 
   @IsOptional()
   @IsString()
   @MaxLength(100)
-  last_name?: string;
+  lastName?: string;
 
   @IsOptional()
   @IsBoolean()
-  is_active?: boolean;
+  isActive?: boolean;
 
   @IsOptional()
   @IsString()
   @MaxLength(2048)
-  profile_image_url?: string;
+  profileImageUrl?: string;
 }
 
 export class LoginDto {
@@ -67,12 +65,12 @@ export class LoginDto {
 export class UserResponseDto {
   id: string;
   email: string;
-  first_name?: string;
-  last_name?: string;
-  is_active: boolean;
-  profile_image_url?: string;
-  last_login?: string;
-  created_at: string;
-  updated_at: string;
-  full_name?: string;
+  firstName?: string;
+  lastName?: string;
+  isActive: boolean;
+  profileImageUrl?: string;
+  lastLogin?: string;
+  createdAt: string;
+  updatedAt: string;
+  fullName?: string;
 }
