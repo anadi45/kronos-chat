@@ -1,8 +1,8 @@
 export interface User {
   id: string;
   email: string;
-  firstName?: string;
-  lastName?: string;
+  firstName: string;
+  lastName: string;
   isActive: boolean;
   profileImageUrl?: string;
   lastLogin?: string;
@@ -14,8 +14,8 @@ export interface User {
 export interface CreateUserDto {
   email: string;
   password: string;
-  firstName?: string;
-  lastName?: string;
+  firstName: string;
+  lastName: string;
   profileImageUrl?: string;
 }
 

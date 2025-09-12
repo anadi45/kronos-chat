@@ -73,11 +73,32 @@ class ApiService {
         console.log(`API Response: ${response.status} ${response.config.url}`);
         return response;
       },
-      (error) => {
+      async (error) => {
         console.error(
           'API Response Error:',
           error.response?.data || error.message
         );
+
+        // Handle 401 Unauthorized - try to refresh token
+        if (error.response?.status === 401 && error.config && !error.config._retry) {
+          error.config._retry = true;
+          
+          try {
+            await this.refreshToken();
+            // Retry the original request with new token
+            const token = localStorage.getItem('accessToken');
+            if (token) {
+              error.config.headers.Authorization = `Bearer ${token}`;
+              return this.client.request(error.config);
+            }
+          } catch (refreshError) {
+            // Refresh failed, redirect to login
+            this.logout();
+            window.location.href = '/';
+            return Promise.reject(refreshError);
+          }
+        }
+
         return Promise.reject(error);
       }
     );
@@ -119,6 +140,19 @@ class ApiService {
     return response.data;
   }
 
+  async refreshToken(): Promise<AuthToken> {
+    const response = await this.client.post('/auth/refresh');
+    const token = response.data;
+
+    // Store new token in localStorage
+    localStorage.setItem('accessToken', token.accessToken);
+    localStorage.setItem('tokenType', token.tokenType);
+    localStorage.setItem('expiresIn', token.expiresIn.toString());
+    localStorage.setItem('loginTime', Date.now().toString());
+
+    return token;
+  }
+
   isAuthenticated(): boolean {
     const token = localStorage.getItem('accessToken');
     const loginTime = localStorage.getItem('loginTime');
@@ -133,8 +167,11 @@ class ApiService {
     const expirationTime = loginTimestamp + parseInt(expiresIn) * 1000;
 
     if (now >= expirationTime) {
-      // Token expired, clear storage
-      this.logout();
+      // Token expired, clear storage synchronously
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('tokenType');
+      localStorage.removeItem('expiresIn');
+      localStorage.removeItem('loginTime');
       return false;
     }
 

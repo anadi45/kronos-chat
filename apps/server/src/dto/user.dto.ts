@@ -98,8 +98,8 @@ export class LoginDto {
 export class UserResponseDto {
   id: string;
   email: string;
-  firstName?: string;
-  lastName?: string;
+  firstName: string;
+  lastName: string;
   isActive: boolean;
   profileImageUrl?: string;
   lastLogin?: string;

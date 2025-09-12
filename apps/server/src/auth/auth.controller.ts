@@ -7,6 +7,7 @@ import {
   Get,
   UseGuards,
   Request,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import type { LoginResponse } from '@kronos/shared-types';
@@ -45,23 +46,42 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
   async refresh(@Request() req): Promise<LoginResponse> {
-    // Create a new token for the authenticated user
-    const loginDto: LoginDto = {
-      email: req.user.email,
-      password: '', // We don't need the password for refresh since user is already authenticated
-    };
-
-    // For refresh, we bypass password validation by directly creating a new token
+    // User is already authenticated via JWT guard
     const user = await this.usersService.findByEmail(req.user.email);
     if (!user) {
-      throw new Error('User not found');
+      throw new UnauthorizedException('User not found');
+    }
+
+    if (!user.isActive) {
+      throw new UnauthorizedException('Account is disabled');
     }
 
     // Update last login
     await this.usersService.updateLastLogin(user.id);
 
-    // This would normally require a separate refresh token implementation
-    // For now, we'll return the same response as login
-    return this.authService.login({ email: user.email, password: 'refresh' });
+    // Generate new JWT token
+    const payload = {
+      sub: user.id,
+      email: user.email,
+    };
+
+    const accessToken = this.authService.generateToken(payload);
+    const userResponse = await this.usersService.findOne(user.id);
+
+    return {
+      accessToken,
+      user: userResponse as any,
+      tokenType: 'Bearer',
+      expiresIn: 1800, // 30 minutes
+    };
+  }
+
+  @Post('logout')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  async logout(): Promise<{ message: string }> {
+    // In a stateless JWT system, logout is handled client-side by removing the token
+    // We could implement token blacklisting here if needed
+    return { message: 'Logged out successfully' };
   }
 }
