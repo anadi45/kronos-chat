@@ -45,7 +45,7 @@ export class AuthService {
 
     return {
       accessToken,
-      user: userResponse,
+      user: userResponse as any,
       tokenType: 'Bearer',
       expiresIn: 1800, // 30 minutes
     };
@@ -63,5 +63,9 @@ export class AuthService {
     }
 
     return user;
+  }
+
+  generateToken(payload: JwtPayload): string {
+    return this.jwtService.sign(payload);
   }
 }

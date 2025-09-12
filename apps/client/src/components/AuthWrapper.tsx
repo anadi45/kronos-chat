@@ -18,6 +18,40 @@ const AuthWrapper: React.FC<AuthWrapperProps> = ({ children }) => {
     checkAuthStatus();
   }, []);
 
+  // Set up periodic token refresh
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
+    const refreshInterval = setInterval(async () => {
+      try {
+        // Check if token is close to expiring (within 5 minutes)
+        const loginTime = localStorage.getItem('loginTime');
+        const expiresIn = localStorage.getItem('expiresIn');
+        
+        if (loginTime && expiresIn) {
+          const now = Date.now();
+          const loginTimestamp = parseInt(loginTime);
+          const expirationTime = loginTimestamp + parseInt(expiresIn) * 1000;
+          const timeUntilExpiry = expirationTime - now;
+          
+          // Refresh if token expires within 5 minutes
+          if (timeUntilExpiry < 5 * 60 * 1000 && timeUntilExpiry > 0) {
+            await apiService.refreshToken();
+            console.log('Token refreshed automatically');
+          }
+        }
+      } catch (error) {
+        console.error('Automatic token refresh failed:', error);
+        // If refresh fails, logout user
+        await apiService.logout();
+        setIsAuthenticated(false);
+        setUser(null);
+      }
+    }, 60000); // Check every minute
+
+    return () => clearInterval(refreshInterval);
+  }, [isAuthenticated]);
+
   const checkAuthStatus = async () => {
     setIsLoading(true);
     
@@ -27,10 +61,18 @@ const AuthWrapper: React.FC<AuthWrapperProps> = ({ children }) => {
         setUser(userProfile);
         setIsAuthenticated(true);
       } catch (error) {
-        // Token might be invalid, clear it
-        await apiService.logout();
-        setIsAuthenticated(false);
-        setUser(null);
+        // Token might be invalid, try to refresh first
+        try {
+          await apiService.refreshToken();
+          const userProfile = await apiService.getCurrentUser();
+          setUser(userProfile);
+          setIsAuthenticated(true);
+        } catch (refreshError) {
+          // Refresh failed, clear auth and redirect to login
+          await apiService.logout();
+          setIsAuthenticated(false);
+          setUser(null);
+        }
       }
     } else {
       setIsAuthenticated(false);
