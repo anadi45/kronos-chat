@@ -1,6 +1,6 @@
 /**
  * Kronos Chat API Server
- * NestJS backend for the Kronos chat application with Composio integration
+ * NestJS backend for the Kronos chat application
  */
 
 import { Logger, ValidationPipe } from '@nestjs/common';

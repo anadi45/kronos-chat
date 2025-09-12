@@ -6,7 +6,6 @@ The frontend application for the Kronos Chat system - a modern React-based chat 
 
 - **Real-time Chat Interface**: ChatGPT-like streaming responses
 - **Authentication**: Secure JWT-based user login and registration
-- **Third-party Integrations**: Connect with GitHub, Slack, Notion, Gmail, and more via Composio
 - **Responsive Design**: Works seamlessly on desktop, tablet, and mobile
 - **Modern UI**: Clean, intuitive interface with loading states and error handling
 
@@ -17,7 +16,6 @@ The frontend application for the Kronos Chat system - a modern React-based chat 
 - **[Vite](https://vitejs.dev/)** - Fast build tool and development server
 - **[React Router](https://reactrouter.com/)** - Client-side routing
 - **[Axios](https://axios-http.com/)** - HTTP client for API communication
-- **[Composio](https://composio.dev/)** - Third-party service integrations
 
 ## Project Structure
 
@@ -35,10 +33,8 @@ apps/client/
 │   │   └── ToolExecutor.tsx          # Execute third-party tools
 │   ├── services/           # API service layer
 │   │   ├── apiService.ts             # Main API client
-│   │   ├── composioService.ts        # Composio integration
 │   │   └── index.ts                  # Service exports
 │   ├── config/             # Configuration files
-│   │   └── composio.ts               # Composio setup
 │   ├── assets/             # Images and static assets
 │   ├── App.tsx             # Root component
 │   ├── main.tsx            # Application entry point
@@ -74,7 +70,6 @@ apps/client/
    ```bash
    # Create .env.local file
    echo "VITE_API_BASE_URL=http://localhost:3000/api/v1" > .env.local
-   echo "VITE_COMPOSIO_API_KEY=your_composio_api_key_here" >> .env.local
    ```
 
 4. **Start the development server:**
@@ -116,7 +111,6 @@ apps/client/
 | Variable | Description | Default |
 |----------|-------------|---------|
 | `VITE_API_BASE_URL` | Backend API base URL | `http://localhost:3000/api/v1` |
-| `VITE_COMPOSIO_API_KEY` | Composio API key for integrations | - |
 
 ## Core Components
 
@@ -135,16 +129,6 @@ apps/client/
 - `IntegrationDashboard.tsx`: View and manage active connections
 - `ToolExecutor.tsx`: Execute actions on connected services
 
-### Supported Integrations
-
-Via Composio, the client supports:
-- **GitHub**: Repository management, issue tracking
-- **Slack**: Channel messaging, notifications
-- **Notion**: Database operations, page management
-- **Gmail**: Email sending and reading
-- **Google Calendar**: Event management
-- **Discord**: Server interactions
-- **Twitter**: Social media posting
 
 ## API Integration
 
@@ -152,7 +136,6 @@ The client communicates with the NestJS backend via:
 - **Authentication**: JWT tokens for secure API access
 - **Chat API**: Real-time streaming chat responses
 - **User Management**: Profile and account operations
-- **Composio Integration**: OAuth flows and tool execution
 
 ## Docker Deployment
 
@@ -237,10 +220,6 @@ npx nx test client --coverage
 - Fix ESLint issues: `npm run lint`
 - Clear Vite cache: `rm -rf dist`
 
-**Integration issues:**
-- Verify Composio API key is set correctly
-- Check OAuth callback URLs are configured
-- Ensure required scopes are requested
 
 ### Debug Tools
 - React Developer Tools browser extension

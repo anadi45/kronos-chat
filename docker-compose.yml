@@ -36,7 +36,6 @@ services:
       - DATABASE_LOGGING=false
       - JWT_SECRET=${JWT_SECRET:-your-secret-key-here-change-in-production}
       - JWT_EXPIRES_IN=30m
-      - COMPOSIO_API_KEY=${COMPOSIO_API_KEY}
       - PORT=3000
       - API_PREFIX=/api/v1
     ports:
@@ -58,7 +57,6 @@ services:
       context: ./apps/client
       dockerfile: Dockerfile
       args:
-        - VITE_COMPOSIO_API_KEY=${VITE_COMPOSIO_API_KEY}
         - VITE_API_BASE_URL=${VITE_API_BASE_URL:-http://localhost:8000/api/v1}
     container_name: kronos-client
     ports:

@@ -1,10 +1,5 @@
 import { useState } from 'react'
 import './App.css'
-import EnhancedOAuthManager from './components/EnhancedOAuthManager'
-import AuthConfigManager from './components/AuthConfigManager'
-import OAuthCallback from './components/OAuthCallback'
-import ToolExecutor from './components/ToolExecutor'
-import IntegrationDashboard from './components/IntegrationDashboard'
 import ChatInterface from './components/ChatInterface'
 import AuthWrapper from './components/AuthWrapper'
 import { type UserProfile } from '@kronos/shared-types'
@@ -15,31 +10,10 @@ interface AppProps {
 }
 
 function App({ user, onLogout }: AppProps) {
-  const [activeTab, setActiveTab] = useState<'chat' | 'dashboard' | 'connections' | 'auth-configs' | 'tools' | 'callback'>('chat')
-
-  const renderContent = () => {
-    const userId = user?.id || "unknown";
-    
-    switch (activeTab) {
-      case 'chat':
-        return <ChatInterface userId={userId} />
-      case 'dashboard':
-        return <IntegrationDashboard userId={userId} />
-      case 'connections':
-        return <EnhancedOAuthManager userId={userId} />
-      case 'auth-configs':
-        return <AuthConfigManager userId={userId} />
-      case 'tools':
-        return <ToolExecutor />
-      case 'callback':
-        return <OAuthCallback />
-      default:
-        return <ChatInterface userId={userId} />
-    }
-  }
+  const userId = user?.id || "unknown";
 
   return (
-    <div className={`${activeTab === 'chat' ? 'h-screen' : 'min-h-screen'} gradient-bg flex flex-col`}>
+    <div className="h-screen gradient-bg flex flex-col">
       {/* Header */}
       <header className="glass border-b border-white/10 shadow-lg">
         <div className="max-w-7xl mx-auto px-4">
@@ -72,77 +46,15 @@ function App({ user, onLogout }: AppProps) {
                   </button>
                 </div>
               )}
-              <div className="text-sm text-gray-400">
-                Powered by Composio Integration
-              </div>
             </div>
           </div>
         </div>
       </header>
 
-      {/* Navigation */}
-      <nav className="glass border-b border-white/10">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="flex space-x-8 overflow-x-auto">
-            {[
-              { id: 'chat', label: 'AI Chat', icon: '💬' },
-              { id: 'dashboard', label: 'Integration Dashboard', icon: '📊' },
-              { id: 'connections', label: 'OAuth Connections', icon: '🔗' },
-              { id: 'auth-configs', label: 'Auth Configurations', icon: '⚙️' },
-              { id: 'tools', label: 'Tool Executor', icon: '🛠️' },
-              { id: 'callback', label: 'OAuth Callback', icon: '↩️' },
-            ].map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id as any)}
-                className={`py-4 px-1 border-b-2 font-medium text-sm transition-all duration-200 ${
-                  activeTab === tab.id
-                    ? 'border-blue-500 text-blue-400'
-                    : 'border-transparent text-gray-400 hover:text-gray-300 hover:border-gray-600'
-                }`}
-              >
-                <span className="mr-2">{tab.icon}</span>
-                {tab.label}
-              </button>
-            ))}
-          </div>
-        </div>
-      </nav>
-
       {/* Main Content */}
-      <main className={`${activeTab === 'chat' ? 'flex-1 flex flex-col overflow-hidden' : 'max-w-7xl mx-auto py-6'}`}>
-        {activeTab === 'chat' ? (
-          <div className="flex-1 flex flex-col overflow-hidden">
-            {renderContent()}
-          </div>
-        ) : (
-          <div className="px-4 py-6">
-            <div className="glass p-6 rounded-2xl shadow-2xl border border-white/10">
-              {renderContent()}
-            </div>
-          </div>
-        )}
+      <main className="flex-1 flex flex-col overflow-hidden">
+        <ChatInterface userId={userId} />
       </main>
-
-      {/* Footer - Hidden for chat interface */}
-      {activeTab !== 'chat' && (
-        <footer className="glass border-t border-white/10 mt-12">
-          <div className="max-w-7xl mx-auto py-4 px-4">
-            <div className="text-center text-sm text-gray-400">
-              Enhanced with{' '}
-              <a
-                href="https://docs.composio.dev"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-blue-400 hover:text-blue-300 transition-colors duration-200"
-              >
-                Composio
-              </a>{' '}
-              for robust OAuth integration
-            </div>
-          </div>
-        </footer>
-      )}
     </div>
   )
 }
