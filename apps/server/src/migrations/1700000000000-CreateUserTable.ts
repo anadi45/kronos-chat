@@ -53,6 +53,14 @@ export class CreateUserTable1700000000000 implements MigrationInterface {
             type: 'timestamptz',
             isNullable: false,
           },
+          {
+            name: 'composio_auth_config_id',
+            type: 'varchar',
+            length: '1000',
+            isNullable: true,
+            comment:
+              'Composio authentication configuration ID for OAuth integrations',
+          },
           ...MigrationHelpers.getTimestampColumns(),
         ],
         indices: [
@@ -69,6 +77,10 @@ export class CreateUserTable1700000000000 implements MigrationInterface {
             name: 'IDX_users_is_active',
             columnNames: ['is_active'],
           },
+          {
+            name: 'IDX_users_composio_auth_config_id',
+            columnNames: ['composio_auth_config_id'],
+          },
         ],
       }),
       true
@@ -77,6 +89,7 @@ export class CreateUserTable1700000000000 implements MigrationInterface {
 
   public async down(queryRunner: QueryRunner): Promise<void> {
     // Drop indexes
+    await queryRunner.dropIndex('users', 'IDX_users_composio_auth_config_id');
     await queryRunner.dropIndex('users', 'IDX_users_is_active');
     await queryRunner.dropIndex('users', 'IDX_users_created_at');
     await queryRunner.dropIndex('users', 'IDX_users_email');

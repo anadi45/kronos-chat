@@ -1,4 +1,9 @@
-import { Injectable, Logger, BadRequestException, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  BadRequestException,
+  NotFoundException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Composio } from '@composio/core';
 
@@ -48,7 +53,12 @@ export interface IntegrationProvider {
   name: string;
   displayName: string;
   description: string;
-  category: 'PRODUCTIVITY' | 'COMMUNICATION' | 'DEVELOPMENT' | 'STORAGE' | 'CALENDAR';
+  category:
+    | 'PRODUCTIVITY'
+    | 'COMMUNICATION'
+    | 'DEVELOPMENT'
+    | 'STORAGE'
+    | 'CALENDAR';
   isActive: boolean;
 }
 
@@ -58,7 +68,13 @@ export interface IntegrationProvider {
 export interface ConnectedAccount {
   id: string;
   provider: string;
-  status: 'INITIALIZING' | 'INITIATED' | 'ACTIVE' | 'INACTIVE' | 'FAILED' | 'EXPIRED';
+  status:
+    | 'INITIALIZING'
+    | 'INITIATED'
+    | 'ACTIVE'
+    | 'INACTIVE'
+    | 'FAILED'
+    | 'EXPIRED';
   connectedAt: string;
   lastUsed?: string;
 }
@@ -75,9 +91,11 @@ export class ComposioIntegrationsService {
 
   constructor(private readonly configService: ConfigService) {
     const apiKey = this.configService.get<string>('COMPOSIO_API_KEY');
-    
+
     if (!apiKey) {
-      this.logger.warn('COMPOSIO_API_KEY not configured. Integration features will be limited.');
+      this.logger.warn(
+        'COMPOSIO_API_KEY not configured. Integration features will be limited.'
+      );
       this.isConfigured = false;
       // Initialize with empty API key for development
       this.composio = new Composio({ apiKey: '' });
@@ -102,22 +120,29 @@ export class ComposioIntegrationsService {
   /**
    * Creates an authentication configuration for a specific provider
    * This should be called once per provider and the config ID should be stored in database
-   * 
+   *
    * @param provider - The integration provider (e.g., 'GMAIL', 'SLACK')
    * @returns Promise<string> - The authentication configuration ID
    */
   async createAuthConfiguration(provider: string): Promise<string> {
     this.validateConfiguration();
-    
+
     try {
-      this.logger.log(`Creating authentication configuration for provider: ${provider}`);
-      
+      this.logger.log(
+        `Creating authentication configuration for provider: ${provider}`
+      );
+
       const authConfig = await this.composio.authConfigs.create(provider);
-      
-      this.logger.log(`Authentication configuration created successfully: ${authConfig.id}`);
+
+      this.logger.log(
+        `Authentication configuration created successfully: ${authConfig.id}`
+      );
       return authConfig.id;
     } catch (error) {
-      this.logger.error(`Failed to create authentication configuration for ${provider}:`, error);
+      this.logger.error(
+        `Failed to create authentication configuration for ${provider}:`,
+        error
+      );
       throw new BadRequestException(
         `Unable to create authentication configuration for ${provider}. Please verify the provider name and try again.`
       );
@@ -126,26 +151,36 @@ export class ComposioIntegrationsService {
 
   /**
    * Initiates a new integration connection for a user
-   * 
+   *
    * @param request - The connection creation request
    * @returns Promise<CreateIntegrationResponse> - Connection details including redirect URL
    */
-  async createIntegrationConnection(request: CreateIntegrationRequest): Promise<CreateIntegrationResponse> {
+  async createIntegrationConnection(
+    request: CreateIntegrationRequest
+  ): Promise<CreateIntegrationResponse> {
     this.validateConfiguration();
-    
+
     try {
-      this.logger.log(`Initiating integration connection for user ${request.userId} with provider ${request.provider}`);
-      
+      this.logger.log(
+        `Initiating integration connection for user ${request.userId} with provider ${request.provider}`
+      );
+
       // Get or create auth configuration for the provider
-      const authConfigId = await this.getOrCreateAuthConfiguration(request.provider);
-      
+      const authConfigId = await this.getOrCreateAuthConfiguration(
+        request.provider
+      );
+      console.dir(authConfigId, { depth: null });
+
       const connection = await this.composio.connectedAccounts.initiate(
         request.userId,
         authConfigId
       );
+      console.dir(connection, { depth: null });
 
-      this.logger.log(`Integration connection initiated successfully: ${connection.id}`);
-      
+      this.logger.log(
+        `Integration connection initiated successfully: ${connection.id}`
+      );
+
       return {
         connectionId: connection.id,
         redirectUrl: connection.redirectUrl,
@@ -162,17 +197,24 @@ export class ComposioIntegrationsService {
 
   /**
    * Retrieves available tools for a user with specific integration toolkits
-   * 
+   *
    * @param userId - The user identifier
    * @param toolkits - Array of toolkit names to retrieve tools for
    * @returns Promise<any[]> - Array of available tools
    */
-  async getAvailableTools(userId: string, toolkits: string[] = ['GMAIL']): Promise<any[]> {
+  async getAvailableTools(
+    userId: string,
+    toolkits: string[] = ['GMAIL']
+  ): Promise<any[]> {
     this.validateConfiguration();
-    
+
     try {
-      this.logger.log(`Retrieving tools for user ${userId} with toolkits: ${toolkits.join(', ')}`);
-      
+      this.logger.log(
+        `Retrieving tools for user ${userId} with toolkits: ${toolkits.join(
+          ', '
+        )}`
+      );
+
       const tools = await this.composio.tools.get(userId, {
         toolkits,
       });
@@ -189,28 +231,28 @@ export class ComposioIntegrationsService {
 
   /**
    * Retrieves all connected accounts for a user
-   * 
+   *
    * @param userId - The user identifier
    * @returns Promise<ConnectedAccount[]> - Array of connected accounts
    */
   async getConnectedAccounts(userId: string): Promise<ConnectedAccount[]> {
     this.validateConfiguration();
-    
+
     try {
       this.logger.log(`Retrieving connected accounts for user ${userId}`);
-      
+
       const response = await this.composio.connectedAccounts.list({
         userIds: [userId],
       });
-      
-      const accounts: ConnectedAccount[] = response.items.map(item => ({
+
+      const accounts: ConnectedAccount[] = response.items.map((item) => ({
         id: item.id,
         provider: item.toolkit.slug,
         status: item.status,
         connectedAt: item.createdAt,
         lastUsed: item.updatedAt,
       }));
-      
+
       this.logger.log(`Found ${accounts.length} connected accounts`);
       return accounts;
     } catch (error) {
@@ -223,19 +265,24 @@ export class ComposioIntegrationsService {
 
   /**
    * Disconnects a specific integration account
-   * 
+   *
    * @param userId - The user identifier
    * @param connectionId - The connection identifier to disconnect
    * @returns Promise<{ success: boolean }> - Success status
    */
-  async disconnectIntegration(userId: string, connectionId: string): Promise<{ success: boolean }> {
+  async disconnectIntegration(
+    userId: string,
+    connectionId: string
+  ): Promise<{ success: boolean }> {
     this.validateConfiguration();
-    
+
     try {
-      this.logger.log(`Disconnecting integration ${connectionId} for user ${userId}`);
-      
+      this.logger.log(
+        `Disconnecting integration ${connectionId} for user ${userId}`
+      );
+
       await this.composio.connectedAccounts.delete(connectionId);
-      
+
       this.logger.log(`Integration ${connectionId} disconnected successfully`);
       return { success: true };
     } catch (error) {
@@ -248,7 +295,7 @@ export class ComposioIntegrationsService {
 
   /**
    * Retrieves all available integration providers
-   * 
+   *
    * @returns Promise<IntegrationProvider[]> - Array of available providers
    */
   async getAvailableProviders(): Promise<IntegrationProvider[]> {
@@ -307,7 +354,9 @@ export class ComposioIntegrationsService {
         },
       ];
 
-      this.logger.log(`Retrieved ${providers.length} available integration providers`);
+      this.logger.log(
+        `Retrieved ${providers.length} available integration providers`
+      );
       return providers;
     } catch (error) {
       this.logger.error(`Failed to retrieve available providers:`, error);
@@ -320,22 +369,24 @@ export class ComposioIntegrationsService {
   /**
    * Gets or creates an authentication configuration for a provider
    * In production, this should be stored in a database
-   * 
+   *
    * @param provider - The provider name
    * @returns Promise<string> - The authentication configuration ID
    */
-  private async getOrCreateAuthConfiguration(provider: string): Promise<string> {
+  private async getOrCreateAuthConfiguration(
+    provider: string
+  ): Promise<string> {
     // In a production environment, you should:
     // 1. Check if an auth config already exists for this provider
     // 2. Store auth config IDs in a database
     // 3. Reuse existing configs instead of creating new ones
-    
+
     return await this.createAuthConfiguration(provider);
   }
 
   /**
    * Checks if the service is properly configured
-   * 
+   *
    * @returns boolean - Configuration status
    */
   isServiceConfigured(): boolean {

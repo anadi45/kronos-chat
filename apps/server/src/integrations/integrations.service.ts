@@ -33,7 +33,7 @@ export class IntegrationsService {
   /**
    * Get all available integrations
    */
-  async getAvailableIntegrations(): Promise<Integration[]> {
+  getAvailableIntegrations(): Integration[] {
     return AVAILABLE_INTEGRATIONS;
   }
 
@@ -46,12 +46,13 @@ export class IntegrationsService {
       const connectedAccounts = await this.composioService.getConnectedAccounts(
         userId
       );
+      console.dir(connectedAccounts, { depth: null });
       if (connectedAccounts.length === 0) {
         return [];
       }
 
       // Get all available integrations
-      const allIntegrations = await this.getAvailableIntegrations();
+      const allIntegrations = this.getAvailableIntegrations();
 
       // Map connected accounts to integrations
       const connectedIntegrations = allIntegrations.map((integration) => {
@@ -86,7 +87,7 @@ export class IntegrationsService {
    */
   async getIntegrationStatus(): Promise<IntegrationStatus> {
     const isConfigured = this.composioService.isServiceConfigured();
-    const integrations = await this.getAvailableIntegrations();
+    const integrations = this.getAvailableIntegrations();
 
     return {
       configured: isConfigured,
@@ -101,16 +102,26 @@ export class IntegrationsService {
     try {
       // For now, delegate to Composio service for OAuth connections
       if (provider === 'gmail') {
-        return await this.composioService.createIntegrationConnection({
+        const connectionResult = await this.composioService.createIntegrationConnection({
           userId,
           provider: 'GMAIL',
         });
+
+        // Transform the response to match frontend expectations
+        return {
+          success: true,
+          authUrl: connectionResult.redirectUrl,
+          provider: connectionResult.provider,
+          status: 'available' as const,
+          connectionId: connectionResult.connectionId,
+        };
       }
 
       // For other integrations, return a placeholder response
       return {
+        success: false,
         message: `${provider} integration is coming soon`,
-        status: 'coming_soon',
+        status: 'coming_soon' as const,
         provider,
       };
     } catch (error) {
@@ -118,7 +129,12 @@ export class IntegrationsService {
         `Failed to connect integration ${provider} for user ${userId}:`,
         error
       );
-      throw error;
+      return {
+        success: false,
+        message: `Failed to connect ${provider} integration. Please try again.`,
+        provider,
+        status: 'available' as const,
+      };
     }
   }
 
@@ -157,7 +173,7 @@ export class IntegrationsService {
    * Get integration details and capabilities
    */
   async getIntegrationDetails(provider: string): Promise<Integration | null> {
-    const integrations = await this.getAvailableIntegrations();
+    const integrations = this.getAvailableIntegrations();
     return (
       integrations.find((integration) => integration.id === provider) || null
     );

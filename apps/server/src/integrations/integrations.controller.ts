@@ -74,8 +74,7 @@ export class IntegrationsController {
     @Param('provider') provider: string,
     @Request() req: any
   ): Promise<any> {
-    const userId = req.user.id;
-    return this.integrationsService.connectIntegration(userId, provider);
+    return this.integrationsService.connectIntegration(req.user.id, provider);
   }
 
   /**
@@ -91,8 +90,7 @@ export class IntegrationsController {
     @Param('provider') provider: string,
     @Request() req: any
   ): Promise<{ success: boolean }> {
-    const userId = req.user.id;
-    return this.integrationsService.disconnectIntegration(userId, provider);
+    return this.integrationsService.disconnectIntegration(req.user.id, provider);
   }
 
   /**
@@ -132,11 +130,10 @@ export class IntegrationsController {
     @Body(ValidationPipe) request: any,
     @Request() req: any
   ): Promise<any> {
-    const userId = req.user.id;
 
     return this.composioService.createIntegrationConnection({
       ...request,
-      userId,
+      userId: req.user.id,
     });
   }
 
@@ -148,8 +145,7 @@ export class IntegrationsController {
    */
   @Get('connections')
   async getConnectedAccounts(@Request() req: any): Promise<any[]> {
-    const userId = req.user.id;
-    return this.composioService.getConnectedAccounts(userId);
+    return this.composioService.getConnectedAccounts(req.user.id);
   }
 
   /**
@@ -165,8 +161,7 @@ export class IntegrationsController {
     @Param('connectionId') connectionId: string,
     @Request() req: any
   ): Promise<{ success: boolean }> {
-    const userId = req.user.id;
-    return this.composioService.disconnectIntegration(userId, connectionId);
+    return this.composioService.disconnectIntegration(req.user.id, connectionId);
   }
 
   /**
@@ -181,10 +176,9 @@ export class IntegrationsController {
     @Request() req: any,
     @Query('toolkits') toolkits?: string
   ): Promise<any[]> {
-    const userId = req.user.id;
     const toolkitArray = toolkits ? toolkits.split(',') : ['GMAIL'];
 
-    return this.composioService.getAvailableTools(userId, toolkitArray);
+    return this.composioService.getAvailableTools(req.user.id, toolkitArray);
   }
 
   /**

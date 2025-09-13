@@ -28,6 +28,7 @@ export interface ConnectIntegrationResponse {
   authUrl?: string;
   provider: string;
   status: 'available' | 'coming_soon' | 'beta';
+  connectionId?: string;
 }
 
 export interface DisconnectIntegrationRequest {

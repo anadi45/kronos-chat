@@ -120,13 +120,52 @@ const Integrations: React.FC = () => {
   const [integrations, setIntegrations] = useState<Integration[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
   const [connectingProvider, setConnectingProvider] = useState<string | null>(null);
   const [disconnectingProvider, setDisconnectingProvider] = useState<string | null>(null);
 
 
   useEffect(() => {
     loadIntegrations();
+    handleOAuthCallback();
   }, []);
+
+  const handleOAuthCallback = () => {
+    // Check if we're returning from an OAuth flow
+    const urlParams = new URLSearchParams(window.location.search);
+    const code = urlParams.get('code');
+    const state = urlParams.get('state');
+    const error = urlParams.get('error');
+    const errorDescription = urlParams.get('error_description');
+
+    if (error) {
+      const errorMessage = errorDescription || error;
+      setError(`OAuth authentication failed: ${errorMessage}`);
+      // Clean up URL parameters
+      window.history.replaceState({}, document.title, window.location.pathname);
+      return;
+    }
+
+    if (code && state) {
+      // OAuth callback received - the connection should be established
+      // Clean up URL parameters
+      window.history.replaceState({}, document.title, window.location.pathname);
+      
+      // Show success message and refresh integrations
+      setError(null);
+      setSuccess(`Successfully connected to ${state}!`);
+      
+      // Load integrations to reflect the new connection
+      loadIntegrations();
+      
+      // Clean up stored connection ID
+      const provider = state.toLowerCase();
+      localStorage.removeItem(`oauth_connection_${provider}`);
+      
+      // Clear success message after 5 seconds
+      setTimeout(() => setSuccess(null), 5000);
+    }
+  };
 
   const loadIntegrations = async () => {
     try {
@@ -159,15 +198,20 @@ const Integrations: React.FC = () => {
     try {
       setConnectingProvider(provider);
       setError(null);
+      setSuccess(null);
 
       const result = await apiService.connectIntegration(provider);
       
       if (result.success) {
-        // If there's an auth URL, redirect to it
+        // If there's an auth URL, redirect to it for OAuth flow
         if (result.authUrl) {
+          // Store the connection ID for later verification
+          if (result.connectionId) {
+            localStorage.setItem(`oauth_connection_${provider}`, result.connectionId);
+          }
           window.location.href = result.authUrl;
         } else {
-          // Refresh integrations
+          // Refresh integrations if no redirect needed
           await loadIntegrations();
         }
       } else {
@@ -185,6 +229,7 @@ const Integrations: React.FC = () => {
     try {
       setDisconnectingProvider(provider);
       setError(null);
+      setSuccess(null);
 
       const result = await apiService.disconnectIntegration(provider);
       
@@ -232,6 +277,18 @@ const Integrations: React.FC = () => {
             <button 
               onClick={() => setError(null)}
               className="mt-2 text-sm text-red-300 hover:text-red-200"
+            >
+              Dismiss
+            </button>
+          </div>
+        )}
+
+        {success && (
+          <div className="mb-6 p-4 bg-green-500/10 border border-green-500/20 rounded-lg">
+            <p className="text-green-400">{success}</p>
+            <button 
+              onClick={() => setSuccess(null)}
+              className="mt-2 text-sm text-green-300 hover:text-green-200"
             >
               Dismiss
             </button>
