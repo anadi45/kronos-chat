@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ComposioIntegrationsService } from '../composio/composio-integrations.service';
+import { AVAILABLE_INTEGRATIONS } from '../constants/integrations.constants';
 
 export interface Integration {
   id: string;
@@ -27,68 +28,13 @@ export interface IntegrationStatus {
 export class IntegrationsService {
   private readonly logger = new Logger(IntegrationsService.name);
 
-  constructor(
-    private readonly composioService: ComposioIntegrationsService,
-  ) {}
+  constructor(private readonly composioService: ComposioIntegrationsService) {}
 
   /**
    * Get all available integrations
    */
   async getAvailableIntegrations(): Promise<Integration[]> {
-    const integrations: Integration[] = [
-      {
-        id: 'slack',
-        name: 'Slack',
-        description: 'Connect Kronos to your Slack workspace for seamless team communication',
-        icon: 'slack',
-        category: 'communication',
-        status: 'coming_soon',
-        capabilities: ['send_messages', 'read_channels', 'manage_workspace'],
-        authType: 'oauth',
-      },
-      {
-        id: 'discord',
-        name: 'Discord',
-        description: 'Bring Kronos AI to your Discord server for community interactions',
-        icon: 'discord',
-        category: 'communication',
-        status: 'coming_soon',
-        capabilities: ['send_messages', 'read_channels', 'manage_server'],
-        authType: 'oauth',
-      },
-      {
-        id: 'github',
-        name: 'GitHub',
-        description: 'Integrate with GitHub for code assistance and repository management',
-        icon: 'github',
-        category: 'development',
-        status: 'coming_soon',
-        capabilities: ['read_repos', 'create_issues', 'manage_pull_requests'],
-        authType: 'oauth',
-      },
-      {
-        id: 'notion',
-        name: 'Notion',
-        description: 'Connect with Notion for document creation and knowledge management',
-        icon: 'notion',
-        category: 'productivity',
-        status: 'coming_soon',
-        capabilities: ['read_pages', 'create_pages', 'manage_database'],
-        authType: 'oauth',
-      },
-      {
-        id: 'gmail',
-        name: 'Gmail',
-        description: 'Send and manage emails through Gmail integration',
-        icon: 'gmail',
-        category: 'communication',
-        status: 'available',
-        capabilities: ['send_emails', 'read_emails', 'manage_labels'],
-        authType: 'oauth',
-      },
-    ];
-
-    return integrations;
+    return AVAILABLE_INTEGRATIONS;
   }
 
   /**
@@ -97,17 +43,22 @@ export class IntegrationsService {
   async getConnectedIntegrations(userId: string): Promise<Integration[]> {
     try {
       // Get connected accounts from Composio service
-      const connectedAccounts = await this.composioService.getConnectedAccounts(userId);
-      
+      const connectedAccounts = await this.composioService.getConnectedAccounts(
+        userId
+      );
+      if (connectedAccounts.length === 0) {
+        return [];
+      }
+
       // Get all available integrations
       const allIntegrations = await this.getAvailableIntegrations();
-      
+
       // Map connected accounts to integrations
-      const connectedIntegrations = allIntegrations.map(integration => {
+      const connectedIntegrations = allIntegrations.map((integration) => {
         const connectedAccount = connectedAccounts.find(
-          account => account.provider.toLowerCase() === integration.id
+          (account) => account.provider.toLowerCase() === integration.id
         );
-        
+
         if (connectedAccount) {
           return {
             ...integration,
@@ -116,13 +67,16 @@ export class IntegrationsService {
             status: 'available' as const,
           };
         }
-        
+
         return integration;
       });
 
       return connectedIntegrations;
     } catch (error) {
-      this.logger.error(`Failed to get connected integrations for user ${userId}:`, error);
+      this.logger.error(
+        `Failed to get connected integrations for user ${userId}:`,
+        error
+      );
       return [];
     }
   }
@@ -133,7 +87,7 @@ export class IntegrationsService {
   async getIntegrationStatus(): Promise<IntegrationStatus> {
     const isConfigured = this.composioService.isServiceConfigured();
     const integrations = await this.getAvailableIntegrations();
-    
+
     return {
       configured: isConfigured,
       integrations,
@@ -152,7 +106,7 @@ export class IntegrationsService {
           provider: 'GMAIL',
         });
       }
-      
+
       // For other integrations, return a placeholder response
       return {
         message: `${provider} integration is coming soon`,
@@ -160,7 +114,10 @@ export class IntegrationsService {
         provider,
       };
     } catch (error) {
-      this.logger.error(`Failed to connect integration ${provider} for user ${userId}:`, error);
+      this.logger.error(
+        `Failed to connect integration ${provider} for user ${userId}:`,
+        error
+      );
       throw error;
     }
   }
@@ -168,22 +125,30 @@ export class IntegrationsService {
   /**
    * Disconnect from a specific integration
    */
-  async disconnectIntegration(userId: string, provider: string): Promise<{ success: boolean }> {
+  async disconnectIntegration(
+    userId: string,
+    provider: string
+  ): Promise<{ success: boolean }> {
     try {
       // Get connected accounts to find the connection ID
-      const connectedAccounts = await this.composioService.getConnectedAccounts(userId);
-      const account = connectedAccounts.find(
-        acc => acc.provider.toLowerCase() === provider
+      const connectedAccounts = await this.composioService.getConnectedAccounts(
+        userId
       );
-      
+      const account = connectedAccounts.find(
+        (acc) => acc.provider.toLowerCase() === provider
+      );
+
       if (account) {
         await this.composioService.disconnectIntegration(userId, account.id);
         return { success: true };
       }
-      
+
       return { success: false };
     } catch (error) {
-      this.logger.error(`Failed to disconnect integration ${provider} for user ${userId}:`, error);
+      this.logger.error(
+        `Failed to disconnect integration ${provider} for user ${userId}:`,
+        error
+      );
       return { success: false };
     }
   }
@@ -193,6 +158,8 @@ export class IntegrationsService {
    */
   async getIntegrationDetails(provider: string): Promise<Integration | null> {
     const integrations = await this.getAvailableIntegrations();
-    return integrations.find(integration => integration.id === provider) || null;
+    return (
+      integrations.find((integration) => integration.id === provider) || null
+    );
   }
 }

@@ -188,58 +188,6 @@ export class ComposioIntegrationsService {
   }
 
   /**
-   * Sends an email using Gmail integration
-   * 
-   * @param request - The email sending request
-   * @returns Promise<SendEmailResponse> - Result of the email sending operation
-   */
-  async sendEmailViaGmail(request: SendEmailRequest): Promise<SendEmailResponse> {
-    this.validateConfiguration();
-    
-    try {
-      this.logger.log(`Sending email for user ${request.userId} to ${request.recipient}`);
-      
-      // Retrieve Gmail tools for the user
-      const tools = await this.getAvailableTools(request.userId, ['GMAIL']);
-      
-      if (tools.length === 0) {
-        throw new NotFoundException(
-          'No Gmail integration found. Please connect your Gmail account first.'
-        );
-      }
-
-      // In a production environment, you would integrate with OpenAI or another AI provider
-      // to generate and send the email using the retrieved tools
-      const emailData = {
-        recipient: request.overwriteRecipient || request.recipient,
-        subject: request.subject,
-        content: request.content,
-        toolsAvailable: tools.length,
-        timestamp: new Date().toISOString(),
-      };
-
-      this.logger.log(`Email prepared for sending to ${emailData.recipient}`);
-
-      return {
-        success: true,
-        message: 'Email has been prepared for sending using Gmail integration',
-        toolsAvailable: true,
-        executionResult: emailData,
-      };
-    } catch (error) {
-      this.logger.error(`Failed to send email:`, error);
-      
-      if (error instanceof NotFoundException) {
-        throw error;
-      }
-      
-      throw new BadRequestException(
-        'Unable to send email. Please check your Gmail integration and try again.'
-      );
-    }
-  }
-
-  /**
    * Retrieves all connected accounts for a user
    * 
    * @param userId - The user identifier
