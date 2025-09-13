@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { apiService } from '../services/apiService';
-import type { ChatMessage, StreamChatRequest } from '@kronos/shared-types';
+import type { ChatMessage, ChatRequest } from '@kronos/shared-types';
 
 interface ChatInterfaceProps {
   userId?: string;
@@ -65,18 +65,16 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
 
     try {
       // Create stream request
-      const streamRequest: StreamChatRequest = {
+      const streamRequest: ChatRequest = {
         message: userMessage.content,
-        conversationHistory: messages,
         conversationId: currentConversationId || undefined,
-        systemPrompt: "You are Kronos, a helpful AI assistant. You are knowledgeable, friendly, and provide clear, concise responses."
       };
 
       // Create abort controller for this request
       abortControllerRef.current = new AbortController();
 
       // Get readable stream
-      const stream = await apiService.streamChatMessage(streamRequest);
+      const stream = await apiService.sendChatMessage(streamRequest);
       const reader = stream.getReader();
       const decoder = new TextDecoder();
 
