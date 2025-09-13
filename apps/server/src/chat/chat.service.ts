@@ -22,7 +22,7 @@ export class ChatService {
    * @param request The chat request
    * @returns A ReadableStream that sends the response
    */
-  async sendMessage(request: ChatRequest): Promise<ReadableStream> {
+  async sendMessage(request: ChatRequest, userId: string): Promise<ReadableStream> {
     const conversationId =
       request.conversationId || this.kronosAgent.generateConversationId();
     const kronosAgent = this.kronosAgent; // Capture reference to avoid 'this' context issues
@@ -41,7 +41,8 @@ export class ChatService {
           // Get streaming response from Kronos agent
           const stream = await kronosAgent.streamResponse(
             request.message,
-            request.conversationHistory || []
+            request.conversationHistory || [],
+            userId,
           );
 
           const reader = stream.getReader();

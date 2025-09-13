@@ -1,7 +1,7 @@
-import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
-import { ChatPromptTemplate } from "@langchain/core/prompts";
-import { HumanMessage, SystemMessage } from "@langchain/core/messages";
-import type { ChatMessage } from "@kronos/shared-types";
+import { ChatGoogleGenerativeAI } from '@langchain/google-genai';
+import { HumanMessage, SystemMessage } from '@langchain/core/messages';
+import type { ChatMessage } from '@kronos/shared-types';
+import { Composio } from '@composio/core';
 
 export class KronosAgent {
   private model: ChatGoogleGenerativeAI;
@@ -16,12 +16,12 @@ export class KronosAgent {
     try {
       // Initialize Gemini model
       this.model = new ChatGoogleGenerativeAI({
-        model: "gemini-2.0-flash",
+        model: 'gemini-2.0-flash',
         temperature: 0.7,
         maxOutputTokens: 2048,
         apiKey: process.env.GEMINI_API_KEY,
       });
-      
+
       console.log('✅ KronosAgent initialized successfully with Gemini model');
     } catch (error) {
       console.error('❌ Failed to initialize Gemini model:', error);
@@ -42,41 +42,6 @@ Always respond in a helpful and friendly manner.`;
   }
 
   /**
-   * Generate a response using LangChain with Gemini
-   * @param message The user's message
-   * @param conversationHistory Previous messages in the conversation
-   * @returns The AI's response
-   */
-  async generateResponse(
-    message: string,
-    conversationHistory: ChatMessage[] = []
-  ): Promise<string> {
-    try {
-      // Build messages array
-      const messages = [
-        new SystemMessage(this.systemPrompt),
-        ...conversationHistory.map((msg) => {
-          if (msg.role === 'user') {
-            return new HumanMessage(msg.content);
-          } else if (msg.role === 'assistant') {
-            return new HumanMessage(msg.content); // Note: Gemini uses HumanMessage for assistant responses in conversation history
-          }
-          return new HumanMessage(msg.content);
-        }),
-        new HumanMessage(message),
-      ];
-
-      // Generate response
-      const response = await this.model.invoke(messages);
-      
-      return response.content as string;
-    } catch (error) {
-      console.error('Error generating response:', error);
-      throw new Error('Failed to generate response');
-    }
-  }
-
-  /**
    * Stream a response using LangChain with Gemini
    * @param message The user's message
    * @param conversationHistory Previous messages in the conversation
@@ -84,7 +49,8 @@ Always respond in a helpful and friendly manner.`;
    */
   async streamResponse(
     message: string,
-    conversationHistory: ChatMessage[] = []
+    conversationHistory: ChatMessage[] = [],
+    userId: string
   ): Promise<ReadableStream> {
     // Build messages array
     const messages = [
@@ -105,21 +71,33 @@ Always respond in a helpful and friendly manner.`;
 
     // Check if model is properly initialized
     if (!model) {
-      throw new Error('Model not properly initialized. Please check your GEMINI_API_KEY.');
+      throw new Error(
+        'Model not properly initialized. Please check your GEMINI_API_KEY.'
+      );
     }
+
+    const composio = new Composio({
+      apiKey: process.env.COMPOSIO_API_KEY,
+    });
+
+    const tools = await composio.tools.get(userId, {
+      tools: ['GMAIL_FETCH_EMAILS'],
+    });
+
+    console.dir(tools, { depth: null });
 
     // Create streaming response
     return new ReadableStream({
       async start(controller) {
         try {
-          const stream = await model.stream(messages);
-          
+          const stream = await model.bindTools(tools).stream(messages);
+
           for await (const chunk of stream) {
             if (chunk.content) {
               const contentChunk = `data: ${JSON.stringify({
                 type: 'content',
                 data: chunk.content,
-                timestamp: new Date().toISOString()
+                timestamp: new Date().toISOString(),
               })}\n\n`;
               controller.enqueue(new TextEncoder().encode(contentChunk));
             }
@@ -128,10 +106,10 @@ Always respond in a helpful and friendly manner.`;
           // Send done signal
           const doneChunk = `data: ${JSON.stringify({
             type: 'done',
-            timestamp: new Date().toISOString()
+            timestamp: new Date().toISOString(),
           })}\n\n`;
           controller.enqueue(new TextEncoder().encode(doneChunk));
-          
+
           // Send final [DONE] marker
           controller.enqueue(new TextEncoder().encode('data: [DONE]\n\n'));
           controller.close();
@@ -140,12 +118,12 @@ Always respond in a helpful and friendly manner.`;
           const errorChunk = `data: ${JSON.stringify({
             type: 'error',
             error: 'Failed to generate response',
-            timestamp: new Date().toISOString()
+            timestamp: new Date().toISOString(),
           })}\n\n`;
           controller.enqueue(new TextEncoder().encode(errorChunk));
           controller.close();
         }
-      }
+      },
     });
   }
 

@@ -30,12 +30,15 @@ export class ChatController {
     res.setHeader('Access-Control-Allow-Headers', 'Cache-Control');
 
     try {
-      const stream = await this.chatService.sendMessage(chatRequest);
+      const stream = await this.chatService.sendMessage(
+        chatRequest,
+        req.user.id
+      );
       const reader = stream.getReader();
 
       while (true) {
         const { done, value } = await reader.read();
-        
+
         if (done) {
           break;
         }
