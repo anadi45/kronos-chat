@@ -1,7 +1,7 @@
 import {
   Controller,
-  Post,
   Get,
+  Post,
   Delete,
   Body,
   Param,
@@ -9,38 +9,110 @@ import {
   Request,
   HttpCode,
   HttpStatus,
-  Query,
   ValidationPipe,
+  Query,
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import {
-  ComposioIntegrationsService,
-  CreateIntegrationRequest,
-  CreateIntegrationResponse,
-  SendEmailRequest,
-  SendEmailResponse,
-  IntegrationProvider,
-  ConnectedAccount,
-} from './composio-integrations.service';
+import { IntegrationsService } from './integrations.service';
+import { ComposioIntegrationsService } from '../composio/composio-integrations.service';
 
 /**
- * Professional controller for managing Composio integrations
- * Provides RESTful API endpoints for OAuth connections, tool management, and integration operations
+ * Controller for managing all integrations
+ * Provides unified endpoints for listing integrations, managing connections, and integration operations
  */
-@Controller('composio')
+@Controller('integrations')
 @UseGuards(JwtAuthGuard)
-export class ComposioIntegrationsController {
+export class IntegrationsController {
   constructor(
+    private readonly integrationsService: IntegrationsService,
     private readonly composioService: ComposioIntegrationsService,
   ) {}
 
   /**
-   * Retrieves all available integration providers
+   * Get all available integrations
    * 
-   * @returns Promise<IntegrationProvider[]> - List of available providers
+   * @returns Promise<any[]> - List of available integrations
+   */
+  @Get()
+  async getAvailableIntegrations(): Promise<any[]> {
+    return this.integrationsService.getAvailableIntegrations();
+  }
+
+  /**
+   * Get user's connected integrations
+   * 
+   * @param req - Express request object containing user information
+   * @returns Promise<any[]> - List of user's connected integrations
+   */
+  @Get('connected')
+  async getConnectedIntegrations(@Request() req: any): Promise<any[]> {
+    const userId = req.user.id;
+    return this.integrationsService.getConnectedIntegrations(userId);
+  }
+
+  /**
+   * Get integration status and configuration
+   * 
+   * @returns Promise<{ configured: boolean; integrations: any[] }> - Integration status
+   */
+  @Get('status')
+  async getIntegrationStatus(): Promise<{ configured: boolean; integrations: any[] }> {
+    return this.integrationsService.getIntegrationStatus();
+  }
+
+  /**
+   * Connect to a specific integration
+   * 
+   * @param provider - The integration provider identifier
+   * @param req - Express request object containing user information
+   * @returns Promise<any> - Connection result
+   */
+  @Post(':provider/connect')
+  async connectIntegration(
+    @Param('provider') provider: string,
+    @Request() req: any,
+  ): Promise<any> {
+    const userId = req.user.id;
+    return this.integrationsService.connectIntegration(userId, provider);
+  }
+
+  /**
+   * Disconnect from a specific integration
+   * 
+   * @param provider - The integration provider identifier
+   * @param req - Express request object containing user information
+   * @returns Promise<{ success: boolean }> - Disconnection result
+   */
+  @Delete(':provider/disconnect')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async disconnectIntegration(
+    @Param('provider') provider: string,
+    @Request() req: any,
+  ): Promise<{ success: boolean }> {
+    const userId = req.user.id;
+    return this.integrationsService.disconnectIntegration(userId, provider);
+  }
+
+  /**
+   * Get integration details and capabilities
+   * 
+   * @param provider - The integration provider identifier
+   * @returns Promise<any> - Integration details
+   */
+  @Get(':provider')
+  async getIntegrationDetails(@Param('provider') provider: string): Promise<any> {
+    return this.integrationsService.getIntegrationDetails(provider);
+  }
+
+  // Composio-specific endpoints (routed through integrations)
+
+  /**
+   * Retrieves all available integration providers from Composio
+   * 
+   * @returns Promise<any[]> - List of available providers
    */
   @Get('providers')
-  async getAvailableProviders(): Promise<IntegrationProvider[]> {
+  async getAvailableProviders(): Promise<any[]> {
     return this.composioService.getAvailableProviders();
   }
 
@@ -49,13 +121,13 @@ export class ComposioIntegrationsController {
    * 
    * @param request - The integration connection request
    * @param req - Express request object containing user information
-   * @returns Promise<CreateIntegrationResponse> - Connection details
+   * @returns Promise<any> - Connection details
    */
   @Post('connections')
   async createIntegrationConnection(
-    @Body(ValidationPipe) request: Omit<CreateIntegrationRequest, 'userId'>,
+    @Body(ValidationPipe) request: any,
     @Request() req: any,
-  ): Promise<CreateIntegrationResponse> {
+  ): Promise<any> {
     const userId = req.user.id;
     
     return this.composioService.createIntegrationConnection({
@@ -68,10 +140,10 @@ export class ComposioIntegrationsController {
    * Retrieves all connected accounts for the authenticated user
    * 
    * @param req - Express request object containing user information
-   * @returns Promise<ConnectedAccount[]> - List of connected accounts
+   * @returns Promise<any[]> - List of connected accounts
    */
   @Get('connections')
-  async getConnectedAccounts(@Request() req: any): Promise<ConnectedAccount[]> {
+  async getConnectedAccounts(@Request() req: any): Promise<any[]> {
     const userId = req.user.id;
     return this.composioService.getConnectedAccounts(userId);
   }
@@ -85,7 +157,7 @@ export class ComposioIntegrationsController {
    */
   @Delete('connections/:connectionId')
   @HttpCode(HttpStatus.NO_CONTENT)
-  async disconnectIntegration(
+  async disconnectIntegrationConnection(
     @Param('connectionId') connectionId: string,
     @Request() req: any,
   ): Promise<{ success: boolean }> {
@@ -116,13 +188,13 @@ export class ComposioIntegrationsController {
    * 
    * @param request - The email sending request
    * @param req - Express request object containing user information
-   * @returns Promise<SendEmailResponse> - Email sending result
+   * @returns Promise<any> - Email sending result
    */
   @Post('email/send')
   async sendEmail(
-    @Body(ValidationPipe) request: Omit<SendEmailRequest, 'userId'>,
+    @Body(ValidationPipe) request: any,
     @Request() req: any,
-  ): Promise<SendEmailResponse> {
+  ): Promise<any> {
     const userId = req.user.id;
     
     return this.composioService.sendEmailViaGmail({
@@ -156,15 +228,15 @@ export class ComposioIntegrationsController {
    * 
    * @returns Promise<{ configured: boolean; message: string }> - Configuration status
    */
-  @Get('status')
+  @Get('service/status')
   async getServiceStatus(): Promise<{ configured: boolean; message: string }> {
     const isConfigured = this.composioService.isServiceConfigured();
     
     return {
       configured: isConfigured,
       message: isConfigured 
-        ? 'Composio service is properly configured and ready to use'
-        : 'Composio service is not configured. Please check COMPOSIO_API_KEY environment variable',
+        ? 'Integration service is properly configured and ready to use'
+        : 'Integration service is not configured. Please check COMPOSIO_API_KEY environment variable',
     };
   }
 }

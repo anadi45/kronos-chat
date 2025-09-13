@@ -190,19 +190,19 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
   };
 
   return (
-    <div className="flex flex-col h-full bg-transparent">
+    <div className="chat-container">
       {/* Chat Controls */}
-      <div className="flex items-center justify-between p-4 border-b border-white/10">
+      <div className="chat-header">
         <div>
           <p className="text-sm text-gray-300">
             {currentConversationId ? `Conversation: ${currentConversationId.slice(-8)}` : 'New conversation'}
           </p>
         </div>
-        <div className="flex space-x-2">
+        <div className="chat-controls">
           {isStreaming && (
             <button
               onClick={handleStopStreaming}
-              className="px-3 py-1 bg-red-500/20 text-red-400 rounded-md hover:bg-red-500/30 text-sm border border-red-500/30"
+              className="chat-control-btn stop"
             >
               Stop
             </button>
@@ -210,7 +210,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
           <button
             onClick={clearConversation}
             disabled={isStreaming}
-            className="px-3 py-1 bg-white/10 text-gray-300 rounded-md hover:bg-white/20 disabled:opacity-50 text-sm border border-white/20"
+            className="chat-control-btn clear"
           >
             Clear
           </button>
@@ -218,14 +218,12 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
       </div>
 
       {/* Messages Area */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div className="chat-messages">
         {messages.length === 0 && !streamingMessage && (
-          <div className="text-center py-12">
-            <div className="text-4xl mb-4">💬</div>
-            <h3 className="text-lg font-medium text-white mb-2">
-              Welcome to Kronos AI
-            </h3>
-            <p className="text-gray-300 max-w-md mx-auto">
+          <div className="chat-welcome">
+            <div className="chat-welcome-icon">💬</div>
+            <h3>Welcome to Kronos AI</h3>
+            <p>
               Start a conversation with our AI assistant. Ask questions, get help, or just chat!
             </p>
           </div>
@@ -234,40 +232,28 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
         {messages.map((message, index) => (
           <div
             key={index}
-            className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
+            className={`chat-message ${message.role}`}
           >
-            <div className={`max-w-3xl ${message.role === 'user' ? 'ml-12' : 'mr-12'}`}>
-              <div
-                className={`rounded-lg px-4 py-2 ${
-                  message.role === 'user'
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-white/10 text-white border border-white/20'
-                }`}
-              >
-                <div className="whitespace-pre-wrap break-words">
-                  {message.content}
-                </div>
-                {message.timestamp && (
-                  <div className={`text-xs mt-1 ${
-                    message.role === 'user' ? 'text-blue-100' : 'text-gray-400'
-                  }`}>
-                    {formatTimestamp(message.timestamp)}
-                  </div>
-                )}
+            <div className={`message-bubble ${message.role}`}>
+              <div className="whitespace-pre-wrap break-words">
+                {message.content}
               </div>
+              {message.timestamp && (
+                <div className="message-timestamp">
+                  {formatTimestamp(message.timestamp)}
+                </div>
+              )}
             </div>
           </div>
         ))}
 
         {/* Streaming Message */}
         {isStreaming && streamingMessage && (
-          <div className="flex justify-start">
-            <div className="max-w-3xl mr-12">
-              <div className="rounded-lg px-4 py-2 bg-white/10 text-white border border-white/20">
-                <div className="whitespace-pre-wrap break-words">
-                  {streamingMessage}
-                  <span className="inline-block w-2 h-5 bg-white/60 ml-1 animate-pulse">|</span>
-                </div>
+          <div className="chat-message assistant">
+            <div className="message-bubble assistant">
+              <div className="whitespace-pre-wrap break-words">
+                {streamingMessage}
+                <span className="chat-streaming-cursor"></span>
               </div>
             </div>
           </div>
@@ -275,29 +261,23 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
 
         {/* Loading indicator */}
         {isStreaming && !streamingMessage && (
-          <div className="flex justify-start">
-            <div className="max-w-3xl mr-12">
-              <div className="rounded-lg px-4 py-3 bg-white/10 text-white border border-white/20">
-                <div className="flex items-center space-x-2">
-                  <div className="flex space-x-1">
-                    <div className="w-2 h-2 bg-white/60 rounded-full animate-bounce"></div>
-                    <div className="w-2 h-2 bg-white/60 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                    <div className="w-2 h-2 bg-white/60 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-                  </div>
-                  <span className="text-sm text-gray-300">Kronos is thinking...</span>
-                </div>
+          <div className="chat-message assistant">
+            <div className="chat-loading">
+              <div className="chat-loading-dots">
+                <div className="chat-loading-dot"></div>
+                <div className="chat-loading-dot"></div>
+                <div className="chat-loading-dot"></div>
               </div>
+              <span className="text-sm text-gray-300">Kronos is thinking...</span>
             </div>
           </div>
         )}
 
         {/* Error Message */}
         {error && (
-          <div className="bg-red-500/20 border border-red-500/30 rounded-lg p-4">
-            <div className="flex items-center">
-              <div className="text-red-400 mr-2">⚠️</div>
-              <div className="text-red-300">{error}</div>
-            </div>
+          <div className="chat-error">
+            <div>⚠️</div>
+            <div>{error}</div>
           </div>
         )}
 
@@ -305,24 +285,22 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
       </div>
 
       {/* Input Area */}
-      <div className="border-t border-white/10 bg-white/5 p-4">
-        <div className="flex items-end space-x-4">
-          <div className="flex-1">
-            <textarea
-              ref={textareaRef}
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyPress={handleKeyPress}
-              placeholder="Type your message here... (Press Enter to send, Shift+Enter for new line)"
-              className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none min-h-[50px] max-h-32 text-white placeholder-gray-400"
-              disabled={isStreaming}
-              rows={1}
-            />
-          </div>
+      <div className="chat-input-container">
+        <div className="chat-input-wrapper">
+          <textarea
+            ref={textareaRef}
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyPress={handleKeyPress}
+            placeholder="Type your message here... (Press Enter to send, Shift+Enter for new line)"
+            className="chat-input"
+            disabled={isStreaming}
+            rows={1}
+          />
           <button
             onClick={handleSendMessage}
             disabled={!input.trim() || isStreaming}
-            className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center space-x-2"
+            className="chat-send-btn"
           >
             {isStreaming ? (
               <>
@@ -343,7 +321,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
           </button>
         </div>
         
-        <div className="text-xs text-gray-400 mt-2 text-center">
+        <div className="chat-disclaimer">
           Kronos AI can make mistakes. Consider checking important information.
         </div>
       </div>

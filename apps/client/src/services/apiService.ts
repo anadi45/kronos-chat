@@ -7,6 +7,11 @@ import type {
   ChatRequest,
   ChatResponse,
   StreamChatRequest,
+  Integration,
+  IntegrationStatus,
+  ConnectIntegrationResponse,
+  DisconnectIntegrationResponse,
+  IntegrationDetails,
 } from '@kronos/shared-types';
 
 // API Configuration
@@ -189,6 +194,137 @@ class ApiService {
     }
 
     return response.body;
+  }
+
+  // Integration Methods
+
+  /**
+   * Get all available integrations
+   * GET /integrations
+   */
+  async getAvailableIntegrations(): Promise<Integration[]> {
+    const response = await this.client.get('/integrations');
+    return response.data;
+  }
+
+  /**
+   * Get user's connected integrations
+   * GET /integrations/connected
+   */
+  async getConnectedIntegrations(): Promise<Integration[]> {
+    const response = await this.client.get('/integrations/connected');
+    return response.data;
+  }
+
+  /**
+   * Get integration status and configuration
+   * GET /integrations/status
+   */
+  async getIntegrationStatus(): Promise<IntegrationStatus> {
+    const response = await this.client.get('/integrations/status');
+    return response.data;
+  }
+
+  /**
+   * Connect to a specific integration
+   * POST /integrations/:provider/connect
+   */
+  async connectIntegration(provider: string): Promise<ConnectIntegrationResponse> {
+    const response = await this.client.post(`/integrations/${provider}/connect`);
+    return response.data;
+  }
+
+  /**
+   * Disconnect from a specific integration
+   * DELETE /integrations/:provider/disconnect
+   */
+  async disconnectIntegration(provider: string): Promise<DisconnectIntegrationResponse> {
+    const response = await this.client.delete(`/integrations/${provider}/disconnect`);
+    return response.data;
+  }
+
+  /**
+   * Get integration details and capabilities
+   * GET /integrations/:provider
+   */
+  async getIntegrationDetails(provider: string): Promise<IntegrationDetails> {
+    const response = await this.client.get(`/integrations/${provider}`);
+    return response.data;
+  }
+
+  // Composio-specific endpoints (routed through integrations)
+
+  /**
+   * Get available integration providers from Composio
+   * GET /integrations/providers
+   */
+  async getAvailableProviders(): Promise<any[]> {
+    const response = await this.client.get('/integrations/providers');
+    return response.data;
+  }
+
+  /**
+   * Create integration connection via Composio
+   * POST /integrations/connections
+   */
+  async createIntegrationConnection(request: any): Promise<any> {
+    const response = await this.client.post('/integrations/connections', request);
+    return response.data;
+  }
+
+  /**
+   * Get connected accounts via Composio
+   * GET /integrations/connections
+   */
+  async getConnectedAccounts(): Promise<any[]> {
+    const response = await this.client.get('/integrations/connections');
+    return response.data;
+  }
+
+  /**
+   * Disconnect integration connection via Composio
+   * DELETE /integrations/connections/:connectionId
+   */
+  async disconnectIntegrationConnection(connectionId: string): Promise<{ success: boolean }> {
+    const response = await this.client.delete(`/integrations/connections/${connectionId}`);
+    return response.data;
+  }
+
+  /**
+   * Get available tools via Composio
+   * GET /integrations/tools
+   */
+  async getAvailableTools(toolkits?: string): Promise<any[]> {
+    const params = toolkits ? { toolkits } : {};
+    const response = await this.client.get('/integrations/tools', { params });
+    return response.data;
+  }
+
+  /**
+   * Send email via Gmail integration
+   * POST /integrations/email/send
+   */
+  async sendEmail(request: any): Promise<any> {
+    const response = await this.client.post('/integrations/email/send', request);
+    return response.data;
+  }
+
+  /**
+   * Create auth configuration for a provider
+   * POST /integrations/auth-configs/:provider
+   */
+  async createAuthConfiguration(provider: string): Promise<any> {
+    const response = await this.client.post(`/integrations/auth-configs/${provider}`);
+    return response.data;
+  }
+
+  /**
+   * Get service configuration status
+   * GET /integrations/service/status
+   */
+  async getServiceStatus(): Promise<{ configured: boolean; message: string }> {
+    const response = await this.client.get('/integrations/service/status');
+    return response.data;
   }
 }
 
