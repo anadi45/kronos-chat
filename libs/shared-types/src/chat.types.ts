@@ -7,9 +7,7 @@ export interface ChatMessage {
 export interface ChatRequest {
   message: string;
   conversationId?: string;
-  systemPrompt?: string;
-  temperature?: number;
-  maxTokens?: number;
+  conversationHistory?: ChatMessage[];
 }
 
 export interface ChatResponse {
@@ -18,14 +16,6 @@ export interface ChatResponse {
   timestamp: string;
 }
 
-export interface StreamChatRequest {
-  message: string;
-  conversationHistory?: ChatMessage[];
-  conversationId?: string;
-  systemPrompt?: string;
-  temperature?: number;
-  maxTokens?: number;
-}
 
 export interface Conversation {
   id: string;

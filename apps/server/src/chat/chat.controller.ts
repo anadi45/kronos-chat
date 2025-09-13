@@ -5,29 +5,49 @@ import {
   Body,
   UseGuards,
   Request,
-  HttpCode,
-  HttpStatus,
+  Res,
 } from '@nestjs/common';
+import type { Response } from 'express';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import type { ChatRequest, ChatResponse } from '@kronos/shared-types';
+import { ChatService } from './chat.service';
+import type { ChatRequest } from '@kronos/shared-types';
 
 @Controller('chat')
 @UseGuards(JwtAuthGuard)
 export class ChatController {
+  constructor(private readonly chatService: ChatService) {}
   @Post()
-  @HttpCode(HttpStatus.OK)
   async sendMessage(
     @Request() req,
-    @Body() chatRequest: ChatRequest
-  ): Promise<ChatResponse> {
-    // Basic implementation - would integrate with actual AI service
-    const response: ChatResponse = {
-      message: `Echo: ${chatRequest.message}`,
-      conversationId: chatRequest.conversationId || `conv_${Date.now()}`,
-      timestamp: new Date().toISOString(),
-    };
+    @Body() chatRequest: ChatRequest,
+    @Res() res: Response
+  ): Promise<void> {
+    // Set headers for Server-Sent Events
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Headers', 'Cache-Control');
 
-    return response;
+    try {
+      const stream = await this.chatService.sendMessage(chatRequest);
+      const reader = stream.getReader();
+
+      while (true) {
+        const { done, value } = await reader.read();
+        
+        if (done) {
+          break;
+        }
+
+        res.write(value);
+      }
+
+      res.end();
+    } catch (error) {
+      console.error('Streaming error:', error);
+      res.status(500).json({ error: 'Streaming failed' });
+    }
   }
 
   @Get('conversations')

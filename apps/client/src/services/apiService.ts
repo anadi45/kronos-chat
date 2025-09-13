@@ -5,8 +5,6 @@ import type {
   AuthToken,
   UserProfile,
   ChatRequest,
-  ChatResponse,
-  StreamChatRequest,
   Integration,
   IntegrationStatus,
   ConnectIntegrationResponse,
@@ -167,14 +165,9 @@ class ApiService {
 
 
   // Chat Methods
-  async sendChatMessage(request: ChatRequest): Promise<ChatResponse> {
-    const response = await this.client.post('/chat/message', request);
-    return response.data;
-  }
-
-  async streamChatMessage(request: StreamChatRequest): Promise<ReadableStream> {
+  async sendChatMessage(request: ChatRequest): Promise<ReadableStream> {
     const response = await fetch(
-      `${this.client.defaults.baseURL}/chat/stream`,
+      `${this.client.defaults.baseURL}/chat`,
       {
         method: 'POST',
         headers: {
