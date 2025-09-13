@@ -45,6 +45,11 @@ export class User {
   @Column({ name: 'last_login', type: 'timestamptz', nullable: false })
   lastLogin: Date;
 
+  @Column({ name: 'composio_auth_config_id', type: 'varchar', length: 1000, nullable: true })
+  @IsOptional()
+  @IsString()
+  composioAuthConfigId?: string;
+
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt: Date;
 

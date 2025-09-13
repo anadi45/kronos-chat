@@ -1,30 +1,17 @@
 import axios, { type AxiosInstance, type AxiosResponse } from 'axios';
 import type {
-  AuthConfig,
-  AuthConfigRequest,
-  AuthConfigUpdateRequest,
-  AuthConfigListResponse,
-  Toolkit,
-  ToolkitAction as Action,
-  ConnectedAccount,
-  ConnectionRequest,
-  EnhancedConnectionRequest,
-  ConnectionResponse,
-  ToolExecuteRequest,
-  ToolExecuteResponse,
   UserSignup,
   UserLogin,
   AuthToken,
   UserProfile,
-  IntegrationSummary,
-  IntegrationDashboard,
-  IntegrationCategory,
-  IntegrationStats,
-  IntegrationActionRequest,
-  IntegrationActionResponse,
   ChatRequest,
   ChatResponse,
   StreamChatRequest,
+  Integration,
+  IntegrationStatus,
+  ConnectIntegrationResponse,
+  DisconnectIntegrationResponse,
+  IntegrationDetails,
 } from '@kronos/shared-types';
 
 // API Configuration
@@ -178,214 +165,6 @@ class ApiService {
     return true;
   }
 
-  // Health Check
-  async checkComposioHealth(): Promise<{
-    configured: boolean;
-    message: string;
-  }> {
-    const response = await this.client.get('/composio/health');
-    return response.data;
-  }
-
-  // Auth Config Management
-  async listAuthConfigs(params?: {
-    is_composio_managed?: boolean;
-    toolkit_slug?: string;
-    show_disabled?: boolean;
-    search?: string;
-    limit?: number;
-    cursor?: string;
-  }): Promise<AuthConfigListResponse> {
-    const response = await this.client.get('/composio/auth-configs', {
-      params,
-    });
-    return response.data;
-  }
-
-  async getAuthConfig(authConfigId: string): Promise<AuthConfig> {
-    const response = await this.client.get(
-      `/composio/auth-configs/${authConfigId}`
-    );
-    return response.data;
-  }
-
-  async createAuthConfig(request: AuthConfigRequest): Promise<AuthConfig> {
-    const response = await this.client.post('/composio/auth-configs', request);
-    return response.data;
-  }
-
-  async updateAuthConfig(
-    authConfigId: string,
-    request: AuthConfigUpdateRequest
-  ): Promise<AuthConfig> {
-    const response = await this.client.put(
-      `/composio/auth-configs/${authConfigId}`,
-      request
-    );
-    return response.data;
-  }
-
-  async deleteAuthConfig(
-    authConfigId: string
-  ): Promise<{ success: boolean; message: string }> {
-    const response = await this.client.delete(
-      `/composio/auth-configs/${authConfigId}`
-    );
-    return response.data;
-  }
-
-  // Toolkit Management
-  async getAvailableToolkits(params?: {
-    search?: string;
-    limit?: number;
-  }): Promise<Toolkit[]> {
-    const response = await this.client.get('/composio/toolkits', { params });
-    return response.data;
-  }
-
-  async getToolkitActions(
-    toolkitSlug: string,
-    params?: {
-      limit?: number;
-    }
-  ): Promise<Action[]> {
-    const response = await this.client.get(
-      `/composio/toolkits/${toolkitSlug}/actions`,
-      { params }
-    );
-    return response.data;
-  }
-
-  // Connection Management
-  async initiateConnection(
-    request: ConnectionRequest
-  ): Promise<ConnectionResponse> {
-    const response = await this.client.post(
-      '/composio/connections/initiate',
-      request
-    );
-    return response.data;
-  }
-
-  async initiateEnhancedConnection(
-    request: EnhancedConnectionRequest
-  ): Promise<ConnectionResponse> {
-    const response = await this.client.post(
-      '/composio/connections/initiate-enhanced',
-      request
-    );
-    return response.data;
-  }
-
-  async listConnections(userId: string): Promise<ConnectedAccount[]> {
-    const response = await this.client.get(`/composio/connections/${userId}`);
-    return response.data;
-  }
-
-  async getConnection(accountId: string): Promise<ConnectedAccount> {
-    const response = await this.client.get(
-      `/composio/connections/account/${accountId}`
-    );
-    return response.data;
-  }
-
-  async enableConnection(
-    accountId: string
-  ): Promise<{ success: boolean; message: string }> {
-    const response = await this.client.post(
-      `/composio/connections/${accountId}/enable`
-    );
-    return response.data;
-  }
-
-  async disableConnection(
-    accountId: string
-  ): Promise<{ success: boolean; message: string }> {
-    const response = await this.client.post(
-      `/composio/connections/${accountId}/disable`
-    );
-    return response.data;
-  }
-
-  async refreshConnection(
-    accountId: string
-  ): Promise<{ success: boolean; message: string }> {
-    const response = await this.client.post(
-      `/composio/connections/${accountId}/refresh`
-    );
-    return response.data;
-  }
-
-  async deleteConnection(
-    accountId: string
-  ): Promise<{ success: boolean; message: string }> {
-    const response = await this.client.delete(
-      `/composio/connections/${accountId}`
-    );
-    return response.data;
-  }
-
-  // Tool Execution
-  async executeTool(request: ToolExecuteRequest): Promise<ToolExecuteResponse> {
-    const response = await this.client.post('/composio/tools/execute', request);
-    return response.data;
-  }
-
-  // Integration Dashboard Methods
-  async getIntegrationDashboard(): Promise<IntegrationDashboard> {
-    const response = await this.client.get('/integrations/dashboard');
-    return response.data;
-  }
-
-  async getIntegrationStats(): Promise<IntegrationStats> {
-    const response = await this.client.get('/integrations/stats');
-    return response.data;
-  }
-
-  async getIntegrationSummary(params?: {
-    category?: string;
-    connected_only?: boolean;
-    search?: string;
-  }): Promise<IntegrationSummary[]> {
-    const response = await this.client.get('/integrations/summary', { params });
-    return response.data;
-  }
-
-  async getIntegrationDetails(provider: string): Promise<IntegrationSummary> {
-    const response = await this.client.get(`/integrations/${provider}/details`);
-    return response.data;
-  }
-
-  async performIntegrationAction(
-    actionRequest: IntegrationActionRequest
-  ): Promise<IntegrationActionResponse> {
-    const response = await this.client.post(
-      '/integrations/action',
-      actionRequest
-    );
-    return response.data;
-  }
-
-  async getIntegrationCategories(): Promise<{
-    categories: IntegrationCategory[];
-    total_categories: number;
-  }> {
-    const response = await this.client.get('/integrations/categories');
-    return response.data;
-  }
-
-  async getIntegrationHealth(): Promise<{
-    composio_health: boolean;
-    total_connections: number;
-    healthy_connections: number;
-    failed_connections: number;
-    health_percentage: number;
-    status: string;
-    last_updated: string;
-  }> {
-    const response = await this.client.get('/integrations/health');
-    return response.data;
-  }
 
   // Chat Methods
   async sendChatMessage(request: ChatRequest): Promise<ChatResponse> {
@@ -415,6 +194,137 @@ class ApiService {
     }
 
     return response.body;
+  }
+
+  // Integration Methods
+
+  /**
+   * Get all available integrations
+   * GET /integrations
+   */
+  async getAvailableIntegrations(): Promise<Integration[]> {
+    const response = await this.client.get('/integrations');
+    return response.data;
+  }
+
+  /**
+   * Get user's connected integrations
+   * GET /integrations/connected
+   */
+  async getConnectedIntegrations(): Promise<Integration[]> {
+    const response = await this.client.get('/integrations/connected');
+    return response.data;
+  }
+
+  /**
+   * Get integration status and configuration
+   * GET /integrations/status
+   */
+  async getIntegrationStatus(): Promise<IntegrationStatus> {
+    const response = await this.client.get('/integrations/status');
+    return response.data;
+  }
+
+  /**
+   * Connect to a specific integration
+   * POST /integrations/:provider/connect
+   */
+  async connectIntegration(provider: string): Promise<ConnectIntegrationResponse> {
+    const response = await this.client.post(`/integrations/${provider}/connect`);
+    return response.data;
+  }
+
+  /**
+   * Disconnect from a specific integration
+   * DELETE /integrations/:provider/disconnect
+   */
+  async disconnectIntegration(provider: string): Promise<DisconnectIntegrationResponse> {
+    const response = await this.client.delete(`/integrations/${provider}/disconnect`);
+    return response.data;
+  }
+
+  /**
+   * Get integration details and capabilities
+   * GET /integrations/:provider
+   */
+  async getIntegrationDetails(provider: string): Promise<IntegrationDetails> {
+    const response = await this.client.get(`/integrations/${provider}`);
+    return response.data;
+  }
+
+  // Composio-specific endpoints (routed through integrations)
+
+  /**
+   * Get available integration providers from Composio
+   * GET /integrations/providers
+   */
+  async getAvailableProviders(): Promise<any[]> {
+    const response = await this.client.get('/integrations/providers');
+    return response.data;
+  }
+
+  /**
+   * Create integration connection via Composio
+   * POST /integrations/connections
+   */
+  async createIntegrationConnection(request: any): Promise<any> {
+    const response = await this.client.post('/integrations/connections', request);
+    return response.data;
+  }
+
+  /**
+   * Get connected accounts via Composio
+   * GET /integrations/connections
+   */
+  async getConnectedAccounts(): Promise<any[]> {
+    const response = await this.client.get('/integrations/connections');
+    return response.data;
+  }
+
+  /**
+   * Disconnect integration connection via Composio
+   * DELETE /integrations/connections/:connectionId
+   */
+  async disconnectIntegrationConnection(connectionId: string): Promise<{ success: boolean }> {
+    const response = await this.client.delete(`/integrations/connections/${connectionId}`);
+    return response.data;
+  }
+
+  /**
+   * Get available tools via Composio
+   * GET /integrations/tools
+   */
+  async getAvailableTools(toolkits?: string): Promise<any[]> {
+    const params = toolkits ? { toolkits } : {};
+    const response = await this.client.get('/integrations/tools', { params });
+    return response.data;
+  }
+
+  /**
+   * Send email via Gmail integration
+   * POST /integrations/email/send
+   */
+  async sendEmail(request: any): Promise<any> {
+    const response = await this.client.post('/integrations/email/send', request);
+    return response.data;
+  }
+
+  /**
+   * Create auth configuration for a provider
+   * POST /integrations/auth-configs/:provider
+   */
+  async createAuthConfiguration(provider: string): Promise<any> {
+    const response = await this.client.post(`/integrations/auth-configs/${provider}`);
+    return response.data;
+  }
+
+  /**
+   * Get service configuration status
+   * GET /integrations/service/status
+   */
+  async getServiceStatus(): Promise<{ configured: boolean; message: string }> {
+    const response = await this.client.get('/integrations/service/status');
+    return response.data;
   }
 }
 

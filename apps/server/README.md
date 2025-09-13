@@ -1,13 +1,12 @@
 # Kronos Chat Server
 
-The backend API for the Kronos Chat system - a scalable NestJS application with authentication, chat functionality, and Composio integrations.
+The backend API for the Kronos Chat system - a scalable NestJS application with authentication and chat functionality.
 
 ## Features
 
 - **RESTful API**: Complete backend API with authentication and chat endpoints
 - **JWT Authentication**: Secure user authentication with Passport JWT strategy
 - **Database Integration**: PostgreSQL with TypeORM for data persistence
-- **Third-party Integrations**: Composio service for OAuth connections and tool execution
 - **Real-time Chat**: WebSocket support for live chat functionality
 - **Validation & Security**: Request validation, password hashing, and CORS configuration
 
@@ -19,7 +18,6 @@ The backend API for the Kronos Chat system - a scalable NestJS application with 
 - **[PostgreSQL](https://postgresql.org/)** - Robust relational database
 - **[Passport JWT](https://www.passportjs.org/)** - Authentication middleware
 - **[bcryptjs](https://github.com/dcodeIO/bcrypt.js)** - Password hashing
-- **[Composio](https://composio.dev/)** - Third-party service integrations
 - **[Jest](https://jestjs.io/)** - Testing framework
 
 ## Project Structure
@@ -42,14 +40,10 @@ apps/server/
 │   ├── chat/             # Chat functionality module
 │   │   ├── chat.controller.ts    # Chat endpoints
 │   │   └── chat.module.ts        # Chat module
-│   ├── composio/         # Composio integration module
-│   │   ├── composio.controller.ts  # Integration endpoints
-│   │   └── composio.service.ts     # Composio service logic
 │   ├── entities/         # Database entities
 │   │   └── user.entity.ts        # User entity definition
 │   ├── dto/              # Data Transfer Objects
 │   │   ├── user.dto.ts           # User DTOs
-│   │   └── composio.dto.ts       # Composio DTOs
 │   ├── config/           # Configuration modules
 │   │   ├── config.module.ts      # Configuration setup
 │   │   └── database.config.ts    # Database configuration
@@ -104,8 +98,6 @@ apps/server/
    API_PREFIX=api/v1
    NODE_ENV=development
    
-   # Optional Integrations
-   COMPOSIO_API_KEY=your_composio_api_key_here
    EOF
    ```
 
@@ -184,14 +176,6 @@ apps/server/
 | GET | `/chat/conversations` | List conversations | Yes |
 | POST | `/chat/stream` | Stream chat response | Yes |
 
-### Composio Integration
-| Method | Endpoint | Description | Auth Required |
-|--------|----------|-------------|---------------|
-| GET | `/composio/status` | Get integration status | Yes |
-| POST | `/composio/connections/initiate` | Start OAuth flow | Yes |
-| GET | `/composio/connections` | List connections | Yes |
-| DELETE | `/composio/connections/:id` | Remove connection | Yes |
-| POST | `/composio/tools/execute` | Execute tool action | Yes |
 
 ### Health & Info
 | Method | Endpoint | Description | Auth Required |
@@ -213,7 +197,6 @@ apps/server/
 | `DATABASE_NAME` | Database name | - |
 | `JWT_SECRET` | JWT signing secret | - |
 | `JWT_EXPIRES_IN` | JWT expiration | `30m` |
-| `COMPOSIO_API_KEY` | Composio API key | - |
 
 ## Database
 
@@ -250,22 +233,6 @@ The server uses JWT-based authentication with the following flow:
 - JWT tokens include user ID and email claims
 - Tokens expire after configurable time period
 
-## Third-party Integrations
-
-### Composio Service
-The server integrates with Composio to provide:
-- OAuth connection management
-- Tool execution for connected services
-- Webhook handling for real-time updates
-
-### Supported Services
-- GitHub (repositories, issues, pull requests)
-- Slack (channels, messages)
-- Notion (databases, pages)
-- Gmail (email sending/reading)
-- Google Calendar (events)
-- Discord (servers, channels)
-- Twitter (posting, timeline)
 
 ## Testing
 
@@ -381,10 +348,6 @@ docker build -t kronos-server:prod --target production .
 - Check token expiration
 - Validate user credentials
 
-**Integration failures:**
-- Check Composio API key
-- Verify OAuth configurations
-- Test external service connectivity
 
 ### Debug Tools
 - NestJS built-in logger

@@ -23,10 +23,6 @@ export interface HealthCheckResponse {
     configured: boolean;
     error?: string;
   };
-  composio: {
-    status: string;
-    configured: boolean;
-  };
 }
 
 export interface AppInfo {

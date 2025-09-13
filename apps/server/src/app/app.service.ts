@@ -7,7 +7,7 @@ export class AppService {
       name: 'Kronos Chat API',
       version: '1.0.0',
       description:
-        'A NestJS backend for the Kronos chat application with Composio integration',
+        'A NestJS backend for the Kronos chat application',
       environment: process.env.NODE_ENV || 'development',
       docsUrl: process.env.NODE_ENV !== 'production' ? '/api/docs' : null,
     };
@@ -22,10 +22,6 @@ export class AppService {
       database: {
         status: 'healthy', // TODO: Add actual database health check
         configured: true,
-      },
-      composio: {
-        status: process.env.COMPOSIO_API_KEY ? 'configured' : 'not_configured',
-        configured: !!process.env.COMPOSIO_API_KEY,
       },
     };
   }

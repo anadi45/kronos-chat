@@ -71,14 +71,12 @@ kronos-chat/
 - Vite for build tooling
 - Modern chat interface with real-time streaming
 - Authentication with JWT
-- Integration with Composio for third-party services
 
 ### Backend (`apps/server`)
 - NestJS framework with TypeScript
 - TypeORM for database operations
 - JWT authentication with Passport
 - PostgreSQL database
-- Composio integration for external tools
 
 ### Shared Libraries
 - `@kronos/shared-types`: Common interfaces and types
@@ -136,15 +134,12 @@ DATABASE_NAME=kronos_chat
 # Authentication
 JWT_SECRET=your-secret-key-here
 
-# Optional integrations
-COMPOSIO_API_KEY=your-composio-api-key
 ```
 
 ## Features
 
 - **Real-time Chat**: Streaming chat interface with AI integration
 - **Authentication**: Secure JWT-based user authentication
-- **Third-party Integrations**: Connect with GitHub, Slack, Notion, and more via Composio
 - **Responsive Design**: Works on desktop, tablet, and mobile
 - **Type Safety**: Full TypeScript coverage across frontend and backend
 - **Monorepo Benefits**: Shared code, consistent tooling, and incremental builds

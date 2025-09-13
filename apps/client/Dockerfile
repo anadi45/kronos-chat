@@ -4,11 +4,9 @@ FROM node:20-bullseye-slim as build
 WORKDIR /app
 
 # Accept build arguments
-ARG VITE_COMPOSIO_API_KEY
 ARG VITE_API_BASE_URL
 
 # Set environment variables from build args
-ENV VITE_COMPOSIO_API_KEY=$VITE_COMPOSIO_API_KEY
 ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
 
 # Copy package files
