@@ -7,6 +7,7 @@ export interface ChatMessage {
 export interface ChatRequest {
   message: string;
   conversationId?: string;
+  conversationHistory?: ChatMessage[];
 }
 
 export interface ChatResponse {

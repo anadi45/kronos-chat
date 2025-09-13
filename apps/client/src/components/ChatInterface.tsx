@@ -67,6 +67,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
       // Create stream request
       const streamRequest: ChatRequest = {
         message: userMessage.content,
+        conversationHistory: messages,
         conversationId: currentConversationId || undefined,
       };
 
