@@ -6,6 +6,7 @@
   "private": true,
   "dependencies": {
     "@composio/core": "^0.1.51",
+    "@langchain/langgraph": "^0.4.9",
     "@nestjs/common": "^11.1.6",
     "@nestjs/config": "^4.0.2",
     "@nestjs/core": "^11.1.6",
