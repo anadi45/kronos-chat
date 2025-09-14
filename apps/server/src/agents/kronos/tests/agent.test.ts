@@ -1,4 +1,4 @@
-import { KronosAgent } from './kronos';
+import { KronosAgent } from '../agent';
 
 describe('KronosAgent', () => {
   let agent: KronosAgent;

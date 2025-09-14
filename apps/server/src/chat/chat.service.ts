@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import type { ChatRequest } from '@kronos/shared-types';
-import { KronosAgent } from '../agents/kronos/kronos';
+import { KronosAgent } from '../agents/kronos/agent';
 
 @Injectable()
 export class ChatService {
