@@ -2,6 +2,10 @@ import { ChatGoogleGenerativeAI } from '@langchain/google-genai';
 import { HumanMessage, SystemMessage } from '@langchain/core/messages';
 import type { ChatMessage } from '@kronos/shared-types';
 import { Composio } from '@composio/core';
+import {
+  LangChainToolConverter,
+  ComposioTool,
+} from '../utils/langchain-tool-converter';
 
 export class KronosAgent {
   private model: ChatGoogleGenerativeAI;
@@ -84,13 +88,15 @@ Always respond in a helpful and friendly manner.`;
       tools: ['GMAIL_FETCH_EMAILS'],
     });
 
-    console.dir(tools, { depth: null });
+    const langchainTools = tools.map((tool) =>
+      LangChainToolConverter.convert(tool as ComposioTool)
+    );
 
     // Create streaming response
     return new ReadableStream({
       async start(controller) {
         try {
-          const stream = await model.bindTools(tools).stream(messages);
+          const stream = await model.bindTools(langchainTools).stream(messages);
 
           for await (const chunk of stream) {
             if (chunk.content) {
