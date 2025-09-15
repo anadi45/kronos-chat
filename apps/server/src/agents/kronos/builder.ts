@@ -1,18 +1,29 @@
 import { StateGraph, END, Annotation } from '@langchain/langgraph';
 import { ChatGoogleGenerativeAI } from '@langchain/google-genai';
-import { HumanMessage, SystemMessage, AIMessage } from '@langchain/core/messages';
+import {
+  HumanMessage,
+  SystemMessage,
+  AIMessage,
+  ToolMessage,
+} from '@langchain/core/messages';
 import { RunnableConfig } from '@langchain/core/runnables';
 import { Composio } from '@composio/core';
 import {
   LangChainToolConverter,
   ComposioTool,
 } from '../utils/langchain-tool-converter';
-import { KronosAgentState, KronosAgentConfig, KronosAgentStateSchema } from './state';
+import {
+  KronosAgentState,
+  KronosAgentConfig,
+  KronosAgentStateSchema,
+} from './state';
 import type { ChatMessage } from '@kronos/shared-types';
+import { MODELS } from '../../constants/models.constants';
+import { SYSTEM_PROMPT } from './prompts';
 
 /**
  * Kronos Agent Builder
- * 
+ *
  * Encapsulates the complex logic for building the Kronos agent graph using LangGraph.
  * This builder creates a workflow with tool execution, agent reasoning, and response generation.
  */
@@ -20,27 +31,25 @@ export class KronosAgentBuilder {
   private model: ChatGoogleGenerativeAI;
   private systemPrompt: string;
   private tools: any[] = [];
-  private composio: Composio;
+  private toolProvider: Composio;
 
   AGENT_NAME = 'kronos_agent';
 
   constructor() {
-    this.initializeModel();
-    this.initializeComposio();
-    this.setupSystemPrompt();
+    this.initializeProviders();
   }
 
   /**
    * Build and return the complete Kronos agent graph
    */
   async build(): Promise<any> {
-    console.log('🚀 Starting Kronos agent creation');
-
     try {
+      console.log('🚀 Starting Kronos agent creation');
       await this.loadTools();
 
       // Build the workflow graph
       const workflow = new StateGraph(KronosAgentStateSchema);
+
       await this.addNodes(workflow);
       this.configureEdges(workflow);
 
@@ -58,58 +67,22 @@ export class KronosAgentBuilder {
   }
 
   /**
-   * Initialize the Gemini model
+   * Initialize Providers
    */
-  private initializeModel(): void {
-    if (!process.env.GEMINI_API_KEY) {
-      throw new Error('GEMINI_API_KEY environment variable is required');
-    }
-
+  private initializeProviders(): void {
     try {
       this.model = new ChatGoogleGenerativeAI({
-        model: 'gemini-2.0-flash',
+        model: MODELS.GEMINI_2_0_FLASH,
         temperature: 0.7,
         maxOutputTokens: 2048,
         apiKey: process.env.GEMINI_API_KEY,
       });
-
-      console.log('✅ KronosAgent model initialized successfully');
+      this.toolProvider = new Composio({
+        apiKey: process.env.COMPOSIO_API_KEY,
+      });
     } catch (error) {
-      console.error('❌ Failed to initialize Gemini model:', error);
-      throw new Error(`Failed to initialize Gemini model: ${error.message}`);
+      throw new Error(`Failed to initialize Providers: ${error.message}`);
     }
-  }
-
-  /**
-   * Initialize Composio for tool integration
-   */
-  private initializeComposio(): void {
-    if (!process.env.COMPOSIO_API_KEY) {
-      throw new Error('COMPOSIO_API_KEY environment variable is required');
-    }
-
-    this.composio = new Composio({
-      apiKey: process.env.COMPOSIO_API_KEY,
-    });
-
-    console.log('✅ Composio initialized successfully');
-  }
-
-  /**
-   * Setup the system prompt for Kronos
-   */
-  private setupSystemPrompt(): void {
-    this.systemPrompt = `You are Kronos, a helpful AI assistant. You are knowledgeable, friendly, and provide clear, concise responses. 
-
-Key characteristics:
-- You are helpful and supportive
-- You provide accurate information
-- You are conversational and engaging
-- You can help with a wide variety of topics
-- You maintain context throughout conversations
-- You can use tools to help users with their tasks
-
-Always respond in a helpful and friendly manner. When you need to use tools, do so efficiently and explain what you're doing.`;
   }
 
   /**
@@ -120,7 +93,7 @@ Always respond in a helpful and friendly manner. When you need to use tools, do 
 
     try {
       // Get tools from Composio (using a default user ID for now)
-      const composioTools = await this.composio.tools.get('default-user', {
+      const composioTools = await this.toolProvider.tools.get('default-user', {
         tools: ['GMAIL_FETCH_EMAILS'],
       });
 
@@ -134,7 +107,10 @@ Always respond in a helpful and friendly manner. When you need to use tools, do 
         console.log(`  ${index + 1}. ${tool.name}`);
       });
     } catch (error) {
-      console.warn('⚠️ Failed to load Composio tools, continuing without tools:', error);
+      console.warn(
+        '⚠️ Failed to load Composio tools, continuing without tools:',
+        error
+      );
       this.tools = [];
     }
   }
@@ -145,9 +121,10 @@ Always respond in a helpful and friendly manner. When you need to use tools, do 
   private async addNodes(workflow: any): Promise<void> {
     console.log('📝 Adding nodes to Kronos workflow');
 
-    workflow.addNode('tool_node', this.createToolNode());
-    workflow.addNode('agent_node', this.createAgentNode());
-    workflow.addNode('answer_node', this.createAnswerNode());
+    workflow.addNode('agent', this.createAgentNode());
+    workflow.addNode('tool', this.createToolNode());
+    workflow.addNode('final_answer', this.createFinalAnswerNode());
+    workflow.addNode('complete', this.createCompleteNode());
   }
 
   /**
@@ -157,12 +134,53 @@ Always respond in a helpful and friendly manner. When you need to use tools, do 
     console.log('🔗 Configuring Kronos workflow edges');
 
     // Set entry point
-    workflow.setEntryPoint('tool_node');
+    workflow.setEntryPoint('agent');
 
-    // Define the flow: tool_node -> agent_node -> answer_node -> END
-    workflow.addEdge('tool_node', 'agent_node');
-    workflow.addEdge('agent_node', 'answer_node');
-    workflow.addEdge('answer_node', END);
+    // Agent -> tools or final answer node
+    workflow.addConditionalEdges(
+      'agent',
+      this.shouldAct,
+      {
+        'continue': 'tool',
+        'final_answer': 'final_answer',
+        'complete': 'complete',
+      }
+    );
+
+    // Tool -> agent (loop back)
+    workflow.addEdge('tool', 'agent');
+
+    // Final answer -> complete
+    workflow.addEdge('final_answer', 'complete');
+
+    // Complete -> END
+    workflow.addEdge('complete', END);
+  }
+
+  /**
+   * Determine if the agent should use tools or move to final answer
+   */
+  private shouldAct(state: KronosAgentState): string {
+    const lastMessage = state.messages[state.messages.length - 1];
+
+    // Handle AIMessage with tool routing logic
+    if (lastMessage && lastMessage instanceof AIMessage) {
+      const aiMessage = lastMessage as AIMessage;
+      const toolCalls = aiMessage.tool_calls || [];
+
+      if (toolCalls.length > 0) {
+        const toolNames = toolCalls.map(tc => tc.name);
+        console.log('Routing: Tool calls requested:', toolNames);
+        return 'continue';
+      } else {
+        console.log('Routing: LLM provided a direct answer, proceeding to completion.');
+        return 'complete';
+      }
+    }
+
+    // Default fallback
+    console.log('Routing: Proceeding to final answer processing');
+    return 'complete';
   }
 
   /**
@@ -173,26 +191,61 @@ Always respond in a helpful and friendly manner. When you need to use tools, do 
       console.log('🔧 Executing tool node');
 
       try {
-        // Check if tools are available and if the message requires tool usage
-        if (this.tools.length === 0) {
-          console.log('No tools available, skipping tool execution');
-          return {
-            toolCalls: [],
-            toolResults: [],
-          };
+        const lastMessage = state.messages[state.messages.length - 1];
+        
+        if (!lastMessage || !(lastMessage instanceof AIMessage)) {
+          console.log('No AI message found, skipping tool execution');
+          return {};
         }
 
-        // For now, we'll skip tool execution in the tool node
-        // and let the agent node handle tool calls as needed
+        const aiMessage = lastMessage as AIMessage;
+        const toolCalls = aiMessage.tool_calls || [];
+
+        if (toolCalls.length === 0) {
+          console.log('No tool calls found in last message, skipping tool execution');
+          return {};
+        }
+
+        // Execute tools sequentially for now
+        const toolResults: ToolMessage[] = [];
+        
+        for (const toolCall of toolCalls) {
+          try {
+            // Find the tool
+            const tool = this.tools.find(t => t.name === toolCall.name);
+            if (!tool) {
+              toolResults.push(new ToolMessage({
+                content: `Tool ${toolCall.name} not found`,
+                tool_call_id: toolCall.id,
+              }));
+              continue;
+            }
+
+            // Execute the tool
+            console.log(`Executing tool: ${toolCall.name}`);
+            const result = await tool.invoke(toolCall.args);
+            
+            toolResults.push(new ToolMessage({
+              content: JSON.stringify(result),
+              tool_call_id: toolCall.id,
+            }));
+
+          } catch (error) {
+            console.error(`Error executing tool ${toolCall.name}:`, error);
+            toolResults.push(new ToolMessage({
+              content: `Error executing ${toolCall.name}: ${error.message}`,
+              tool_call_id: toolCall.id,
+            }));
+          }
+        }
+
         return {
-          toolCalls: [],
-          toolResults: [],
+          messages: toolResults,
         };
+
       } catch (error) {
         console.error('❌ Tool node execution failed:', error);
         return {
-          toolCalls: [],
-          toolResults: [],
           error: `Tool execution failed: ${error.message}`,
         };
       }
@@ -209,7 +262,7 @@ Always respond in a helpful and friendly manner. When you need to use tools, do 
       try {
         // Build messages array
         const messages = [
-          new SystemMessage(this.systemPrompt),
+          new SystemMessage(SYSTEM_PROMPT),
           ...state.conversationHistory.map((msg) => {
             if (msg.role === 'user') {
               return new HumanMessage(msg.content);
@@ -221,27 +274,22 @@ Always respond in a helpful and friendly manner. When you need to use tools, do 
           new HumanMessage(state.currentMessage),
         ];
 
-        // Check if model is properly initialized
-        if (!this.model) {
-          throw new Error('Model not properly initialized. Please check your GEMINI_API_KEY.');
-        }
-
         // Bind tools to the model if available
-        const modelWithTools = this.tools.length > 0 
-          ? this.model.bindTools(this.tools)
-          : this.model;
+        const modelWithTools =
+          this.tools.length > 0 ? this.model.bindTools(this.tools) : this.model;
 
         // Generate response
         const response = await modelWithTools.invoke(messages);
 
         return {
-          response: response.content as string,
           messages: [...state.messages, response],
         };
       } catch (error) {
         console.error('❌ Agent node execution failed:', error);
         return {
-          response: 'I apologize, but I encountered an error while processing your request.',
+          messages: [...state.messages, new AIMessage(
+            'I apologize, but I encountered an error while processing your request.'
+          )],
           error: `Agent execution failed: ${error.message}`,
         };
       }
@@ -249,29 +297,45 @@ Always respond in a helpful and friendly manner. When you need to use tools, do 
   }
 
   /**
-   * Create the answer generation node
+   * Create the final answer node
    */
-  private createAnswerNode() {
+  private createFinalAnswerNode() {
     return async (state: KronosAgentState, config: RunnableConfig) => {
-      console.log('💬 Executing answer node');
+      console.log('💬 Executing final answer node');
 
       try {
-        // The agent node should have already generated the response
-        // This node can be used for post-processing, formatting, or final validation
-        const finalResponse = state.response || 'I apologize, but I was unable to generate a response.';
+        // Get the last AI message as the final response
+        const lastMessage = state.messages[state.messages.length - 1];
+        let finalResponse = 'I apologize, but I was unable to generate a response.';
+
+        if (lastMessage && lastMessage instanceof AIMessage) {
+          const aiMessage = lastMessage as AIMessage;
+          finalResponse = aiMessage.content as string;
+        }
 
         return {
           response: finalResponse,
           isComplete: true,
         };
       } catch (error) {
-        console.error('❌ Answer node execution failed:', error);
+        console.error('❌ Final answer node execution failed:', error);
         return {
-          response: 'I apologize, but I encountered an error while finalizing my response.',
+          response:
+            'I apologize, but I encountered an error while finalizing my response.',
           isComplete: true,
-          error: `Answer generation failed: ${error.message}`,
+          error: `Final answer generation failed: ${error.message}`,
         };
       }
+    };
+  }
+
+  /**
+   * Create the completion node
+   */
+  private createCompleteNode() {
+    return async (state: KronosAgentState, config: RunnableConfig) => {
+      console.log('✅ Graph execution completed');
+      return {};
     };
   }
 
@@ -285,7 +349,7 @@ Always respond in a helpful and friendly manner. When you need to use tools, do 
   ): Promise<ReadableStream> {
     try {
       const graph = await this.build();
-      
+
       // Create initial state
       const initialState: KronosAgentState = {
         messages: [],
@@ -305,10 +369,13 @@ Always respond in a helpful and friendly manner. When you need to use tools, do 
             // Execute the graph
             const result = await graph.invoke(initialState);
 
+            // Get the final response from the result
+            const finalResponse = result.response || 'I apologize, but I was unable to generate a response.';
+
             // Stream the response
             const contentChunk = `data: ${JSON.stringify({
               type: 'content',
-              data: result.response,
+              data: finalResponse,
               timestamp: new Date().toISOString(),
             })}\n\n`;
             controller.enqueue(new TextEncoder().encode(contentChunk));
