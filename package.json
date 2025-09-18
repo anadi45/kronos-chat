@@ -3,7 +3,10 @@
   "version": "0.0.0",
   "license": "MIT",
   "scripts": {
-    "build": "nx run-many --target=build --projects=tag:type:lib --parallel=false && nx run-many --target=build --projects=tag:type:app --parallel=true"
+    "build": "nx run-many --target=build --projects=tag:type:lib --parallel=false && nx run-many --target=build --projects=tag:type:app --parallel=true",
+    "serve:client": "nx serve client",
+    "serve:client:fresh": "nx serve client --skip-nx-cache --buildLibsFromSource",
+    "serve:client:clean": "./scripts/serve-client-fresh.sh"
   },
   "private": true,
   "dependencies": {

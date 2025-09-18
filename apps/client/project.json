@@ -23,16 +23,17 @@
       "executor": "@nx/vite:dev-server",
       "defaultConfiguration": "development",
       "options": {
-        "buildTarget": "client:build"
+        "buildTarget": "client:build",
+        "buildLibsFromSource": true
       },
       "configurations": {
         "development": {
           "buildTarget": "client:build:development",
-          "hmr": true
+          "buildLibsFromSource": true
         },
         "production": {
           "buildTarget": "client:build:production",
-          "hmr": false
+          "buildLibsFromSource": true
         }
       }
     },
@@ -59,6 +60,25 @@
       "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
       "options": {
         "jestConfig": "apps/client/jest.config.ts"
+      }
+    },
+    "clean": {
+      "executor": "nx:run-commands",
+      "options": {
+        "commands": [
+          "rm -rf node_modules/.vite",
+          "rm -rf dist/apps/client",
+          "rm -rf .nx/cache"
+        ]
+      }
+    },
+    "serve-fresh": {
+      "executor": "nx:run-commands",
+      "options": {
+        "commands": [
+          "nx clean client",
+          "nx serve client --skip-nx-cache"
+        ]
       }
     }
   },
