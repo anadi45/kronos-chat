@@ -6,55 +6,111 @@ import Settings from './components/Settings'
 import HomePage from './components/HomePage'
 import Layout from './components/Layout'
 import AuthWrapper from './components/AuthWrapper'
+import LoginForm from './components/LoginForm'
+import SignupForm from './components/SignupForm'
 import { type UserProfile } from '@kronos/core'
 
 interface AppProps {
   user?: UserProfile;
   onLogout?: () => void;
+  isAuthenticated?: boolean;
 }
 
-function App({ user, onLogout }: AppProps) {
+function App({ user, onLogout, isAuthenticated }: AppProps) {
   const userId = user?.id || "unknown";
 
   return (
     <Router>
       <Routes>
-        {/* Home page route */}
+        {/* Home page route - only accessible when authenticated */}
         <Route 
           path="/" 
-          element={<HomePage user={user} onLogout={onLogout} />} 
+          element={
+            isAuthenticated ? (
+              <HomePage user={user} onLogout={onLogout} />
+            ) : (
+              <Navigate to="/login" replace />
+            )
+          } 
         />
         
-        {/* Layout routes with sidebar */}
+        {/* Login route - only accessible when not authenticated */}
+        <Route 
+          path="/login" 
+          element={
+            !isAuthenticated ? (
+              <LoginForm 
+                onSuccess={() => window.location.reload()} 
+                onSwitchToSignup={() => window.location.href = '/signup'}
+              />
+            ) : (
+              <Navigate to="/" replace />
+            )
+          } 
+        />
+        
+        {/* Signup route - only accessible when not authenticated */}
+        <Route 
+          path="/signup" 
+          element={
+            !isAuthenticated ? (
+              <SignupForm 
+                onSuccess={() => window.location.reload()} 
+                onSwitchToLogin={() => window.location.href = '/login'}
+              />
+            ) : (
+              <Navigate to="/" replace />
+            )
+          } 
+        />
+        
+        {/* Layout routes with sidebar - only accessible when authenticated */}
         <Route 
           path="/chat" 
           element={
-            <Layout user={user} onLogout={onLogout}>
-              <ChatInterface userId={userId} />
-            </Layout>
+            isAuthenticated ? (
+              <Layout user={user} onLogout={onLogout}>
+                <ChatInterface userId={userId} />
+              </Layout>
+            ) : (
+              <Navigate to="/login" replace />
+            )
           } 
         />
         
         <Route 
           path="/integrations" 
           element={
-            <Layout user={user} onLogout={onLogout}>
-              <Integrations />
-            </Layout>
+            isAuthenticated ? (
+              <Layout user={user} onLogout={onLogout}>
+                <Integrations />
+              </Layout>
+            ) : (
+              <Navigate to="/login" replace />
+            )
           } 
         />
         
         <Route 
           path="/settings" 
           element={
-            <Layout user={user} onLogout={onLogout}>
-              <Settings />
-            </Layout>
+            isAuthenticated ? (
+              <Layout user={user} onLogout={onLogout}>
+                <Settings />
+              </Layout>
+            ) : (
+              <Navigate to="/login" replace />
+            )
           } 
         />
         
-        {/* Redirect any unknown routes to home */}
-        <Route path="*" element={<Navigate to="/" replace />} />
+        {/* Redirect any unknown routes to appropriate page based on auth status */}
+        <Route 
+          path="*" 
+          element={
+            <Navigate to={isAuthenticated ? "/" : "/login"} replace />
+          } 
+        />
       </Routes>
     </Router>
   )

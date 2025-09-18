@@ -8,7 +8,7 @@ export default defineConfig({
   root: resolve(__dirname),
   resolve: {
     alias: {
-      '@kronos/core': resolve(__dirname, '../../dist/libs/kronos-core/src/index.js')
+      '@kronos/core': resolve(__dirname, '../../libs/kronos-core/src')
     }
   },
   build: {
@@ -17,5 +17,11 @@ export default defineConfig({
         main: resolve(__dirname, 'index.html')
       }
     }
-  }
+  },
+  // Disable Vite's dependency pre-bundling cache for fresh builds
+  optimizeDeps: {
+    force: true
+  },
+  // Clear cache on each build
+  clearScreen: false
 })
