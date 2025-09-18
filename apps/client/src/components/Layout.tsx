@@ -43,7 +43,7 @@ const Layout: React.FC<LayoutProps> = ({ user, onLogout, children }) => {
         isCollapsed={isSidebarCollapsed}
         onToggle={handleSidebarToggle}
         activeSection={getCurrentSection()}
-        onSectionChange={(section) => {
+        onSectionChange={() => {
           // This will be handled by React Router navigation
         }}
       />
