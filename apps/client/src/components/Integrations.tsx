@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { apiService } from '../services/apiService';
-import type { Integration } from '@kronos/shared-types';
+import type { Integration } from '@kronos/core';
 
 interface IntegrationCardProps {
   integration: Integration;

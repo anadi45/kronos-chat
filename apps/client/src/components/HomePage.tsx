@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { type UserProfile } from '@kronos/shared-types';
+import { type UserProfile } from '@kronos/core';
 
 interface HomePageProps {
   user?: UserProfile;
@@ -94,7 +94,7 @@ const HomePage: React.FC<HomePageProps> = ({ user, onLogout }) => {
 
           {/* Features Grid */}
           <div className="grid md:grid-cols-3 gap-6 mb-12">
-            {features.map((feature, index) => (
+            {features.map((feature) => (
               <Link
                 key={feature.path}
                 to={feature.path}

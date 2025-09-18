@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import Sidebar from './Sidebar';
-import { type UserProfile } from '@kronos/shared-types';
+import { type UserProfile } from '@kronos/core';
 
 interface LayoutProps {
   user?: UserProfile;
@@ -43,7 +43,7 @@ const Layout: React.FC<LayoutProps> = ({ user, onLogout, children }) => {
         isCollapsed={isSidebarCollapsed}
         onToggle={handleSidebarToggle}
         activeSection={getCurrentSection()}
-        onSectionChange={(section) => {
+        onSectionChange={() => {
           // This will be handled by React Router navigation
         }}
       />

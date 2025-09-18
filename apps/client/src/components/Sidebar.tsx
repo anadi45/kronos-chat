@@ -10,9 +10,7 @@ interface SidebarProps {
 
 const Sidebar: React.FC<SidebarProps> = ({ 
   isCollapsed, 
-  onToggle, 
-  activeSection, 
-  onSectionChange 
+  onToggle
 }) => {
   const location = useLocation();
   

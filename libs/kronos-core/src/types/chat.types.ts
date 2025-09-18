@@ -24,3 +24,4 @@ export interface Conversation {
   updatedAt: string;
   messages: ChatMessage[];
 }
+

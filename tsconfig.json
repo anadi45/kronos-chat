@@ -4,13 +4,10 @@
   "files": [],
   "references": [
     {
-      "path": "./libs/shared-types"
-    },
-    {
       "path": "./apps/server"
     },
     {
-      "path": "./libs/utils"
+      "path": "./libs/kronos-core"
     }
   ]
 }

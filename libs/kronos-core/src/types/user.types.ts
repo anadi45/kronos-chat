@@ -27,4 +27,4 @@ export interface UpdateUserDto {
   profileImageUrl?: string;
 }
 
-export interface UserResponseDto extends User {}
+export type UserResponseDto = User;

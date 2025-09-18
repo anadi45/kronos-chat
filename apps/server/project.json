@@ -4,13 +4,20 @@
   "sourceRoot": "apps/server/src",
   "targets": {
     "build": {
-      "executor": "@nx/js:tsc",
-      "outputs": ["{options.outputPath}"],
+      "executor": "nx:run-commands",
       "options": {
-        "outputPath": "dist/apps/server",
-        "main": "apps/server/src/main.ts",
-        "tsConfig": "apps/server/tsconfig.app.json",
-        "assets": []
+        "command": "webpack-cli build",
+        "args": [
+          "--node-env=production"
+        ],
+        "cwd": "apps/server"
+      },
+      "configurations": {
+        "development": {
+          "args": [
+            "--node-env=development"
+          ]
+        }
       }
     },
     "serve": {
@@ -33,5 +40,6 @@
       }
     }
   },
-  "tags": ["type:app", "scope:server"]
+  "tags": ["type:app", "scope:server"],
+  "implicitDependencies": ["@kronos/core"]
 }

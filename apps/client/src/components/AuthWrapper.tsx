@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { apiService } from '../services/apiService';
-import { type UserProfile } from '@kronos/shared-types';
+import { type UserProfile } from '@kronos/core';
 import LoginForm from './LoginForm';
 import SignupForm from './SignupForm';
 

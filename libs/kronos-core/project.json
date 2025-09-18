@@ -1,16 +1,16 @@
 {
-  "name": "shared-types",
+  "name": "@kronos/core",
   "projectType": "library",
-  "sourceRoot": "libs/shared-types/src",
+  "sourceRoot": "libs/kronos-core/src",
   "targets": {
     "build": {
       "executor": "@nx/js:tsc",
       "outputs": ["{options.outputPath}"],
       "options": {
-        "outputPath": "dist/libs/shared-types",
-        "tsConfig": "libs/shared-types/tsconfig.lib.json",
-        "packageJson": "libs/shared-types/package.json",
-        "main": "libs/shared-types/src/index.ts"
+        "outputPath": "dist/libs/kronos-core",
+        "tsConfig": "libs/kronos-core/tsconfig.lib.json",
+        "packageJson": "libs/kronos-core/package.json",
+        "main": "libs/kronos-core/src/index.ts"
       }
     },
     "lint": {
@@ -20,7 +20,7 @@
       "executor": "@nx/jest:jest",
       "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
       "options": {
-        "jestConfig": "libs/shared-types/jest.config.ts"
+        "jestConfig": "libs/kronos-core/jest.config.ts"
       }
     }
   },

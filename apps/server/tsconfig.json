@@ -4,7 +4,7 @@
   "include": [],
   "references": [
     {
-      "path": "../../libs/shared-types"
+      "path": "../../libs/kronos-core"
     },
     {
       "path": "./tsconfig.app.json"

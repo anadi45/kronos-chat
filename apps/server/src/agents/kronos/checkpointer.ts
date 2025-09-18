@@ -10,7 +10,7 @@ const { Pool } = pg;
  */
 export class KronosCheckpointer {
   private postgresSaver: PostgresSaver;
-  private isInitialized: boolean = false;
+  private isInitialized = false;
 
   constructor(connectionString?: string, pool?: pg.Pool) {
     if (pool) {

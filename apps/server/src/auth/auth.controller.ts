@@ -10,7 +10,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import type { LoginResponse } from '@kronos/shared-types';
+import type { LoginResponse } from '@kronos/core';
 import { UsersService } from '../users/users.service';
 import { LoginDto, CreateUserDto, UserResponseDto } from '../dto/user.dto';
 import { JwtAuthGuard } from './jwt-auth.guard';

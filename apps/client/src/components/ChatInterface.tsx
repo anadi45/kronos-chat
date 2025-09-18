@@ -1,18 +1,19 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { apiService } from '../services/apiService';
-import type { ChatMessage, ChatRequest, Conversation } from '@kronos/shared-types';
+import type { 
+  ChatMessage, 
+  ChatRequest, 
+  Conversation
+} from '@kronos/core';
+import { StreamEvent, StreamEventType } from '@kronos/core';
 
 interface ChatInterfaceProps {
   userId?: string;
 }
 
-interface StreamChunk {
-  type: 'conversationId' | 'content' | 'done' | 'error';
-  data?: string;
-  conversationId?: string;
-  timestamp?: string;
-  error?: string;
-}
+// Remove the old StreamChunk interface as we'll use the new StreamEvent types
 
 const ChatInterface: React.FC<ChatInterfaceProps> = () => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -21,8 +22,10 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
   const [currentConversationId, setCurrentConversationId] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
   const [streamingMessage, setStreamingMessage] = useState('');
+  const [streamingMarkdown, setStreamingMarkdown] = useState('');
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [showConversations, setShowConversations] = useState(false);
+  const [isMarkdownMode, setIsMarkdownMode] = useState(false);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -52,7 +55,21 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
   // Load conversations on component mount
   useEffect(() => {
     loadConversations();
+    // Load persisted conversation ID from localStorage
+    const persistedConversationId = localStorage.getItem('kronos-current-conversation-id');
+    if (persistedConversationId) {
+      setCurrentConversationId(persistedConversationId);
+    }
   }, []);
+
+  // Persist conversation ID to localStorage when it changes
+  useEffect(() => {
+    if (currentConversationId) {
+      localStorage.setItem('kronos-current-conversation-id', currentConversationId);
+    } else {
+      localStorage.removeItem('kronos-current-conversation-id');
+    }
+  }, [currentConversationId]);
 
   const loadConversations = async () => {
     try {
@@ -116,6 +133,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
 
       let assistantMessage = '';
       let conversationId = currentConversationId;
+      let sessionId = '';
+      let isNewConversation = false;
 
       try {
         while (true) {
@@ -135,36 +154,52 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
               }
 
               try {
-                const parsed: StreamChunk = JSON.parse(data);
+                const parsed: StreamEvent = JSON.parse(data);
                 
                 switch (parsed.type) {
-                  case 'conversationId':
-                    conversationId = parsed.data || '';
+                  case StreamEventType.START:
+                    conversationId = (parsed.data as any).conversationId || '';
+                    sessionId = (parsed.data as any).sessionId || '';
+                    isNewConversation = (parsed.data as any).isNewConversation || false;
                     setCurrentConversationId(conversationId);
+                    console.log('Stream started:', { conversationId, sessionId, isNewConversation });
                     break;
                     
-                  case 'content':
-                    assistantMessage += parsed.data || '';
+                  case StreamEventType.TOKEN:
+                    assistantMessage += (parsed.data as any).token || '';
                     setStreamingMessage(assistantMessage);
                     break;
                     
-                  case 'done':
+                  case StreamEventType.MARKDOWN_TOKEN:
+                    assistantMessage += (parsed.data as any).token || '';
+                    setStreamingMarkdown(assistantMessage);
+                    setIsMarkdownMode(true);
+                    break;
+                    
+                    
+                  case StreamEventType.END: {
                     // Finalize the assistant message
                     const finalMessage: ChatMessage = {
                       role: 'assistant',
                       content: assistantMessage,
-                      timestamp: parsed.timestamp || new Date().toISOString()
+                      timestamp: new Date().toISOString()
                     };
                     setMessages(prev => [...prev, finalMessage]);
                     setStreamingMessage('');
                     setIsStreaming(false);
+                    console.log('Stream ended:', { 
+                      conversationId, 
+                      totalTokens: parsed.data.totalTokens,
+                      processingTime: parsed.data.processingTime 
+                    });
                     return;
+                  }
                     
-                  case 'error':
-                    throw new Error(parsed.error || 'Unknown streaming error');
+                  default:
+                    console.warn('Unknown stream event type:', parsed.type);
                 }
               } catch (parseError) {
-                console.warn('Failed to parse stream chunk:', data, parseError);
+                console.warn('Failed to parse stream event:', data, parseError);
               }
             }
           }
@@ -173,7 +208,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
         reader.releaseLock();
       }
 
-      // If we reach here without a 'done' message, finalize anyway
+      // If we reach here without an 'end' message, finalize anyway
       if (assistantMessage) {
         const finalMessage: ChatMessage = {
           role: 'assistant',
@@ -213,6 +248,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
     setMessages([]);
     setCurrentConversationId('');
     setStreamingMessage('');
+    setStreamingMarkdown('');
+    setIsMarkdownMode(false);
     setError(null);
     setShowConversations(false);
   };
@@ -327,7 +364,51 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
           >
             <div className={`message-bubble ${message.role}`}>
               <div className="whitespace-pre-wrap break-words">
-                {message.content}
+                {message.role === 'assistant' ? (
+                  <ReactMarkdown 
+                    remarkPlugins={[remarkGfm]}
+                    components={{
+                      code: ({ node, className, children, ...props }: any) => {
+                        const match = /language-(\w+)/.exec(className || '');
+                        const isInline = !match;
+                        return !isInline && match ? (
+                          <pre className="bg-gray-800 text-gray-100 p-4 rounded-lg overflow-x-auto">
+                            <code className={className} {...props}>
+                              {children}
+                            </code>
+                          </pre>
+                        ) : (
+                          <code className="bg-gray-200 text-gray-800 px-1 py-0.5 rounded text-sm" {...props}>
+                            {children}
+                          </code>
+                        );
+                      },
+                      p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
+                      ul: ({ children }) => <ul className="list-disc list-inside mb-2">{children}</ul>,
+                      ol: ({ children }) => <ol className="list-decimal list-inside mb-2">{children}</ol>,
+                      li: ({ children }) => <li className="mb-1">{children}</li>,
+                      blockquote: ({ children }) => (
+                        <blockquote className="border-l-4 border-gray-300 pl-4 italic text-gray-600 mb-2">
+                          {children}
+                        </blockquote>
+                      ),
+                      h1: ({ children }) => <h1 className="text-2xl font-bold mb-2">{children}</h1>,
+                      h2: ({ children }) => <h2 className="text-xl font-bold mb-2">{children}</h2>,
+                      h3: ({ children }) => <h3 className="text-lg font-bold mb-2">{children}</h3>,
+                      strong: ({ children }) => <strong className="font-bold">{children}</strong>,
+                      em: ({ children }) => <em className="italic">{children}</em>,
+                      a: ({ href, children }) => (
+                        <a href={href} className="text-blue-600 hover:underline" target="_blank" rel="noopener noreferrer">
+                          {children}
+                        </a>
+                      ),
+                    }}
+                  >
+                    {message.content}
+                  </ReactMarkdown>
+                ) : (
+                  message.content
+                )}
               </div>
               {message.timestamp && (
                 <div className="message-timestamp">
@@ -339,11 +420,55 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
         ))}
 
         {/* Streaming Message */}
-        {isStreaming && streamingMessage && (
+        {isStreaming && (streamingMessage || streamingMarkdown) && (
           <div className="chat-message assistant">
             <div className="message-bubble assistant">
               <div className="whitespace-pre-wrap break-words">
-                {streamingMessage}
+                {isMarkdownMode ? (
+                  <ReactMarkdown 
+                    remarkPlugins={[remarkGfm]}
+                    components={{
+                      code: ({ node, className, children, ...props }: any) => {
+                        const match = /language-(\w+)/.exec(className || '');
+                        const isInline = !match;
+                        return !isInline && match ? (
+                          <pre className="bg-gray-800 text-gray-100 p-4 rounded-lg overflow-x-auto">
+                            <code className={className} {...props}>
+                              {children}
+                            </code>
+                          </pre>
+                        ) : (
+                          <code className="bg-gray-200 text-gray-800 px-1 py-0.5 rounded text-sm" {...props}>
+                            {children}
+                          </code>
+                        );
+                      },
+                      p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
+                      ul: ({ children }) => <ul className="list-disc list-inside mb-2">{children}</ul>,
+                      ol: ({ children }) => <ol className="list-decimal list-inside mb-2">{children}</ol>,
+                      li: ({ children }) => <li className="mb-1">{children}</li>,
+                      blockquote: ({ children }) => (
+                        <blockquote className="border-l-4 border-gray-300 pl-4 italic text-gray-600 mb-2">
+                          {children}
+                        </blockquote>
+                      ),
+                      h1: ({ children }) => <h1 className="text-2xl font-bold mb-2">{children}</h1>,
+                      h2: ({ children }) => <h2 className="text-xl font-bold mb-2">{children}</h2>,
+                      h3: ({ children }) => <h3 className="text-lg font-bold mb-2">{children}</h3>,
+                      strong: ({ children }) => <strong className="font-bold">{children}</strong>,
+                      em: ({ children }) => <em className="italic">{children}</em>,
+                      a: ({ href, children }) => (
+                        <a href={href} className="text-blue-600 hover:underline" target="_blank" rel="noopener noreferrer">
+                          {children}
+                        </a>
+                      ),
+                    }}
+                  >
+                    {streamingMarkdown || streamingMessage}
+                  </ReactMarkdown>
+                ) : (
+                  streamingMessage
+                )}
                 <span className="chat-streaming-cursor"></span>
               </div>
             </div>
