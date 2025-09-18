@@ -56,18 +56,27 @@ export class ChatController {
 
   @Get('conversations')
   async getConversations(@Request() req) {
-    // Basic implementation - would fetch from database
+    const conversations = await this.chatService.getConversations(req.user.id);
     return {
-      conversations: [],
+      conversations,
       userId: req.user.id,
     };
   }
 
   @Get('conversations/:conversationId/messages')
   async getConversationMessages(@Request() req, @Param('conversationId') conversationId: string) {
-    // Basic implementation - would fetch from database
+    const conversation = await this.chatService.getConversationMessages(conversationId, req.user.id);
+    
+    if (!conversation) {
+      return {
+        messages: [],
+        conversationId: conversationId,
+        error: 'Conversation not found',
+      };
+    }
+
     return {
-      messages: [],
+      messages: conversation.messages,
       conversationId: conversationId,
     };
   }

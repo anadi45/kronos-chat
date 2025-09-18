@@ -1,12 +1,18 @@
 import { Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import type { ChatRequest } from '@kronos/shared-types';
 import { KronosAgent } from '../agents/kronos/agent';
+import { Conversation, ChatMessage } from '../entities/conversation.entity';
 
 @Injectable()
 export class ChatService {
   private kronosAgent: KronosAgent;
 
-  constructor() {
+  constructor(
+    @InjectRepository(Conversation)
+    private conversationRepository: Repository<Conversation>
+  ) {
     try {
       this.kronosAgent = new KronosAgent();
     } catch (error) {
@@ -20,23 +26,56 @@ export class ChatService {
   /**
    * Send a chat message with streaming response using LangChain and Gemini
    * @param request The chat request
+   * @param userId The user ID
    * @returns A ReadableStream that sends the response
    */
   async sendMessage(request: ChatRequest, userId: string): Promise<ReadableStream> {
-    const conversationId =
-      request.conversationId || this.kronosAgent.generateConversationId();
     const kronosAgent = this.kronosAgent; // Capture reference to avoid 'this' context issues
 
     return new ReadableStream({
       async start(controller) {
         try {
+          // Get or create conversation
+          let conversation: Conversation;
+          let isNewConversation = false;
+
+          if (request.conversationId) {
+            // Load existing conversation
+            conversation = await this.conversationRepository.findOne({
+              where: { id: request.conversationId, created_by: userId }
+            });
+            
+            if (!conversation) {
+              throw new Error('Conversation not found');
+            }
+          } else {
+            // Create new conversation
+            isNewConversation = true;
+            conversation = this.conversationRepository.create({
+              title: null,
+              messages: [],
+              metadata: {},
+              created_by: userId,
+              updated_by: userId,
+            });
+            await this.conversationRepository.save(conversation);
+          }
+
           // Send conversation ID first
           const conversationIdChunk = `data: ${JSON.stringify({
             type: 'conversationId',
-            data: conversationId,
+            data: conversation.id,
             timestamp: new Date().toISOString(),
           })}\n\n`;
           controller.enqueue(new TextEncoder().encode(conversationIdChunk));
+
+          // Add user message to conversation
+          const userMessage: ChatMessage = {
+            role: 'user',
+            content: request.message,
+            timestamp: new Date().toISOString(),
+          };
+          conversation.messages.push(userMessage);
 
           // Get streaming response from Kronos agent
           const stream = await kronosAgent.streamResponse(
@@ -46,6 +85,7 @@ export class ChatService {
           );
 
           const reader = stream.getReader();
+          let assistantResponse = '';
 
           while (true) {
             const { done, value } = await reader.read();
@@ -54,7 +94,47 @@ export class ChatService {
               break;
             }
 
+            // Decode and accumulate assistant response
+            const chunk = new TextDecoder().decode(value);
+            if (chunk.includes('data: ')) {
+              const lines = chunk.split('\n');
+              for (const line of lines) {
+                if (line.startsWith('data: ')) {
+                  const data = line.slice(6);
+                  if (data !== '[DONE]' && data !== '') {
+                    try {
+                      const parsed = JSON.parse(data);
+                      if (parsed.type === 'content' && parsed.data) {
+                        assistantResponse += parsed.data;
+                      }
+                    } catch (e) {
+                      // Skip invalid JSON
+                    }
+                  }
+                }
+              }
+            }
+
             controller.enqueue(value);
+          }
+
+          // Add assistant message to conversation
+          if (assistantResponse) {
+            const assistantMessage: ChatMessage = {
+              role: 'assistant',
+              content: assistantResponse,
+              timestamp: new Date().toISOString(),
+            };
+            conversation.messages.push(assistantMessage);
+
+            // Update conversation title if it's new and this is the first exchange
+            if (isNewConversation && conversation.messages.length === 2) {
+              conversation.title = request.message.slice(0, 50) + (request.message.length > 50 ? '...' : '');
+            }
+
+            // Save updated conversation
+            conversation.updated_by = userId;
+            await this.conversationRepository.save(conversation);
           }
 
           controller.close();
@@ -74,6 +154,30 @@ export class ChatService {
           controller.close();
         }
       },
+    });
+  }
+
+  /**
+   * Get all conversations for a user
+   * @param userId The user ID
+   * @returns Array of conversations
+   */
+  async getConversations(userId: string): Promise<Conversation[]> {
+    return this.conversationRepository.find({
+      where: { created_by: userId },
+      order: { updated_at: 'DESC' },
+    });
+  }
+
+  /**
+   * Get messages for a specific conversation
+   * @param conversationId The conversation ID
+   * @param userId The user ID
+   * @returns Conversation with messages
+   */
+  async getConversationMessages(conversationId: string, userId: string): Promise<Conversation | null> {
+    return this.conversationRepository.findOne({
+      where: { id: conversationId, created_by: userId },
     });
   }
 }
