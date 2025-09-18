@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import type { ChatRequest } from '@kronos/shared-types';
 import { KronosAgent } from '../agents/kronos/agent';
 import { Conversation, ChatMessage } from '../entities/conversation.entity';
+import { ChatMessageRole } from '../enum/roles.enum';
 
 @Injectable()
 export class ChatService {
@@ -31,6 +32,7 @@ export class ChatService {
    */
   async sendMessage(request: ChatRequest, userId: string): Promise<ReadableStream> {
     const kronosAgent = this.kronosAgent; // Capture reference to avoid 'this' context issues
+    const conversationRepository = this.conversationRepository; // Capture repository reference
 
     return new ReadableStream({
       async start(controller) {
@@ -41,7 +43,7 @@ export class ChatService {
 
           if (request.conversationId) {
             // Load existing conversation
-            conversation = await this.conversationRepository.findOne({
+            conversation = await conversationRepository.findOne({
               where: { id: request.conversationId, created_by: userId }
             });
             
@@ -51,14 +53,14 @@ export class ChatService {
           } else {
             // Create new conversation
             isNewConversation = true;
-            conversation = this.conversationRepository.create({
+            conversation = conversationRepository.create({
               title: null,
               messages: [],
               metadata: {},
               created_by: userId,
               updated_by: userId,
             });
-            await this.conversationRepository.save(conversation);
+            await conversationRepository.save(conversation);
           }
 
           // Send conversation ID first
@@ -71,7 +73,7 @@ export class ChatService {
 
           // Add user message to conversation
           const userMessage: ChatMessage = {
-            role: 'user',
+            role: ChatMessageRole.USER,
             content: request.message,
             timestamp: new Date().toISOString(),
           };
@@ -121,7 +123,7 @@ export class ChatService {
           // Add assistant message to conversation
           if (assistantResponse) {
             const assistantMessage: ChatMessage = {
-              role: 'assistant',
+              role: ChatMessageRole.AI,
               content: assistantResponse,
               timestamp: new Date().toISOString(),
             };
@@ -134,7 +136,7 @@ export class ChatService {
 
             // Save updated conversation
             conversation.updated_by = userId;
-            await this.conversationRepository.save(conversation);
+            await conversationRepository.save(conversation);
           }
 
           controller.close();

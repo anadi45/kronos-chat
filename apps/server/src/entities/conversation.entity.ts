@@ -8,9 +8,10 @@ import {
   JoinColumn,
 } from 'typeorm';
 import { User } from './user.entity';
+import { ChatMessageRole } from '../enum/roles.enum';
 
 export interface ChatMessage {
-  role: 'user' | 'assistant' | 'system';
+  role: ChatMessageRole;
   content: string;
   timestamp: string;
 }
