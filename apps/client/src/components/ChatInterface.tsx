@@ -80,11 +80,41 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
     }
   };
 
+  const deleteConversation = async (conversationId: string, event: React.MouseEvent) => {
+    event.stopPropagation(); // Prevent triggering the conversation load
+    
+    if (!window.confirm('Are you sure you want to delete this conversation? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      const result = await apiService.deleteConversation(conversationId);
+      if (result.success) {
+        // Remove from local state
+        setConversations(prev => prev.filter(conv => conv.id !== conversationId));
+        
+        // If this was the current conversation, clear it
+        if (currentConversationId === conversationId) {
+          startNewConversation();
+        }
+      } else {
+        setError(result.message || 'Failed to delete conversation');
+      }
+    } catch (error) {
+      console.error('Failed to delete conversation:', error);
+      setError('Failed to delete conversation');
+    }
+  };
+
   const loadConversationMessages = async (conversationId: string) => {
     try {
       const response = await apiService.getConversationMessages(conversationId);
       setMessages(response.messages || []);
       setCurrentConversationId(conversationId);
+      setStreamingMessage('');
+      setStreamingMarkdown('');
+      setIsMarkdownMode(false);
+      setError(null);
     } catch (error) {
       console.error('Failed to load conversation messages:', error);
       setError('Failed to load conversation');
@@ -306,43 +336,60 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
 
       {/* Conversations Sidebar */}
       {showConversations && (
-        <div className="conversations-sidebar">
-          <div className="conversations-header">
-            <h3>Conversations</h3>
-            <button
-              onClick={() => setShowConversations(false)}
-              className="close-btn"
-            >
-              ✕
-            </button>
-          </div>
-          <div className="conversations-list">
-            <button
-              onClick={startNewConversation}
-              className={`conversation-item ${!currentConversationId ? 'active' : ''}`}
-            >
-              <div className="conversation-title">New Conversation</div>
-              <div className="conversation-time">Start fresh</div>
-            </button>
-            {conversations.map((conversation) => (
+        <>
+          <div 
+            className="conversations-backdrop"
+            onClick={() => setShowConversations(false)}
+          />
+          <div className="conversations-sidebar open">
+            <div className="conversations-header">
+              <h3>Conversations</h3>
               <button
-                key={conversation.id}
-                onClick={() => {
-                  loadConversationMessages(conversation.id);
-                  setShowConversations(false);
-                }}
-                className={`conversation-item ${currentConversationId === conversation.id ? 'active' : ''}`}
+                onClick={() => setShowConversations(false)}
+                className="close-btn"
               >
-                <div className="conversation-title">
-                  {conversation.title || `Conversation ${conversation.id.slice(-8)}`}
-                </div>
-                <div className="conversation-time">
-                  {new Date(conversation.updatedAt).toLocaleDateString()}
-                </div>
+                ✕
               </button>
-            ))}
+            </div>
+            <div className="conversations-list">
+              <button
+                onClick={startNewConversation}
+                className={`conversation-item ${!currentConversationId ? 'active' : ''}`}
+              >
+                <div className="conversation-title">New Conversation</div>
+                <div className="conversation-time">Start fresh</div>
+              </button>
+              {conversations.map((conversation) => (
+                <div
+                  key={conversation.id}
+                  className={`conversation-item ${currentConversationId === conversation.id ? 'active' : ''}`}
+                >
+                  <button
+                    onClick={() => {
+                      loadConversationMessages(conversation.id);
+                      setShowConversations(false);
+                    }}
+                    className="conversation-content"
+                  >
+                    <div className="conversation-title">
+                      {conversation.title || `Conversation ${conversation.id.slice(-8)}`}
+                    </div>
+                    <div className="conversation-time">
+                      {new Date(conversation.updatedAt).toLocaleDateString()}
+                    </div>
+                  </button>
+                  <button
+                    onClick={(e) => deleteConversation(conversation.id, e)}
+                    className="conversation-delete-btn"
+                    title="Delete conversation"
+                  >
+                    🗑️
+                  </button>
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
+        </>
       )}
 
       {/* Messages Area */}

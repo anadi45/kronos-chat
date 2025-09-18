@@ -201,4 +201,28 @@ export class ChatService {
       where: { id: conversationId, created_by: userId },
     });
   }
+
+  /**
+   * Delete a conversation
+   * @param conversationId The conversation ID
+   * @param userId The user ID
+   * @returns Success status
+   */
+  async deleteConversation(conversationId: string, userId: string): Promise<{ success: boolean; message: string }> {
+    try {
+      const conversation = await this.conversationRepository.findOne({
+        where: { id: conversationId, created_by: userId },
+      });
+
+      if (!conversation) {
+        return { success: false, message: 'Conversation not found' };
+      }
+
+      await this.conversationRepository.remove(conversation);
+      return { success: true, message: 'Conversation deleted successfully' };
+    } catch (error) {
+      console.error('Error deleting conversation:', error);
+      return { success: false, message: 'Failed to delete conversation' };
+    }
+  }
 }

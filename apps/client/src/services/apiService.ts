@@ -207,6 +207,15 @@ class ApiService {
     return response.data;
   }
 
+  /**
+   * Delete a conversation
+   * DELETE /chat/conversations/:conversationId
+   */
+  async deleteConversation(conversationId: string): Promise<{ success: boolean; message: string }> {
+    const response = await this.client.delete(`/chat/conversations/${conversationId}`);
+    return response.data;
+  }
+
   // Integration Methods
 
   /**
