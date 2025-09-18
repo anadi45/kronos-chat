@@ -8,6 +8,7 @@
  * - Chat messaging
  * - API communication
  * - Third-party integrations
+ * - Utility functions
  */
 
 // Core stream event system
@@ -25,3 +26,6 @@ export * from './api.types';
 
 // Third-party integrations
 export * from './integration.types';
+
+// Utility functions
+export * from './utils';

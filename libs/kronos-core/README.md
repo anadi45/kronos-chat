@@ -15,6 +15,7 @@ npm install @kronos/core
 - **Chat**: Chat message and conversation types
 - **API**: API request/response type definitions
 - **Integrations**: Third-party integration types
+- **Utilities**: Common utility functions for validation, formatting, and API handling
 
 ## Usage
 
@@ -63,6 +64,29 @@ const message: ChatMessage = {
 };
 ```
 
+### Utilities
+
+```typescript
+import { 
+  formatDate, 
+  getRelativeTime, 
+  isValidEmail, 
+  validateRequired,
+  createApiUrl 
+} from '@kronos/core';
+
+// Date formatting
+const formatted = formatDate(new Date());
+const relative = getRelativeTime('2024-01-01T10:00:00Z');
+
+// Validation
+const emailValid = isValidEmail('user@example.com');
+const error = validateRequired('', 'Name');
+
+// API utilities
+const url = createApiUrl('https://api.example.com', '/users');
+```
+
 ## API Reference
 
 ### Stream Events
@@ -84,6 +108,13 @@ const message: ChatMessage = {
 - `StreamEventTransformer` - Transform events to SSE format
 - `StreamEventStatistics` - Generate event statistics
 - `StreamEventDebugger` - Debug and logging utilities
+
+### Utility Functions
+
+- **API Utilities**: `createApiUrl`, `getErrorMessage`, `handleApiError`, `formatApiResponse`
+- **Auth Utilities**: `isValidEmail`, `isStrongPassword`, `getPasswordStrength`, `sanitizeUserData`
+- **Date Utilities**: `formatDate`, `formatDateTime`, `getRelativeTime`, `isToday`
+- **Validation Utilities**: `isEmpty`, `isUUID`, `sanitizeInput`, `validateRequired`, `validateEmail`
 
 ## Development
 
