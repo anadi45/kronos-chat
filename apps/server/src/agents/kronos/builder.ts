@@ -20,8 +20,16 @@ import {
 import type { ChatMessage } from '@kronos/core';
 import { MODELS } from '../../constants/models.constants';
 import { formatSystemPrompt } from './prompts';
-import { getContextValue, extractToolCalls, getCurrentDate, generateConversationId } from './utils';
-import { createKronosCheckpointerFromEnv, createKronosCheckpointer } from './checkpointer';
+import {
+  getContextValue,
+  extractToolCalls,
+  getCurrentDate,
+  generateConversationId,
+} from './utils';
+import {
+  createKronosCheckpointerFromEnv,
+  createKronosCheckpointer,
+} from './checkpointer';
 
 /**
  * Kronos Agent Builder
@@ -34,10 +42,12 @@ export class KronosAgentBuilder {
   private tools: any[] = [];
   private toolProvider: Composio;
   private checkpointer?: any; // PostgreSQL checkpointer instance
+  private userId: string;
 
   AGENT_NAME = 'kronos_agent';
 
-  constructor() {
+  constructor(userId: string) {
+    this.userId = userId;
     this.initializeProviders();
   }
 
@@ -47,7 +57,7 @@ export class KronosAgentBuilder {
   async build(): Promise<any> {
     try {
       console.log('🚀 Starting Kronos agent creation');
-      await this.loadTools();
+      await this.loadTools(this.userId);
       await this.initializeCheckpointer();
 
       // Build the workflow graph
@@ -60,14 +70,23 @@ export class KronosAgentBuilder {
       const compileOptions: any = {
         name: this.AGENT_NAME,
       };
-      
 
-    compileOptions.checkpointer = this.checkpointer.getPostgresSaver();
-      
+      // Only add checkpointer if it's available
+      if (this.checkpointer) {
+        compileOptions.checkpointer = this.checkpointer.getPostgresSaver();
+      }
 
       const compiledGraph = workflow.compile(compileOptions);
 
-      console.log('✅ Kronos agent created successfully with PostgreSQL checkpointer');
+      if (this.checkpointer) {
+        console.log(
+          '✅ Kronos agent created successfully with PostgreSQL checkpointer'
+        );
+      } else {
+        console.log(
+          '✅ Kronos agent created successfully without persistence (checkpointer unavailable)'
+        );
+      }
       return compiledGraph;
     } catch (error) {
       console.error('❌ Failed to create Kronos agent:', error);
@@ -102,20 +121,23 @@ export class KronosAgentBuilder {
       this.checkpointer = await createKronosCheckpointer();
       console.log('✅ PostgreSQL checkpointer initialized successfully');
     } catch (error) {
-      console.warn('⚠️ Failed to initialize PostgreSQL checkpointer, continuing without persistence:', error);
+      console.warn(
+        '⚠️ Failed to initialize PostgreSQL checkpointer, continuing without persistence:',
+        error
+      );
       this.checkpointer = undefined;
     }
   }
 
   /**
-   * Load all available tools
+   * Load all available tools for a given user
    */
-  private async loadTools(): Promise<void> {
+  private async loadTools(userId: string): Promise<void> {
     console.log('🔧 Loading Kronos tools');
 
     try {
       // Get tools from Composio (using a default user ID for now)
-      const composioTools = await this.toolProvider.tools.get('default-user', {
+      const composioTools = await this.toolProvider.tools.get(userId, {
         tools: ['GMAIL_FETCH_EMAILS'],
       });
 
@@ -159,15 +181,11 @@ export class KronosAgentBuilder {
     workflow.setEntryPoint('agent');
 
     // Agent -> tools or final answer node
-    workflow.addConditionalEdges(
-      'agent',
-      this.shouldAct,
-      {
-        'continue': 'tool',
-        'final_answer': 'final_answer',
-        'complete': 'complete',
-      }
-    );
+    workflow.addConditionalEdges('agent', this.shouldAct, {
+      continue: 'tool',
+      final_answer: 'final_answer',
+      complete: 'complete',
+    });
 
     // Tool -> agent (loop back)
     workflow.addEdge('tool', 'agent');
@@ -191,11 +209,13 @@ export class KronosAgentBuilder {
       const toolCalls = aiMessage.tool_calls || [];
 
       if (toolCalls.length > 0) {
-        const toolNames = toolCalls.map(tc => tc.name);
+        const toolNames = toolCalls.map((tc) => tc.name);
         console.log('Routing: Tool calls requested:', toolNames);
         return 'continue';
       } else {
-        console.log('Routing: LLM provided a direct answer, proceeding to completion.');
+        console.log(
+          'Routing: LLM provided a direct answer, proceeding to completion.'
+        );
         return 'complete';
       }
     }
@@ -214,7 +234,7 @@ export class KronosAgentBuilder {
 
       try {
         const lastMessage = state.messages[state.messages.length - 1];
-        
+
         if (!lastMessage || !(lastMessage instanceof AIMessage)) {
           console.log('No AI message found, skipping tool execution');
           return {};
@@ -224,7 +244,9 @@ export class KronosAgentBuilder {
         const toolCalls = extractToolCalls(aiMessage);
 
         if (toolCalls.length === 0) {
-          console.log('No tool calls found in last message, skipping tool execution');
+          console.log(
+            'No tool calls found in last message, skipping tool execution'
+          );
           return {};
         }
 
@@ -238,28 +260,35 @@ export class KronosAgentBuilder {
           hasAuthToken: !!authToken,
           workspaceId,
           userId,
-          conversationId
+          conversationId,
         });
 
         // Execute tools with enhanced error handling
         const toolResults: ToolMessage[] = [];
-        
+
         for (const toolCall of toolCalls) {
           try {
             // Find the tool
-            const tool = this.tools.find(t => t.name === toolCall.name);
+            const tool = this.tools.find((t) => t.name === toolCall.name);
             if (!tool) {
-              console.warn(`Tool ${toolCall.name} not found in available tools`);
-              toolResults.push(new ToolMessage({
-                content: `Tool ${toolCall.name} not found`,
-                tool_call_id: toolCall.id,
-              }));
+              console.warn(
+                `Tool ${toolCall.name} not found in available tools`
+              );
+              toolResults.push(
+                new ToolMessage({
+                  content: `Tool ${toolCall.name} not found`,
+                  tool_call_id: toolCall.id,
+                })
+              );
               continue;
             }
 
             // Execute the tool with context
-            console.log(`Executing tool: ${toolCall.name} with args:`, toolCall.args);
-            
+            console.log(
+              `Executing tool: ${toolCall.name} with args:`,
+              toolCall.args
+            );
+
             // Add context to tool arguments if the tool supports it
             const toolArgs = {
               ...toolCall.args,
@@ -270,26 +299,28 @@ export class KronosAgentBuilder {
             };
 
             const result = await tool.invoke(toolArgs);
-            
-            console.log(`Tool ${toolCall.name} executed successfully`);
-            toolResults.push(new ToolMessage({
-              content: JSON.stringify(result),
-              tool_call_id: toolCall.id,
-            }));
 
+            console.log(`Tool ${toolCall.name} executed successfully`);
+            toolResults.push(
+              new ToolMessage({
+                content: JSON.stringify(result),
+                tool_call_id: toolCall.id,
+              })
+            );
           } catch (error) {
             console.error(`Error executing tool ${toolCall.name}:`, error);
-            toolResults.push(new ToolMessage({
-              content: `Error executing ${toolCall.name}: ${error.message}`,
-              tool_call_id: toolCall.id,
-            }));
+            toolResults.push(
+              new ToolMessage({
+                content: `Error executing ${toolCall.name}: ${error.message}`,
+                tool_call_id: toolCall.id,
+              })
+            );
           }
         }
 
         return {
           messages: toolResults,
         };
-
       } catch (error) {
         console.error('❌ Tool node execution failed:', error);
         return {
@@ -310,7 +341,7 @@ export class KronosAgentBuilder {
         // Get current date for dynamic prompt
         const todayDate = getCurrentDate();
         const formattedPrompt = formatSystemPrompt(todayDate);
-        
+
         // Build messages array with proper conversation history
         const messages = [
           new SystemMessage(formattedPrompt),
@@ -318,18 +349,26 @@ export class KronosAgentBuilder {
         ];
 
         // Add current message if not already in messages
-        if (state.currentMessage && !messages.some(msg => 
-          msg instanceof HumanMessage && msg.content === state.currentMessage
-        )) {
+        if (
+          state.currentMessage &&
+          !messages.some(
+            (msg) =>
+              msg instanceof HumanMessage &&
+              msg.content === state.currentMessage
+          )
+        ) {
           messages.push(new HumanMessage(state.currentMessage));
         }
 
-        console.log(`Agent using conversation history: ${messages.length} messages`);
+        console.log(
+          `Agent using conversation history: ${messages.length} messages`
+        );
 
         // Bind tools to the model with tool choice
-        const modelWithTools = this.tools.length > 0 
-          ? this.model.bindTools(this.tools, { tool_choice: 'any' })
-          : this.model;
+        const modelWithTools =
+          this.tools.length > 0
+            ? this.model.bindTools(this.tools, { tool_choice: 'any' })
+            : this.model;
 
         // Generate response
         const response = await modelWithTools.invoke(messages, config);
@@ -341,9 +380,11 @@ export class KronosAgentBuilder {
       } catch (error) {
         console.error('❌ Agent node execution failed:', error);
         return {
-          messages: [new AIMessage(
-            'I apologize, but I encountered an error while processing your request.'
-          )],
+          messages: [
+            new AIMessage(
+              'I apologize, but I encountered an error while processing your request.'
+            ),
+          ],
           error: `Agent execution failed: ${error.message}`,
         };
       }
@@ -361,21 +402,27 @@ export class KronosAgentBuilder {
         // Generate LLM-based response using conversation history
         const todayDate = getCurrentDate();
         const formattedPrompt = formatSystemPrompt(todayDate);
-        
+
         // Build conversation history for final response generation
         const allMessages = state.messages;
         const conversationHistory = [
           new SystemMessage(formattedPrompt),
-          ...allMessages
+          ...allMessages,
         ];
 
-        console.log(`Final answer using conversation history: ${conversationHistory.length} messages`);
+        console.log(
+          `Final answer using conversation history: ${conversationHistory.length} messages`
+        );
 
         // Generate comprehensive final response using LLM
-        const finalResponse = await this.model.invoke(conversationHistory, config);
+        const finalResponse = await this.model.invoke(
+          conversationHistory,
+          config
+        );
 
         // Extract content from the response
-        let responseContent = 'I apologize, but I was unable to generate a response.';
+        let responseContent =
+          'I apologize, but I was unable to generate a response.';
         if (finalResponse && finalResponse.content) {
           responseContent = finalResponse.content as string;
         }
@@ -390,7 +437,8 @@ export class KronosAgentBuilder {
       } catch (error) {
         console.error('❌ Final answer node execution failed:', error);
         return {
-          response: 'I apologize, but I encountered an error while finalizing my response.',
+          response:
+            'I apologize, but I encountered an error while finalizing my response.',
           isComplete: true,
           error: `Final answer generation failed: ${error.message}`,
         };
@@ -409,7 +457,8 @@ export class KronosAgentBuilder {
   }
 
   /**
-   * Create a streaming response using the built graph with enhanced context support
+   * Create a streaming response using LangGraph's proper streaming capabilities
+   * Supports multiple stream modes: updates, messages, and custom tool updates
    */
   async streamResponse(
     message: string,
@@ -420,6 +469,7 @@ export class KronosAgentBuilder {
       workspaceId?: string;
       conversationId?: string;
       threadId?: string;
+      streamModes?: ('updates' | 'messages' | 'custom')[];
     } = {}
   ): Promise<ReadableStream> {
     try {
@@ -438,7 +488,8 @@ export class KronosAgentBuilder {
       };
 
       // Create config with context and thread ID for checkpointer
-      const threadId = options.threadId || options.conversationId || generateConversationId();
+      const threadId =
+        options.threadId || options.conversationId || generateConversationId();
       const config: RunnableConfig = {
         configurable: {
           authToken: options.authToken,
@@ -446,61 +497,149 @@ export class KronosAgentBuilder {
           conversationId: options.conversationId,
           userId: userId,
           thread_id: threadId,
-        }
+        },
       };
 
-      // Create streaming response
+      // Default stream modes if not specified
+      const streamModes = options.streamModes || [
+        'updates',
+        'messages',
+        'custom',
+      ];
+
+      // Create streaming response using LangGraph's streaming
       return new ReadableStream({
         async start(controller) {
           try {
-            console.log('Starting graph execution with context:', {
+            console.log(
+              'Starting LangGraph streaming with modes:',
+              streamModes
+            );
+            console.log('Context:', {
               hasAuthToken: !!options.authToken,
               workspaceId: options.workspaceId,
               conversationId: options.conversationId,
               userId: userId,
-              threadId: threadId
+              threadId: threadId,
             });
 
-            // Execute the graph with config
-            const result = await graph.invoke(initialState, config);
+            // Use LangGraph's stream method with multiple modes
+            const stream = await graph.stream(initialState, {
+              ...config,
+              streamMode: streamModes,
+            });
 
-            // Get the final response from the result
-            const finalResponse = result.response || 'I apologize, but I was unable to generate a response.';
+            let assistantResponse = '';
+            let tokenSequence = 0;
 
-            console.log('Graph execution completed, streaming response');
+            // Process the stream based on the modes
+            for await (const [streamMode, chunk] of stream) {
+              console.log(`Stream mode: ${streamMode}`, chunk);
 
-            // Stream the response
-            const contentChunk = `data: ${JSON.stringify({
-              type: 'content',
-              data: finalResponse,
-              timestamp: new Date().toISOString(),
-            })}\n\n`;
-            controller.enqueue(new TextEncoder().encode(contentChunk));
+              switch (streamMode) {
+                case 'updates':
+                  // Agent progress updates - emit after each node execution
+                  if (chunk && typeof chunk === 'object') {
+                    const updateEvent = {
+                      type: 'agent_progress',
+                      data: {
+                        node: chunk.node || 'unknown',
+                        status: 'completed',
+                        timestamp: new Date().toISOString(),
+                      },
+                    };
+                    controller.enqueue(
+                      new TextEncoder().encode(
+                        `data: ${JSON.stringify(updateEvent)}\n\n`
+                      )
+                    );
+                  }
+                  break;
 
-            // Send done signal
-            const doneChunk = `data: ${JSON.stringify({
-              type: 'done',
-              timestamp: new Date().toISOString(),
-            })}\n\n`;
-            controller.enqueue(new TextEncoder().encode(doneChunk));
+                case 'messages':
+                  // LLM tokens - stream tokens as they are generated
+                  if (chunk && chunk.content) {
+                    const content =
+                      typeof chunk.content === 'string'
+                        ? chunk.content
+                        : String(chunk.content);
 
-            // Send final [DONE] marker
-            controller.enqueue(new TextEncoder().encode('data: [DONE]\n\n'));
+                    // Stream content as single token to avoid splitting issues
+                    if (content.trim()) {
+                      tokenSequence++;
+                      const tokenEvent = {
+                        type: 'token',
+                        data: content,
+                        sequence: tokenSequence,
+                        timestamp: new Date().toISOString(),
+                      };
+                      controller.enqueue(
+                        new TextEncoder().encode(
+                          `data: ${JSON.stringify(tokenEvent)}\n\n`
+                        )
+                      );
+                      assistantResponse += content;
+                    }
+                  }
+                  break;
+
+                case 'custom':
+                  // Custom tool updates - emit custom data from tools
+                  if (chunk && typeof chunk === 'object') {
+                    const customEvent = {
+                      type: 'tool_update',
+                      data: chunk,
+                      timestamp: new Date().toISOString(),
+                    };
+                    controller.enqueue(
+                      new TextEncoder().encode(
+                        `data: ${JSON.stringify(customEvent)}\n\n`
+                      )
+                    );
+                  }
+                  break;
+              }
+            }
+
+            console.log('LangGraph streaming completed');
+
+            // Send completion event
+            const completionEvent = {
+              type: 'completion',
+              data: {
+                response: assistantResponse,
+                totalTokens: tokenSequence,
+                timestamp: new Date().toISOString(),
+              },
+            };
+            controller.enqueue(
+              new TextEncoder().encode(
+                `data: ${JSON.stringify(completionEvent)}\n\n`
+              )
+            );
+
+            // Close the stream without duplicate [DONE] markers
             controller.close();
           } catch (error) {
-            console.error('Streaming error:', error);
-            const errorChunk = `data: ${JSON.stringify({
+            console.error('LangGraph streaming error:', error);
+            const errorEvent = {
               type: 'error',
-              error: 'Failed to generate response',
-              timestamp: new Date().toISOString(),
-            })}\n\n`;
-            controller.enqueue(new TextEncoder().encode(errorChunk));
+              data: {
+                error: error.message,
+                timestamp: new Date().toISOString(),
+              },
+            };
+            controller.enqueue(
+              new TextEncoder().encode(
+                `data: ${JSON.stringify(errorEvent)}\n\n`
+              )
+            );
             controller.close();
           }
         },
       });
     } catch (error) {
-      console.error('Failed to create streaming response:', error);
+      console.error('Failed to create LangGraph streaming response:', error);
       throw error;
     }
   }
