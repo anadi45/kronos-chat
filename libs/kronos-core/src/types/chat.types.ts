@@ -25,3 +25,10 @@ export interface Conversation {
   messages: ChatMessage[];
 }
 
+export interface ConversationsResponse {
+  data: Conversation[];
+  currentPage: number;
+  totalPages: number;
+  pageSize: number;
+}
+

@@ -26,10 +26,14 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [showConversations, setShowConversations] = useState(false);
   const [isMarkdownMode, setIsMarkdownMode] = useState(false);
+  const [isLoadingConversations, setIsLoadingConversations] = useState(false);
+  const [hasMoreConversations, setHasMoreConversations] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
+  const conversationsListRef = useRef<HTMLDivElement>(null);
 
   // Auto-scroll to bottom when new messages arrive
   const scrollToBottom = useCallback(() => {
@@ -78,6 +82,28 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
     return undefined;
   }, [showConversations]);
 
+  // Handle infinite scroll for conversations
+  useEffect(() => {
+    const handleScroll = () => {
+      if (!conversationsListRef.current || !showConversations) return;
+      
+      const { scrollTop, scrollHeight, clientHeight } = conversationsListRef.current;
+      const isNearBottom = scrollTop + clientHeight >= scrollHeight - 100; // 100px threshold
+      
+      if (isNearBottom && hasMoreConversations && !isLoadingConversations) {
+        loadMoreConversations();
+      }
+    };
+
+    const listElement = conversationsListRef.current;
+    if (listElement) {
+      listElement.addEventListener('scroll', handleScroll);
+      return () => listElement.removeEventListener('scroll', handleScroll);
+    }
+    
+    return undefined;
+  }, [showConversations, hasMoreConversations, isLoadingConversations, currentPage]);
+
   // Persist conversation ID to localStorage when it changes
   useEffect(() => {
     if (currentConversationId) {
@@ -87,12 +113,43 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
     }
   }, [currentConversationId]);
 
-  const loadConversations = async () => {
+  const loadConversations = async (page: number = 1, append: boolean = false) => {
+    if (isLoadingConversations) return;
+    
+    setIsLoadingConversations(true);
     try {
-      const response = await apiService.getConversations();
-      setConversations(response.conversations || []);
-    } catch (error) {
+      const response = await apiService.getConversations(page, 10);
+      if (append) {
+        setConversations(prev => [...prev, ...response.data]);
+      } else {
+        setConversations(response.data || []);
+      }
+      setHasMoreConversations(page < response.totalPages);
+      setCurrentPage(page);
+      setError(null); // Clear any previous errors
+    } catch (error: any) {
       console.error('Failed to load conversations:', error);
+      
+      // Handle different types of errors
+      if (error.response?.status === 400) {
+        setError(`Invalid request: ${error.response.data.message || 'Please check your parameters'}`);
+      } else if (error.response?.status === 401) {
+        setError('Authentication required. Please log in again.');
+      } else if (error.response?.status === 500) {
+        setError('Server error. Please try again later.');
+      } else if (error.code === 'NETWORK_ERROR') {
+        setError('Network error. Please check your connection.');
+      } else {
+        setError('Failed to load conversations. Please try again.');
+      }
+    } finally {
+      setIsLoadingConversations(false);
+    }
+  };
+
+  const loadMoreConversations = async () => {
+    if (hasMoreConversations && !isLoadingConversations) {
+      await loadConversations(currentPage + 1, true);
     }
   };
 
@@ -113,12 +170,27 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
         if (currentConversationId === conversationId) {
           startNewConversation();
         }
+        setError(null); // Clear any previous errors
       } else {
         setError(result.message || 'Failed to delete conversation');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to delete conversation:', error);
-      setError('Failed to delete conversation');
+      
+      // Handle different types of errors
+      if (error.response?.status === 400) {
+        setError(`Invalid request: ${error.response.data.message || 'Please check your parameters'}`);
+      } else if (error.response?.status === 401) {
+        setError('Authentication required. Please log in again.');
+      } else if (error.response?.status === 404) {
+        setError('Conversation not found.');
+      } else if (error.response?.status === 500) {
+        setError('Server error. Please try again later.');
+      } else if (error.code === 'NETWORK_ERROR') {
+        setError('Network error. Please check your connection.');
+      } else {
+        setError('Failed to delete conversation. Please try again.');
+      }
     }
   };
 
@@ -131,9 +203,23 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
       setStreamingMarkdown('');
       setIsMarkdownMode(false);
       setError(null);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to load conversation messages:', error);
-      setError('Failed to load conversation');
+      
+      // Handle different types of errors
+      if (error.response?.status === 400) {
+        setError(`Invalid request: ${error.response.data.message || 'Please check your parameters'}`);
+      } else if (error.response?.status === 401) {
+        setError('Authentication required. Please log in again.');
+      } else if (error.response?.status === 404) {
+        setError('Conversation not found.');
+      } else if (error.response?.status === 500) {
+        setError('Server error. Please try again later.');
+      } else if (error.code === 'NETWORK_ERROR') {
+        setError('Network error. Please check your connection.');
+      } else {
+        setError('Failed to load conversation. Please try again.');
+      }
     }
   };
 
@@ -143,6 +229,9 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
     setStreamingMessage('');
     setError(null);
     setShowConversations(false);
+    // Reset pagination state
+    setCurrentPage(1);
+    setHasMoreConversations(true);
   };
 
   const handleSendMessage = async () => {
@@ -371,7 +460,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
               </button>
             </div>
             <div className="conversations-modal-content">
-              <div className="conversations-list">
+              <div className="conversations-list" ref={conversationsListRef}>
                 <button
                   onClick={startNewConversation}
                   className={`conversation-item ${!currentConversationId ? 'active' : ''}`}
@@ -407,6 +496,21 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
                     </button>
                   </div>
                 ))}
+                
+                {/* Loading indicator */}
+                {isLoadingConversations && (
+                  <div className="conversations-loading">
+                    <div className="conversations-loading-spinner"></div>
+                    <span>Loading more conversations...</span>
+                  </div>
+                )}
+                
+                {/* End of list indicator */}
+                {!hasMoreConversations && conversations.length > 0 && (
+                  <div className="conversations-end">
+                    <span>No more conversations</span>
+                  </div>
+                )}
               </div>
             </div>
           </div>

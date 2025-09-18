@@ -191,6 +191,37 @@ export class ChatService {
   }
 
   /**
+   * Get paginated conversations for a user
+   * @param userId The user ID
+   * @param page Page number (1-based)
+   * @param limit Number of records per page
+   * @returns Paginated conversations
+   */
+  async getConversationsPaginated(
+    userId: string, 
+    page: number = 1, 
+    limit: number = 10
+  ): Promise<{ data: Conversation[]; currentPage: number; totalPages: number; pageSize: number }> {
+    const skip = (page - 1) * limit;
+    
+    const [conversations, total] = await this.conversationRepository.findAndCount({
+      where: { created_by: userId },
+      order: { updated_at: 'DESC' },
+      skip,
+      take: limit,
+    });
+
+    const totalPages = Math.ceil(total / limit);
+
+    return {
+      data: conversations,
+      currentPage: page,
+      totalPages,
+      pageSize: limit,
+    };
+  }
+
+  /**
    * Get messages for a specific conversation
    * @param conversationId The conversation ID
    * @param userId The user ID
