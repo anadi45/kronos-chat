@@ -62,6 +62,22 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
     }
   }, []);
 
+  // Handle escape key to close modal
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && showConversations) {
+        setShowConversations(false);
+      }
+    };
+
+    if (showConversations) {
+      document.addEventListener('keydown', handleEscape);
+      return () => document.removeEventListener('keydown', handleEscape);
+    }
+    
+    return undefined;
+  }, [showConversations]);
+
   // Persist conversation ID to localStorage when it changes
   useEffect(() => {
     if (currentConversationId) {
@@ -334,62 +350,67 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
         </div>
       </div>
 
-      {/* Conversations Sidebar */}
+      {/* Conversations Modal */}
       {showConversations && (
-        <>
-          <div 
-            className="conversations-backdrop"
-            onClick={() => setShowConversations(false)}
-          />
-          <div className="conversations-sidebar open">
-            <div className="conversations-header">
-              <h3>Conversations</h3>
+        <div 
+          className="conversations-modal-overlay"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setShowConversations(false);
+            }
+          }}
+        >
+          <div className="conversations-modal">
+            <div className="conversations-modal-header">
+              <h3>Past Conversations</h3>
               <button
                 onClick={() => setShowConversations(false)}
-                className="close-btn"
+                className="conversations-modal-close"
               >
                 ✕
               </button>
             </div>
-            <div className="conversations-list">
-              <button
-                onClick={startNewConversation}
-                className={`conversation-item ${!currentConversationId ? 'active' : ''}`}
-              >
-                <div className="conversation-title">New Conversation</div>
-                <div className="conversation-time">Start fresh</div>
-              </button>
-              {conversations.map((conversation) => (
-                <div
-                  key={conversation.id}
-                  className={`conversation-item ${currentConversationId === conversation.id ? 'active' : ''}`}
+            <div className="conversations-modal-content">
+              <div className="conversations-list">
+                <button
+                  onClick={startNewConversation}
+                  className={`conversation-item ${!currentConversationId ? 'active' : ''}`}
                 >
-                  <button
-                    onClick={() => {
-                      loadConversationMessages(conversation.id);
-                      setShowConversations(false);
-                    }}
-                    className="conversation-content"
+                  <div className="conversation-title">New Conversation</div>
+                  <div className="conversation-time">Start fresh</div>
+                </button>
+                {conversations.map((conversation) => (
+                  <div
+                    key={conversation.id}
+                    className={`conversation-item ${currentConversationId === conversation.id ? 'active' : ''}`}
                   >
-                    <div className="conversation-title">
-                      {conversation.title || `Conversation ${conversation.id.slice(-8)}`}
-                    </div>
-                    <div className="conversation-time">
-                      {new Date(conversation.updatedAt).toLocaleDateString()}
-                    </div>
-                  </button>
-                  <button
-                    onClick={(e) => deleteConversation(conversation.id, e)}
-                    className="conversation-delete-btn"
-                    title="Delete conversation"
-                  >
-                    🗑️
-                  </button>
-                </div>
-              ))}
+                    <button
+                      onClick={() => {
+                        loadConversationMessages(conversation.id);
+                        setShowConversations(false);
+                      }}
+                      className="conversation-content"
+                    >
+                      <div className="conversation-title">
+                        {conversation.title || `Conversation ${conversation.id.slice(-8)}`}
+                      </div>
+                      <div className="conversation-time">
+                        {new Date(conversation.updatedAt).toLocaleDateString()}
+                      </div>
+                    </button>
+                    <button
+                      onClick={(e) => deleteConversation(conversation.id, e)}
+                      className="conversation-delete-btn"
+                      title="Delete conversation"
+                    >
+                      🗑️
+                    </button>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
-        </>
+        </div>
       )}
 
       {/* Messages Area */}
