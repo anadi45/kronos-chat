@@ -6,6 +6,7 @@ import {
   UseGuards,
   Request,
   Res,
+  Param,
 } from '@nestjs/common';
 import type { Response } from 'express';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -63,11 +64,11 @@ export class ChatController {
   }
 
   @Get('conversations/:conversationId/messages')
-  async getConversationMessages(@Request() req) {
+  async getConversationMessages(@Request() req, @Param('conversationId') conversationId: string) {
     // Basic implementation - would fetch from database
     return {
       messages: [],
-      conversationId: req.params.conversationId,
+      conversationId: conversationId,
     };
   }
 }
