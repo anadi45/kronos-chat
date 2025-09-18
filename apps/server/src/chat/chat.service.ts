@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import type { ChatRequest } from '@kronos/core';
+import type { ChatRequest, PaginatedResponse } from '@kronos/core';
 import { StreamEventFactory, StreamEventSerializer } from '@kronos/core';
 import { KronosAgent } from '../agents/kronos/agent';
 import { Conversation, ChatMessage } from '../entities/conversation.entity';
@@ -201,7 +201,7 @@ export class ChatService {
     userId: string, 
     page: number = 1, 
     limit: number = 10
-  ): Promise<{ items: Conversation[]; total: number; page: number; limit: number; totalPages: number }> {
+  ): Promise<PaginatedResponse<Conversation>> {
     const skip = (page - 1) * limit;
     
     const [conversations, total] = await this.conversationRepository.findAndCount({

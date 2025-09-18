@@ -14,7 +14,7 @@ import {
 import type { Response } from 'express';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ChatService } from './chat.service';
-import type { ChatRequest, ConversationsResponse } from '@kronos/core';
+import type { ChatRequest, PaginatedResponse, Conversation } from '@kronos/core';
 
 @Controller('chat')
 @UseGuards(JwtAuthGuard)
@@ -62,7 +62,7 @@ export class ChatController {
     @Request() req,
     @Query('page') page?: string,
     @Query('limit') limit?: string
-  ): Promise<ConversationsResponse> {
+  ): Promise<PaginatedResponse<Conversation>> {
     // Require both page and limit parameters
     if (!page || !limit) {
       throw new BadRequestException('Both page and limit parameters are required');

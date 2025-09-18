@@ -10,7 +10,8 @@ import type {
   ConnectIntegrationResponse,
   DisconnectIntegrationResponse,
   IntegrationDetails,
-  ConversationsResponse,
+  PaginatedResponse,
+  Conversation,
 } from '@kronos/core';
 
 // API Configuration
@@ -194,7 +195,7 @@ class ApiService {
    * Get user's conversations (pagination required)
    * GET /chat/conversations
    */
-  async getConversations(page: number, limit: number): Promise<ConversationsResponse> {
+  async getConversations(page: number, limit: number): Promise<PaginatedResponse<Conversation>> {
     const response = await this.client.get('/chat/conversations', {
       params: { page, limit }
     });
