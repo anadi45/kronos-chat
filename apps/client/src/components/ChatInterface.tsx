@@ -113,12 +113,14 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
     }
   }, [currentConversationId]);
 
+
   const loadConversations = async (page: number = 1, append: boolean = false) => {
     if (isLoadingConversations) return;
     
     setIsLoadingConversations(true);
     try {
       const response = await apiService.getConversations(page, 10);
+      
       if (append) {
         setConversations(prev => [...prev, ...response.data]);
       } else {
