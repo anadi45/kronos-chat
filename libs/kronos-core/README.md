@@ -8,8 +8,17 @@ Core types and utilities for the Kronos chat application.
 npm install @kronos/core
 ```
 
+## Modular Structure
+
+This package is organized into two main modules:
+
+- **`@kronos/core/types`** - All TypeScript interfaces and type definitions
+- **`@kronos/core/utils`** - Common utility functions for validation, formatting, and API handling
+
 ## Features
 
+- **Modular Imports**: Import only what you need for better tree-shaking
+- **Type Safety**: Full TypeScript coverage with comprehensive type definitions
 - **Stream Events**: Type-safe streaming event system for real-time chat
 - **Authentication**: User authentication types and utilities
 - **Chat**: Chat message and conversation types
@@ -18,6 +27,28 @@ npm install @kronos/core
 - **Utilities**: Common utility functions for validation, formatting, and API handling
 
 ## Usage
+
+### Full Import (Everything)
+
+```typescript
+import { 
+  User, 
+  ChatMessage, 
+  StreamEventFactory,
+  formatDate, 
+  validateEmail 
+} from '@kronos/core';
+```
+
+### Modular Imports (Recommended)
+
+```typescript
+// Import only types
+import { User, ChatMessage, Conversation } from '@kronos/core/types';
+
+// Import only utilities
+import { formatDate, validateEmail, createApiUrl } from '@kronos/core/utils';
+```
 
 ### Stream Events
 
@@ -41,7 +72,7 @@ const event = parser.parse('data: {"type":"start","data":{"conversationId":"conv
 ### Authentication
 
 ```typescript
-import { User, AuthToken, LoginRequest } from '@kronos/core';
+import { User, AuthToken, LoginRequest } from '@kronos/core/types';
 
 const user: User = {
   id: 'user-123',
@@ -53,7 +84,7 @@ const user: User = {
 ### Chat
 
 ```typescript
-import { ChatMessage, Conversation } from '@kronos/core';
+import { ChatMessage, Conversation } from '@kronos/core/types';
 
 const message: ChatMessage = {
   id: 'msg-123',
@@ -73,7 +104,7 @@ import {
   isValidEmail, 
   validateRequired,
   createApiUrl 
-} from '@kronos/core';
+} from '@kronos/core/utils';
 
 // Date formatting
 const formatted = formatDate(new Date());

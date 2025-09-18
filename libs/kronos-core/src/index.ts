@@ -2,30 +2,22 @@
  * @kronos/core
  * 
  * Core types and utilities for the Kronos chat application.
- * This package provides type-safe interfaces and utilities for:
- * - Stream event handling
- * - User authentication
- * - Chat messaging
- * - API communication
- * - Third-party integrations
- * - Utility functions
+ * 
+ * This package provides modular access to:
+ * - Types: All TypeScript interfaces and type definitions
+ * - Utils: Common utility functions for validation, formatting, and API handling
+ * 
+ * Usage:
+ * ```typescript
+ * // Import everything
+ * import { User, ChatMessage, formatDate, StreamEventFactory } from '@kronos/core';
+ * 
+ * // Import specific modules
+ * import { User, ChatMessage } from '@kronos/core/types';
+ * import { formatDate, validateEmail } from '@kronos/core/utils';
+ * ```
  */
 
-// Core stream event system
-export * from './stream.utils';
-
-// Authentication and user management
-export * from './auth.types';
-export * from './user.types';
-
-// Chat and messaging
-export * from './chat.types';
-
-// API communication
-export * from './api.types';
-
-// Third-party integrations
-export * from './integration.types';
-
-// Utility functions
-export * from './utils';
+// Re-export all modules for convenience
+export * from './types/index';
+export * from './utils/index';

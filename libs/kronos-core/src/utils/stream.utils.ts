@@ -7,10 +7,10 @@ export enum StreamEventType {
 
 export abstract class StreamEvent {
   public readonly type: StreamEventType;
-  public readonly data: any;
+  public readonly data: Record<string, unknown>;
   public readonly timestamp: string;
 
-  constructor(type: StreamEventType, data: any) {
+  constructor(type: StreamEventType, data: Record<string, unknown>) {
     this.type = type;
     this.data = data;
     this.timestamp = new Date().toISOString();
@@ -106,7 +106,7 @@ export class StreamEventFactory {
 }
 
 export class StreamEventValidator {
-  static validate(event: any): event is StreamEvent {
+  static validate(event: unknown): event is StreamEvent {
     if (!event || typeof event !== 'object') {
       return false;
     }
@@ -153,16 +153,24 @@ export class StreamEventParser {
     }
   }
 
-  private static createEventFromData(data: any): StreamEvent | null {
+  private static createEventFromData(data: Record<string, unknown>): StreamEvent | null {
+    const eventData = data.data as Record<string, unknown>;
+    
     switch (data.type) {
       case StreamEventType.START:
-        return new StartEvent(data.data.conversationId, data.data.isNewConversation);
+        return new StartEvent(
+          eventData.conversationId as string, 
+          eventData.isNewConversation as boolean
+        );
       case StreamEventType.END:
-        return new EndEvent(data.data.conversationId);
+        return new EndEvent(eventData.conversationId as string);
       case StreamEventType.TOKEN:
-        return new TokenEvent(data.data.token);
+        return new TokenEvent(eventData.token as string);
       case StreamEventType.MARKDOWN_TOKEN:
-        return new MarkdownTokenEvent(data.data.token, data.data.markdownType);
+        return new MarkdownTokenEvent(
+          eventData.token as string, 
+          eventData.markdownType as string
+        );
       default:
         return null;
     }

@@ -2,7 +2,7 @@
  * Validation utility functions
  */
 
-export const isEmpty = (value: any): boolean => {
+export const isEmpty = (value: unknown): boolean => {
   if (value === null || value === undefined) return true;
   if (typeof value === 'string') return value.trim().length === 0;
   if (Array.isArray(value)) return value.length === 0;
@@ -21,7 +21,7 @@ export const sanitizeInput = (input: string): string => {
 };
 
 export const validateRequired = (
-  value: any,
+  value: unknown,
   fieldName: string
 ): string | null => {
   if (isEmpty(value)) {

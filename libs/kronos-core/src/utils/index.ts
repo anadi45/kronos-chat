@@ -6,6 +6,7 @@
  * - Authentication and user validation
  * - Date formatting and manipulation
  * - Input validation and sanitization
+ * - Stream event handling and processing
  */
 
 // API utilities
@@ -19,3 +20,6 @@ export * from './date.utils';
 
 // Validation utilities
 export * from './validation.utils';
+
+// Stream utilities
+export * from './stream.utils';

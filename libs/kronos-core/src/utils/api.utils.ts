@@ -8,22 +8,27 @@ export const createApiUrl = (baseUrl: string, endpoint: string): string => {
   return `${cleanBase}/${cleanEndpoint}`;
 };
 
-export const getErrorMessage = (error: any): string => {
-  if (error?.response?.data?.message) {
-    return error.response.data.message;
+export const getErrorMessage = (error: unknown): string => {
+  if (error && typeof error === 'object' && 'response' in error) {
+    const responseError = error as { response?: { data?: { message?: string } } };
+    if (responseError.response?.data?.message) {
+      return responseError.response.data.message;
+    }
   }
-  if (error?.message) {
-    return error.message;
+  if (error && typeof error === 'object' && 'message' in error) {
+    const messageError = error as { message: string };
+    return messageError.message;
   }
   return 'An unexpected error occurred';
 };
 
 export const handleApiError = (
-  error: any
+  error: unknown
 ): { message: string; status?: number } => {
+  const responseError = error as { response?: { status?: number } };
   return {
     message: getErrorMessage(error),
-    status: error?.response?.status,
+    status: responseError.response?.status,
   };
 };
 

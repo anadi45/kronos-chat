@@ -5,7 +5,15 @@
     "declaration": true,
     "declarationMap": true,
     "emitDeclarationOnly": false,
-    "types": ["node"]
+    "types": ["node"],
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "baseUrl": ".",
+    "paths": {
+      "@kronos/core/*": ["src/*"],
+      "@kronos/core/types/*": ["src/types/*"],
+      "@kronos/core/utils/*": ["src/utils/*"]
+    }
   },
   "include": ["src/**/*.ts"],
   "exclude": ["jest.config.ts", "src/**/*.spec.ts", "src/**/*.test.ts"]

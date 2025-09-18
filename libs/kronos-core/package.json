@@ -14,20 +14,15 @@
       "require": "./dist/index.cjs",
       "types": "./dist/index.d.ts"
     },
-    "./stream": {
-      "import": "./dist/stream/index.js",
-      "require": "./dist/stream/index.cjs",
-      "types": "./dist/stream/index.d.ts"
+    "./types": {
+      "import": "./dist/types/index.js",
+      "require": "./dist/types/index.cjs",
+      "types": "./dist/types/index.d.ts"
     },
-    "./auth": {
-      "import": "./dist/auth/index.js",
-      "require": "./dist/auth/index.cjs",
-      "types": "./dist/auth/index.d.ts"
-    },
-    "./chat": {
-      "import": "./dist/chat/index.js",
-      "require": "./dist/chat/index.cjs",
-      "types": "./dist/chat/index.d.ts"
+    "./utils": {
+      "import": "./dist/utils/index.js",
+      "require": "./dist/utils/index.cjs",
+      "types": "./dist/utils/index.d.ts"
     }
   },
   "files": [
