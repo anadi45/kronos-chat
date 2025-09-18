@@ -177,7 +177,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
                     break;
                     
                     
-                  case StreamEventType.END:
+                  case StreamEventType.END: {
                     // Finalize the assistant message
                     const finalMessage: ChatMessage = {
                       role: 'assistant',
@@ -193,6 +193,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
                       processingTime: parsed.data.processingTime 
                     });
                     return;
+                  }
                     
                   default:
                     console.warn('Unknown stream event type:', parsed.type);

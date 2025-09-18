@@ -99,7 +99,7 @@ Always respond in a helpful and friendly manner.`;
       async start(controller) {
         try {
           const stream = await model.bindTools(langchainTools).stream(messages);
-          let tokenSequence = 0;
+          const tokenSequence = 0;
 
           for await (const chunk of stream) {
             if (chunk.content) {

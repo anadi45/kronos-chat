@@ -28,7 +28,7 @@ export class MigrationHelpers {
   /**
    * Create a standard UUID primary key column
    */
-  static getUuidPrimaryKeyColumn(name: string = 'id') {
+  static getUuidPrimaryKeyColumn(name = 'id') {
     return {
       name,
       type: 'uuid',

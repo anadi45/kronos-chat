@@ -6,6 +6,11 @@ import { resolve } from 'path'
 export default defineConfig({
   plugins: [react()],
   root: resolve(__dirname),
+  resolve: {
+    alias: {
+      '@kronos/core': resolve(__dirname, '../../dist/libs/kronos-core/src/index.js')
+    }
+  },
   build: {
     rollupOptions: {
       input: {

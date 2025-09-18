@@ -5,24 +5,23 @@
   "keywords": ["kronos", "chat", "sdk", "types", "streaming", "ai"],
   "author": "Kronos Team",
   "license": "MIT",
-  "type": "module",
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
+  "main": "./src/index.js",
+  "types": "./src/index.d.ts",
   "exports": {
     ".": {
-      "import": "./dist/index.js",
-      "require": "./dist/index.cjs",
-      "types": "./dist/index.d.ts"
+      "import": "./src/index.js",
+      "require": "./src/index.js",
+      "types": "./src/index.d.ts"
     },
     "./types": {
-      "import": "./dist/types/index.js",
-      "require": "./dist/types/index.cjs",
-      "types": "./dist/types/index.d.ts"
+      "import": "./src/types/index.js",
+      "require": "./src/types/index.js",
+      "types": "./src/types/index.d.ts"
     },
     "./utils": {
-      "import": "./dist/utils/index.js",
-      "require": "./dist/utils/index.cjs",
-      "types": "./dist/utils/index.d.ts"
+      "import": "./src/utils/index.js",
+      "require": "./src/utils/index.js",
+      "types": "./src/utils/index.d.ts"
     }
   },
   "files": [
@@ -38,6 +37,9 @@
   },
   "devDependencies": {
     "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "tslib": "^2.3.0"
   },
   "publishConfig": {
     "access": "public"

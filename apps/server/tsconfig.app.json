@@ -14,10 +14,16 @@
     "strictPropertyInitialization": false,
     "emitDeclarationOnly": false,
     "declaration": true,
-    "module": "nodenext",
-    "moduleResolution": "nodenext",
+    "module": "commonjs",
+    "moduleResolution": "node",
     "esModuleInterop": true,
-    "allowSyntheticDefaultImports": true
+    "allowSyntheticDefaultImports": true,
+    "baseUrl": ".",
+    "paths": {
+      "@kronos/core": ["../../dist/libs/kronos-core/src/index.js"],
+      "@kronos/core/types": ["../../dist/libs/kronos-core/src/types/index.js"],
+      "@kronos/core/utils": ["../../dist/libs/kronos-core/src/utils/index.js"]
+    }
   },
   "include": ["src/**/*.ts"],
   "exclude": [

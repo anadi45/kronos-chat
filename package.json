@@ -2,7 +2,9 @@
   "name": "@kronos/source",
   "version": "0.0.0",
   "license": "MIT",
-  "scripts": {},
+  "scripts": {
+    "build": "nx run-many --target=build --projects=tag:type:lib --parallel=false && nx run-many --target=build --projects=tag:type:app --parallel=true"
+  },
   "private": true,
   "dependencies": {
     "@composio/core": "^0.1.51",

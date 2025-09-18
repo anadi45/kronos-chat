@@ -1,5 +1,5 @@
 {
-  "name": "kronos-core",
+  "name": "@kronos/core",
   "projectType": "library",
   "sourceRoot": "libs/kronos-core/src",
   "targets": {
