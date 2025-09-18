@@ -5,9 +5,9 @@ import { apiService } from '../services/apiService';
 import type { 
   ChatMessage, 
   ChatRequest, 
-  Conversation, 
-  StreamEvent
-} from '@kronos/shared-types';
+  Conversation
+} from '@kronos/core';
+import { StreamEvent, StreamEventType } from '@kronos/core';
 
 interface ChatInterfaceProps {
   userId?: string;
@@ -157,31 +157,27 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
                 const parsed: StreamEvent = JSON.parse(data);
                 
                 switch (parsed.type) {
-                  case 'start':
-                    conversationId = parsed.data.conversationId;
-                    sessionId = parsed.data.sessionId;
-                    isNewConversation = parsed.data.isNewConversation;
+                  case StreamEventType.START:
+                    conversationId = (parsed.data as any).conversationId || '';
+                    sessionId = (parsed.data as any).sessionId || '';
+                    isNewConversation = (parsed.data as any).isNewConversation || false;
                     setCurrentConversationId(conversationId);
                     console.log('Stream started:', { conversationId, sessionId, isNewConversation });
                     break;
                     
-                  case 'token':
-                    assistantMessage += parsed.data.token;
+                  case StreamEventType.TOKEN:
+                    assistantMessage += (parsed.data as any).token || '';
                     setStreamingMessage(assistantMessage);
                     break;
                     
-                  case 'markdown_token':
-                    assistantMessage += parsed.data.token;
+                  case StreamEventType.MARKDOWN_TOKEN:
+                    assistantMessage += (parsed.data as any).token || '';
                     setStreamingMarkdown(assistantMessage);
                     setIsMarkdownMode(true);
                     break;
                     
-                  case 'content':
-                    assistantMessage += parsed.data.content;
-                    setStreamingMessage(assistantMessage);
-                    break;
                     
-                  case 'end':
+                  case StreamEventType.END:
                     // Finalize the assistant message
                     const finalMessage: ChatMessage = {
                       role: 'assistant',
@@ -198,8 +194,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
                     });
                     return;
                     
-                  case 'error':
-                    throw new Error(parsed.data.error || 'Unknown streaming error');
+                  default:
+                    console.warn('Unknown stream event type:', parsed.type);
                 }
               } catch (parseError) {
                 console.warn('Failed to parse stream event:', data, parseError);

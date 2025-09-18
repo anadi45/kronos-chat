@@ -1,4 +1,5 @@
 {
+  "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo",
     "target": "ES2022",
@@ -26,7 +27,7 @@
   "include": ["src"],
   "references": [
     {
-      "path": "../../libs/shared-types/tsconfig.lib.json"
+      "path": "../../libs/kronos-core/tsconfig.lib.json"
     }
   ]
 }

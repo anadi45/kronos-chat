@@ -11,7 +11,7 @@ import {
 import type { Response } from 'express';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ChatService } from './chat.service';
-import type { ChatRequest } from '@kronos/shared-types';
+import type { ChatRequest } from '@kronos/core';
 
 @Controller('chat')
 @UseGuards(JwtAuthGuard)

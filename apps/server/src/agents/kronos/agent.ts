@@ -1,7 +1,7 @@
 import { ChatGoogleGenerativeAI } from '@langchain/google-genai';
 import { HumanMessage, SystemMessage } from '@langchain/core/messages';
-import type { ChatMessage } from '@kronos/shared-types';
-import { StreamEventBuilder, StreamEventSerializer } from '@kronos/shared-types';
+import type { ChatMessage } from '@kronos/core';
+import { StreamEventFactory, StreamEventSerializer } from '@kronos/core';
 import { Composio } from '@composio/core';
 import {
   LangChainToolConverter,
@@ -107,27 +107,14 @@ Always respond in a helpful and friendly manner.`;
               const content = typeof chunk.content === 'string' ? chunk.content : String(chunk.content);
               
               // Send content event
-              const contentEvent = StreamEventBuilder.createContentEvent(
-                content,
-                'text',
-                true,
-                tokenSequence++,
-                undefined,
-                options.correlationId
-              );
+              const contentEvent = StreamEventFactory.createTokenEvent(content);
               controller.enqueue(new TextEncoder().encode(StreamEventSerializer.serialize(contentEvent)));
 
               // Also send individual tokens for better streaming UX
               const tokens = content.split(/(\s+)/);
               for (const token of tokens) {
                 if (token.trim()) {
-                  const tokenEvent = StreamEventBuilder.createTokenEvent(
-                    token,
-                    tokenSequence++,
-                    undefined,
-                    true,
-                    options.correlationId
-                  );
+                  const tokenEvent = StreamEventFactory.createTokenEvent(token);
                   controller.enqueue(new TextEncoder().encode(StreamEventSerializer.serialize(tokenEvent)));
                 }
               }
@@ -135,27 +122,15 @@ Always respond in a helpful and friendly manner.`;
           }
 
           // Send done signal
-          const doneEvent = StreamEventBuilder.createDoneEvent(
-            undefined,
-            undefined,
-            undefined,
-            options.correlationId
-          );
+          const doneEvent = StreamEventFactory.createEndEvent('conversation');
           controller.enqueue(new TextEncoder().encode(StreamEventSerializer.serialize(doneEvent)));
 
           // Send final [DONE] marker
-          controller.enqueue(new TextEncoder().encode(StreamEventSerializer.serializeDone()));
+          controller.enqueue(new TextEncoder().encode('data: [DONE]\n\n'));
           controller.close();
         } catch (error) {
           console.error('Streaming error:', error);
-          const errorEvent = StreamEventBuilder.createErrorEvent(
-            'Failed to generate response',
-            'AGENT_ERROR',
-            { error: error.message },
-            true,
-            5000,
-            options.correlationId
-          );
+          const errorEvent = StreamEventFactory.createTokenEvent(`Error: ${error.message}`);
           controller.enqueue(new TextEncoder().encode(StreamEventSerializer.serialize(errorEvent)));
           controller.close();
         }

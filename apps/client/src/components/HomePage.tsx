@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { type UserProfile } from '@kronos/shared-types';
+import { type UserProfile } from '@kronos/core';
 
 interface HomePageProps {
   user?: UserProfile;

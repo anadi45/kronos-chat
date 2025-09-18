@@ -1,6 +1,6 @@
 import { BaseMessage } from '@langchain/core/messages';
 import { Annotation } from '@langchain/langgraph';
-import type { ChatMessage } from '@kronos/shared-types';
+import type { ChatMessage } from '@kronos/core';
 
 export interface KronosAgentState {
   // Core conversation state

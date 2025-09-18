@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { apiService } from '../services/apiService';
-import { type UserLogin } from '@kronos/shared-types';
+import { type UserLogin } from '@kronos/core';
 
 interface LoginFormProps {
   onSuccess?: () => void;

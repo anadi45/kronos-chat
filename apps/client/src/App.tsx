@@ -6,7 +6,7 @@ import Settings from './components/Settings'
 import HomePage from './components/HomePage'
 import Layout from './components/Layout'
 import AuthWrapper from './components/AuthWrapper'
-import { type UserProfile } from '@kronos/shared-types'
+import { type UserProfile } from '@kronos/core'
 
 interface AppProps {
   user?: UserProfile;

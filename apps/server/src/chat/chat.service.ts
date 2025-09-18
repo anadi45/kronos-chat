@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import type { ChatRequest } from '@kronos/shared-types';
-import { StreamEventBuilder, StreamEventSerializer } from '@kronos/shared-types';
+import type { ChatRequest } from '@kronos/core';
+import { StreamEventFactory, StreamEventSerializer } from '@kronos/core';
 import { KronosAgent } from '../agents/kronos/agent';
 import { Conversation, ChatMessage } from '../entities/conversation.entity';
 import { ChatMessageRole } from '../enum/roles.enum';
@@ -68,12 +68,9 @@ export class ChatService {
           }
 
           // Send START event
-          const startEvent = StreamEventBuilder.createStartEvent(
+          const startEvent = StreamEventFactory.createStartEvent(
             conversation.id,
             isNewConversation,
-            userId,
-            sessionId,
-            correlationId
           );
           controller.enqueue(new TextEncoder().encode(StreamEventSerializer.serialize(startEvent)));
 
@@ -123,13 +120,7 @@ export class ChatService {
                         for (const token of tokens) {
                           if (token.trim()) {
                             tokenSequence++;
-                            const tokenEvent = StreamEventBuilder.createTokenEvent(
-                              token,
-                              tokenSequence,
-                              undefined,
-                              true,
-                              correlationId
-                            );
+                            const tokenEvent = StreamEventFactory.createTokenEvent(token);
                             controller.enqueue(new TextEncoder().encode(StreamEventSerializer.serialize(tokenEvent)));
                             assistantResponse += token;
                           }
@@ -167,13 +158,7 @@ export class ChatService {
 
           // Send END event
           const processingTime = Date.now() - startTime;
-          const endEvent = StreamEventBuilder.createEndEvent(
-            conversation.id,
-            assistantResponse.length,
-            processingTime,
-            assistantResponse,
-            correlationId
-          );
+          const endEvent = StreamEventFactory.createEndEvent(conversation.id);
           controller.enqueue(new TextEncoder().encode(StreamEventSerializer.serialize(endEvent)));
 
           controller.close();
@@ -181,18 +166,12 @@ export class ChatService {
           console.error('Chat service error:', error);
 
           // Send error event
-          const errorEvent = StreamEventBuilder.createErrorEvent(
-            'Failed to generate response',
-            'CHAT_SERVICE_ERROR',
-            { error: error.message },
-            true,
-            5000,
-            correlationId
-          );
+          // For now, we'll create a simple token event with error message
+          const errorEvent = StreamEventFactory.createTokenEvent(`Error: ${error.message}`);
           controller.enqueue(new TextEncoder().encode(StreamEventSerializer.serialize(errorEvent)));
 
           // Send final [DONE] marker
-          controller.enqueue(new TextEncoder().encode(StreamEventSerializer.serializeDone()));
+          controller.enqueue(new TextEncoder().encode('data: [DONE]\n\n'));
           controller.close();
         }
       },

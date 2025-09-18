@@ -19,8 +19,9 @@
     "customConditions": ["development"],
     "baseUrl": ".",
     "paths": {
-      "@kronos/shared-types": ["libs/shared-types/src/index.ts"],
-      "@kronos/utils": ["libs/utils/src/index.ts"]
+      "@kronos/core": ["libs/kronos-core/src/index.ts"],
+      "@kronos/core/types": ["libs/kronos-core/src/types/index.ts"],
+      "@kronos/core/utils": ["libs/kronos-core/src/utils/index.ts"]
     }
   }
 }

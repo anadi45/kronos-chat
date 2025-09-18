@@ -32,7 +32,7 @@
   ],
   "references": [
     {
-      "path": "../../libs/shared-types/tsconfig.lib.json"
+      "path": "../../libs/kronos-core/tsconfig.lib.json"
     }
   ]
 }

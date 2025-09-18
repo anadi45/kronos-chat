@@ -17,7 +17,7 @@ import {
   KronosAgentConfig,
   KronosAgentStateSchema,
 } from './state';
-import type { ChatMessage } from '@kronos/shared-types';
+import type { ChatMessage } from '@kronos/core';
 import { MODELS } from '../../constants/models.constants';
 import { formatSystemPrompt } from './prompts';
 import { getContextValue, extractToolCalls, getCurrentDate, generateConversationId } from './utils';

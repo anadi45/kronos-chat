@@ -10,7 +10,7 @@ import type {
   ConnectIntegrationResponse,
   DisconnectIntegrationResponse,
   IntegrationDetails,
-} from '@kronos/shared-types';
+} from '@kronos/core';
 
 // API Configuration
 const API_BASE_URL =

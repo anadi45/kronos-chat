@@ -111,15 +111,16 @@ export class StreamEventValidator {
       return false;
     }
 
-    if (!event.type || !event.timestamp || !event.data) {
+    const eventObj = event as Record<string, unknown>;
+    if (!eventObj['type'] || !eventObj['timestamp'] || !eventObj['data']) {
       return false;
     }
 
-    if (!Object.values(StreamEventType).includes(event.type)) {
+    if (!Object.values(StreamEventType).includes(eventObj['type'] as StreamEventType)) {
       return false;
     }
 
-    if (typeof event.data !== 'object') {
+    if (typeof eventObj['data'] !== 'object') {
       return false;
     }
 
@@ -143,7 +144,7 @@ export class StreamEventParser {
       const parsed = JSON.parse(data);
       
       if (StreamEventValidator.validate(parsed)) {
-        return this.createEventFromData(parsed);
+        return this.createEventFromData(parsed as StreamEvent);
       }
       
       return null;
@@ -153,23 +154,23 @@ export class StreamEventParser {
     }
   }
 
-  private static createEventFromData(data: Record<string, unknown>): StreamEvent | null {
+  private static createEventFromData(data: StreamEvent): StreamEvent | null {
     const eventData = data.data as Record<string, unknown>;
     
     switch (data.type) {
       case StreamEventType.START:
         return new StartEvent(
-          eventData.conversationId as string, 
-          eventData.isNewConversation as boolean
+          eventData['conversationId'] as string, 
+          eventData['isNewConversation'] as boolean
         );
       case StreamEventType.END:
-        return new EndEvent(eventData.conversationId as string);
+        return new EndEvent(eventData['conversationId'] as string);
       case StreamEventType.TOKEN:
-        return new TokenEvent(eventData.token as string);
+        return new TokenEvent(eventData['token'] as string);
       case StreamEventType.MARKDOWN_TOKEN:
         return new MarkdownTokenEvent(
-          eventData.token as string, 
-          eventData.markdownType as string
+          eventData['token'] as string, 
+          eventData['markdownType'] as 'text' | 'code' | 'bold' | 'italic' | 'link' | 'list' | 'quote'
         );
       default:
         return null;
@@ -361,6 +362,81 @@ export class StreamEventStatistics {
       tokenEvents: tokenEvents.length,
       markdownTokenEvents: markdownTokenEvents.length,
     };
+  }
+}
+
+// ============================================================================
+// Stream Event Builder and Serializer
+// ============================================================================
+
+export class StreamEventBuilder {
+  private events: StreamEvent[] = [];
+
+  addEvent(event: StreamEvent): StreamEventBuilder {
+    this.events.push(event);
+    return this;
+  }
+
+  addStartEvent(conversationId: string, isNewConversation: boolean): StreamEventBuilder {
+    return this.addEvent(StreamEventFactory.createStartEvent(conversationId, isNewConversation));
+  }
+
+  addEndEvent(conversationId: string): StreamEventBuilder {
+    return this.addEvent(StreamEventFactory.createEndEvent(conversationId));
+  }
+
+  addTokenEvent(token: string): StreamEventBuilder {
+    return this.addEvent(StreamEventFactory.createTokenEvent(token));
+  }
+
+  addMarkdownTokenEvent(token: string, markdownType?: 'text' | 'code' | 'bold' | 'italic' | 'link' | 'list' | 'quote'): StreamEventBuilder {
+    return this.addEvent(StreamEventFactory.createMarkdownTokenEvent(token, markdownType));
+  }
+
+  build(): StreamEvent[] {
+    return [...this.events];
+  }
+
+  clear(): StreamEventBuilder {
+    this.events = [];
+    return this;
+  }
+}
+
+export class StreamEventSerializer {
+  static serialize(event: StreamEvent): string {
+    return event.serialize();
+  }
+
+  static serializeArray(events: StreamEvent[]): string {
+    return events.map(event => event.serialize()).join('');
+  }
+
+  static serializeWithDone(events: StreamEvent[]): string {
+    return this.serializeArray(events) + 'data: [DONE]\n\n';
+  }
+
+  static toReadableStream(events: StreamEvent[]): ReadableStream {
+    return new ReadableStream({
+      start(controller) {
+        events.forEach(event => {
+          controller.enqueue(new TextEncoder().encode(event.serialize()));
+        });
+        controller.close();
+      }
+    });
+  }
+
+  static toReadableStreamWithDone(events: StreamEvent[]): ReadableStream {
+    return new ReadableStream({
+      start(controller) {
+        events.forEach(event => {
+          controller.enqueue(new TextEncoder().encode(event.serialize()));
+        });
+        controller.enqueue(new TextEncoder().encode('data: [DONE]\n\n'));
+        controller.close();
+      }
+    });
   }
 }
 
