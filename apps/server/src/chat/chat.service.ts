@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import type { ChatRequest } from '@kronos/core';
+import type { ChatRequest, PaginatedResponse } from '@kronos/core';
 import { StreamEventFactory, StreamEventSerializer } from '@kronos/core';
 import { KronosAgent } from '../agents/kronos/agent';
 import { Conversation, ChatMessage } from '../entities/conversation.entity';
@@ -48,7 +48,7 @@ export class ChatService {
           if (request.conversationId) {
             // Load existing conversation
             conversation = await conversationRepository.findOne({
-              where: { id: request.conversationId, created_by: userId }
+              where: { id: request.conversationId, createdBy: userId }
             });
             
             if (!conversation) {
@@ -61,8 +61,8 @@ export class ChatService {
               title: null,
               messages: [],
               metadata: {},
-              created_by: userId,
-              updated_by: userId,
+              createdBy: userId,
+              updatedBy: userId,
             });
             await conversationRepository.save(conversation);
           }
@@ -152,7 +152,7 @@ export class ChatService {
             }
 
             // Save updated conversation
-            conversation.updated_by = userId;
+            conversation.updatedBy = userId;
             await conversationRepository.save(conversation);
           }
 
@@ -185,9 +185,41 @@ export class ChatService {
    */
   async getConversations(userId: string): Promise<Conversation[]> {
     return this.conversationRepository.find({
-      where: { created_by: userId },
-      order: { updated_at: 'DESC' },
+      where: { createdBy: userId },
+      order: { updatedAt: 'DESC' },
     });
+  }
+
+  /**
+   * Get paginated conversations for a user
+   * @param userId The user ID
+   * @param page Page number (1-based)
+   * @param limit Number of records per page
+   * @returns Paginated conversations
+   */
+  async getConversationsPaginated(
+    userId: string, 
+    page: number = 1, 
+    limit: number = 10
+  ): Promise<PaginatedResponse<Conversation>> {
+    const skip = (page - 1) * limit;
+    
+    const [conversations, total] = await this.conversationRepository.findAndCount({
+      where: { createdBy: userId },
+      order: { updatedAt: 'DESC' },
+      skip,
+      take: limit,
+    });
+
+    const totalPages = Math.ceil(total / limit);
+
+    return {
+      items: conversations,
+      total,
+      page,
+      limit,
+      totalPages,
+    };
   }
 
   /**
@@ -198,7 +230,31 @@ export class ChatService {
    */
   async getConversationMessages(conversationId: string, userId: string): Promise<Conversation | null> {
     return this.conversationRepository.findOne({
-      where: { id: conversationId, created_by: userId },
+      where: { id: conversationId, createdBy: userId },
     });
+  }
+
+  /**
+   * Delete a conversation
+   * @param conversationId The conversation ID
+   * @param userId The user ID
+   * @returns Success status
+   */
+  async deleteConversation(conversationId: string, userId: string): Promise<{ success: boolean; message: string }> {
+    try {
+      const conversation = await this.conversationRepository.findOne({
+        where: { id: conversationId, createdBy: userId },
+      });
+
+      if (!conversation) {
+        return { success: false, message: 'Conversation not found' };
+      }
+
+      await this.conversationRepository.remove(conversation);
+      return { success: true, message: 'Conversation deleted successfully' };
+    } catch (error) {
+      console.error('Error deleting conversation:', error);
+      return { success: false, message: 'Failed to delete conversation' };
+    }
   }
 }

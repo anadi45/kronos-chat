@@ -16,7 +16,6 @@ export interface ChatResponse {
   timestamp: string;
 }
 
-
 export interface Conversation {
   id: string;
   title?: string;
@@ -24,4 +23,6 @@ export interface Conversation {
   updatedAt: string;
   messages: ChatMessage[];
 }
+
+// Use PaginatedResponse<Conversation> directly instead of ConversationsResponse
 

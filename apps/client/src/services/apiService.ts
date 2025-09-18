@@ -10,6 +10,8 @@ import type {
   ConnectIntegrationResponse,
   DisconnectIntegrationResponse,
   IntegrationDetails,
+  PaginatedResponse,
+  Conversation,
 } from '@kronos/core';
 
 // API Configuration
@@ -190,11 +192,13 @@ class ApiService {
   }
 
   /**
-   * Get user's conversations
+   * Get user's conversations (pagination required)
    * GET /chat/conversations
    */
-  async getConversations(): Promise<{ conversations: any[]; userId: string }> {
-    const response = await this.client.get('/chat/conversations');
+  async getConversations(page: number, limit: number): Promise<PaginatedResponse<Conversation>> {
+    const response = await this.client.get('/chat/conversations', {
+      params: { page, limit }
+    });
     return response.data;
   }
 
@@ -204,6 +208,15 @@ class ApiService {
    */
   async getConversationMessages(conversationId: string): Promise<{ messages: any[]; conversationId: string }> {
     const response = await this.client.get(`/chat/conversations/${conversationId}/messages`);
+    return response.data;
+  }
+
+  /**
+   * Delete a conversation
+   * DELETE /chat/conversations/:conversationId
+   */
+  async deleteConversation(conversationId: string): Promise<{ success: boolean; message: string }> {
+    const response = await this.client.delete(`/chat/conversations/${conversationId}`);
     return response.data;
   }
 

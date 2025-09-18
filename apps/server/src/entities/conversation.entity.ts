@@ -34,17 +34,17 @@ export class Conversation {
   @Column({ type: 'jsonb', default: '{}', nullable: true })
   metadata: ConversationMetadata;
 
-  @Column({ type: 'uuid' })
-  created_by: string;
+  @Column({ type: 'uuid', name: 'created_by' })
+  createdBy: string;
 
-  @Column({ type: 'uuid' })
-  updated_by: string;
+  @Column({ type: 'uuid', name: 'updated_by' })
+  updatedBy: string;
 
-  @CreateDateColumn({ type: 'timestamptz' })
-  created_at: Date;
+  @CreateDateColumn({ type: 'timestamptz', name: 'created_at' })
+  createdAt: Date;
 
-  @UpdateDateColumn({ type: 'timestamptz' })
-  updated_at: Date;
+  @UpdateDateColumn({ type: 'timestamptz', name: 'updated_at' })
+  updatedAt: Date;
 
   // Relations
   @ManyToOne(() => User, { onDelete: 'CASCADE', onUpdate: 'CASCADE' })

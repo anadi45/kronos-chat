@@ -26,10 +26,14 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [showConversations, setShowConversations] = useState(false);
   const [isMarkdownMode, setIsMarkdownMode] = useState(false);
+  const [isLoadingConversations, setIsLoadingConversations] = useState(false);
+  const [hasMoreConversations, setHasMoreConversations] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
+  const conversationsListRef = useRef<HTMLDivElement>(null);
 
   // Auto-scroll to bottom when new messages arrive
   const scrollToBottom = useCallback(() => {
@@ -62,6 +66,44 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
     }
   }, []);
 
+  // Handle escape key to close modal
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && showConversations) {
+        setShowConversations(false);
+      }
+    };
+
+    if (showConversations) {
+      document.addEventListener('keydown', handleEscape);
+      return () => document.removeEventListener('keydown', handleEscape);
+    }
+    
+    return undefined;
+  }, [showConversations]);
+
+  // Handle infinite scroll for conversations
+  useEffect(() => {
+    const handleScroll = () => {
+      if (!conversationsListRef.current || !showConversations) return;
+      
+      const { scrollTop, scrollHeight, clientHeight } = conversationsListRef.current;
+      const isNearBottom = scrollTop + clientHeight >= scrollHeight - 100; // 100px threshold
+      
+      if (isNearBottom && hasMoreConversations && !isLoadingConversations) {
+        loadMoreConversations();
+      }
+    };
+
+    const listElement = conversationsListRef.current;
+    if (listElement) {
+      listElement.addEventListener('scroll', handleScroll);
+      return () => listElement.removeEventListener('scroll', handleScroll);
+    }
+    
+    return undefined;
+  }, [showConversations, hasMoreConversations, isLoadingConversations, currentPage]);
+
   // Persist conversation ID to localStorage when it changes
   useEffect(() => {
     if (currentConversationId) {
@@ -71,12 +113,86 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
     }
   }, [currentConversationId]);
 
-  const loadConversations = async () => {
+
+  const loadConversations = async (page: number = 1, append: boolean = false) => {
+    if (isLoadingConversations) return;
+    
+    setIsLoadingConversations(true);
     try {
-      const response = await apiService.getConversations();
-      setConversations(response.conversations || []);
-    } catch (error) {
+      const response = await apiService.getConversations(page, 10);
+      
+      if (append) {
+        setConversations(prev => [...prev, ...response.items]);
+      } else {
+        setConversations(response.items || []);
+      }
+      setHasMoreConversations(page < response.totalPages);
+      setCurrentPage(page);
+      setError(null); // Clear any previous errors
+    } catch (error: any) {
       console.error('Failed to load conversations:', error);
+      
+      // Handle different types of errors
+      if (error.response?.status === 400) {
+        setError(`Invalid request: ${error.response.data.message || 'Please check your parameters'}`);
+      } else if (error.response?.status === 401) {
+        setError('Authentication required. Please log in again.');
+      } else if (error.response?.status === 500) {
+        setError('Server error. Please try again later.');
+      } else if (error.code === 'NETWORK_ERROR') {
+        setError('Network error. Please check your connection.');
+      } else {
+        setError('Failed to load conversations. Please try again.');
+      }
+    } finally {
+      setIsLoadingConversations(false);
+    }
+  };
+
+  const loadMoreConversations = async () => {
+    if (hasMoreConversations && !isLoadingConversations) {
+      await loadConversations(currentPage + 1, true);
+    }
+  };
+
+  const deleteConversation = async (conversationId: string, event: React.MouseEvent) => {
+    event.stopPropagation(); // Prevent triggering the conversation load
+    
+    if (!window.confirm('Are you sure you want to delete this conversation? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      const result = await apiService.deleteConversation(conversationId);
+      if (result.success) {
+        // Remove from local state
+        setConversations(prev => prev.filter(conv => conv.id !== conversationId));
+        
+        // If this was the current conversation, clear it
+        if (currentConversationId === conversationId) {
+          startNewConversation();
+        }
+        setError(null); // Clear any previous errors
+      } else {
+        setError(result.message || 'Failed to delete conversation');
+      }
+    } catch (error: any) {
+      console.error('Failed to delete conversation:', error);
+      
+      // Handle different types of errors
+      if (error.response?.status === 400) {
+        setError(`Invalid request: ${error.response.data.message || 'Please check your parameters'}`);
+      } else if (error.response?.status === 401) {
+        setError('Authentication required. Please log in again.');
+      } else if (error.response?.status === 404) {
+        setError('Conversation not found.');
+      } else if (error.response?.status === 500) {
+        setError('Server error. Please try again later.');
+      } else if (error.code === 'NETWORK_ERROR') {
+        setError('Network error. Please check your connection.');
+      } else {
+        setError('Failed to delete conversation. Please try again.');
+      }
     }
   };
 
@@ -85,9 +201,27 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
       const response = await apiService.getConversationMessages(conversationId);
       setMessages(response.messages || []);
       setCurrentConversationId(conversationId);
-    } catch (error) {
+      setStreamingMessage('');
+      setStreamingMarkdown('');
+      setIsMarkdownMode(false);
+      setError(null);
+    } catch (error: any) {
       console.error('Failed to load conversation messages:', error);
-      setError('Failed to load conversation');
+      
+      // Handle different types of errors
+      if (error.response?.status === 400) {
+        setError(`Invalid request: ${error.response.data.message || 'Please check your parameters'}`);
+      } else if (error.response?.status === 401) {
+        setError('Authentication required. Please log in again.');
+      } else if (error.response?.status === 404) {
+        setError('Conversation not found.');
+      } else if (error.response?.status === 500) {
+        setError('Server error. Please try again later.');
+      } else if (error.code === 'NETWORK_ERROR') {
+        setError('Network error. Please check your connection.');
+      } else {
+        setError('Failed to load conversation. Please try again.');
+      }
     }
   };
 
@@ -97,6 +231,9 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
     setStreamingMessage('');
     setError(null);
     setShowConversations(false);
+    // Reset pagination state
+    setCurrentPage(1);
+    setHasMoreConversations(true);
   };
 
   const handleSendMessage = async () => {
@@ -304,43 +441,80 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
         </div>
       </div>
 
-      {/* Conversations Sidebar */}
+      {/* Conversations Modal */}
       {showConversations && (
-        <div className="conversations-sidebar">
-          <div className="conversations-header">
-            <h3>Conversations</h3>
-            <button
-              onClick={() => setShowConversations(false)}
-              className="close-btn"
-            >
-              ✕
-            </button>
-          </div>
-          <div className="conversations-list">
-            <button
-              onClick={startNewConversation}
-              className={`conversation-item ${!currentConversationId ? 'active' : ''}`}
-            >
-              <div className="conversation-title">New Conversation</div>
-              <div className="conversation-time">Start fresh</div>
-            </button>
-            {conversations.map((conversation) => (
+        <div 
+          className="conversations-modal-overlay"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setShowConversations(false);
+            }
+          }}
+        >
+          <div className="conversations-modal">
+            <div className="conversations-modal-header">
+              <h3>Past Conversations</h3>
               <button
-                key={conversation.id}
-                onClick={() => {
-                  loadConversationMessages(conversation.id);
-                  setShowConversations(false);
-                }}
-                className={`conversation-item ${currentConversationId === conversation.id ? 'active' : ''}`}
+                onClick={() => setShowConversations(false)}
+                className="conversations-modal-close"
               >
-                <div className="conversation-title">
-                  {conversation.title || `Conversation ${conversation.id.slice(-8)}`}
-                </div>
-                <div className="conversation-time">
-                  {new Date(conversation.updatedAt).toLocaleDateString()}
-                </div>
+                ✕
               </button>
-            ))}
+            </div>
+            <div className="conversations-modal-content">
+              <div className="conversations-list" ref={conversationsListRef}>
+                <button
+                  onClick={startNewConversation}
+                  className={`conversation-item ${!currentConversationId ? 'active' : ''}`}
+                >
+                  <div className="conversation-title">New Conversation</div>
+                  <div className="conversation-time">Start fresh</div>
+                </button>
+                {conversations.map((conversation) => (
+                  <div
+                    key={conversation.id}
+                    className={`conversation-item ${currentConversationId === conversation.id ? 'active' : ''}`}
+                  >
+                    <button
+                      onClick={() => {
+                        loadConversationMessages(conversation.id);
+                        setShowConversations(false);
+                      }}
+                      className="conversation-content"
+                    >
+                      <div className="conversation-title">
+                        {conversation.title || `Conversation ${conversation.id.slice(-8)}`}
+                      </div>
+                      <div className="conversation-time">
+                        {new Date(conversation.updatedAt).toLocaleDateString()}
+                      </div>
+                    </button>
+                    <button
+                      onClick={(e) => deleteConversation(conversation.id, e)}
+                      className="conversation-delete-btn"
+                      title="Delete conversation"
+                    >
+                      🗑️
+                    </button>
+                  </div>
+                ))}
+                
+                {/* Loading indicator */}
+                {isLoadingConversations && (
+                  <div className="conversations-loading">
+                    <div className="conversations-loading-spinner"></div>
+                    <span>Loading more conversations...</span>
+                  </div>
+                )}
+                
+                {/* End of list indicator */}
+                {!hasMoreConversations && conversations.length > 0 && (
+                  <div className="conversations-end">
+                    <span>No more conversations</span>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       )}
