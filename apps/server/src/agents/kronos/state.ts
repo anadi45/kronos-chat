@@ -17,6 +17,7 @@ export interface KronosAgentState {
   
   // Agent response state
   response: string;
+  result?: any;
   isComplete: boolean;
   
   // Error handling
@@ -67,6 +68,10 @@ export const KronosAgentStateSchema = Annotation.Root({
     default: () => false,
   }),
   error: Annotation<string | undefined>({
+    reducer: (x, y) => y ?? x,
+    default: () => undefined,
+  }),
+  result: Annotation<any>({
     reducer: (x, y) => y ?? x,
     default: () => undefined,
   }),
