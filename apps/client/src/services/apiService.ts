@@ -189,6 +189,24 @@ class ApiService {
     return response.body;
   }
 
+  /**
+   * Get user's conversations
+   * GET /chat/conversations
+   */
+  async getConversations(): Promise<{ conversations: any[]; userId: string }> {
+    const response = await this.client.get('/chat/conversations');
+    return response.data;
+  }
+
+  /**
+   * Get messages for a specific conversation
+   * GET /chat/conversations/:conversationId/messages
+   */
+  async getConversationMessages(conversationId: string): Promise<{ messages: any[]; conversationId: string }> {
+    const response = await this.client.get(`/chat/conversations/${conversationId}/messages`);
+    return response.data;
+  }
+
   // Integration Methods
 
   /**

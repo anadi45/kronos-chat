@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { apiService } from '../services/apiService';
-import type { ChatMessage, ChatRequest } from '@kronos/shared-types';
+import type { ChatMessage, ChatRequest, Conversation } from '@kronos/shared-types';
 
 interface ChatInterfaceProps {
   userId?: string;
@@ -21,6 +21,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
   const [currentConversationId, setCurrentConversationId] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
   const [streamingMessage, setStreamingMessage] = useState('');
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [showConversations, setShowConversations] = useState(false);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -46,6 +48,39 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
   useEffect(() => {
     adjustTextareaHeight();
   }, [input, adjustTextareaHeight]);
+
+  // Load conversations on component mount
+  useEffect(() => {
+    loadConversations();
+  }, []);
+
+  const loadConversations = async () => {
+    try {
+      const response = await apiService.getConversations();
+      setConversations(response.conversations || []);
+    } catch (error) {
+      console.error('Failed to load conversations:', error);
+    }
+  };
+
+  const loadConversationMessages = async (conversationId: string) => {
+    try {
+      const response = await apiService.getConversationMessages(conversationId);
+      setMessages(response.messages || []);
+      setCurrentConversationId(conversationId);
+    } catch (error) {
+      console.error('Failed to load conversation messages:', error);
+      setError('Failed to load conversation');
+    }
+  };
+
+  const startNewConversation = () => {
+    setMessages([]);
+    setCurrentConversationId('');
+    setStreamingMessage('');
+    setError(null);
+    setShowConversations(false);
+  };
 
   const handleSendMessage = async () => {
     if (!input.trim() || isStreaming) return;
@@ -179,6 +214,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
     setCurrentConversationId('');
     setStreamingMessage('');
     setError(null);
+    setShowConversations(false);
   };
 
   const formatTimestamp = (timestamp: string) => {
@@ -192,7 +228,14 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
     <div className="chat-container">
       {/* Chat Controls */}
       <div className="chat-header">
-        <div>
+        <div className="chat-header-left">
+          <button
+            onClick={() => setShowConversations(!showConversations)}
+            className="chat-control-btn"
+            title="Conversations"
+          >
+            📋
+          </button>
           <p className="text-sm text-gray-300">
             {currentConversationId ? `Conversation: ${currentConversationId.slice(-8)}` : 'New conversation'}
           </p>
@@ -207,6 +250,14 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
             </button>
           )}
           <button
+            onClick={startNewConversation}
+            disabled={isStreaming}
+            className="chat-control-btn"
+            title="New conversation"
+          >
+            ➕
+          </button>
+          <button
             onClick={clearConversation}
             disabled={isStreaming}
             className="chat-control-btn clear"
@@ -215,6 +266,47 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
           </button>
         </div>
       </div>
+
+      {/* Conversations Sidebar */}
+      {showConversations && (
+        <div className="conversations-sidebar">
+          <div className="conversations-header">
+            <h3>Conversations</h3>
+            <button
+              onClick={() => setShowConversations(false)}
+              className="close-btn"
+            >
+              ✕
+            </button>
+          </div>
+          <div className="conversations-list">
+            <button
+              onClick={startNewConversation}
+              className={`conversation-item ${!currentConversationId ? 'active' : ''}`}
+            >
+              <div className="conversation-title">New Conversation</div>
+              <div className="conversation-time">Start fresh</div>
+            </button>
+            {conversations.map((conversation) => (
+              <button
+                key={conversation.id}
+                onClick={() => {
+                  loadConversationMessages(conversation.id);
+                  setShowConversations(false);
+                }}
+                className={`conversation-item ${currentConversationId === conversation.id ? 'active' : ''}`}
+              >
+                <div className="conversation-title">
+                  {conversation.title || `Conversation ${conversation.id.slice(-8)}`}
+                </div>
+                <div className="conversation-time">
+                  {new Date(conversation.updatedAt).toLocaleDateString()}
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Messages Area */}
       <div className="chat-messages">
