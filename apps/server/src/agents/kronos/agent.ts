@@ -1,6 +1,7 @@
 import { ChatGoogleGenerativeAI } from '@langchain/google-genai';
 import { HumanMessage, SystemMessage } from '@langchain/core/messages';
 import type { ChatMessage } from '@kronos/shared-types';
+import { StreamEventBuilder, StreamEventSerializer } from '@kronos/shared-types';
 import { Composio } from '@composio/core';
 import {
   LangChainToolConverter,
@@ -54,7 +55,8 @@ Always respond in a helpful and friendly manner.`;
   async streamResponse(
     message: string,
     conversationHistory: ChatMessage[] = [],
-    userId: string
+    userId: string,
+    options: { correlationId?: string } = {}
   ): Promise<ReadableStream> {
     // Build messages array
     const messages = [
@@ -97,36 +99,64 @@ Always respond in a helpful and friendly manner.`;
       async start(controller) {
         try {
           const stream = await model.bindTools(langchainTools).stream(messages);
+          let tokenSequence = 0;
 
           for await (const chunk of stream) {
             if (chunk.content) {
-              const contentChunk = `data: ${JSON.stringify({
-                type: 'content',
-                data: chunk.content,
-                timestamp: new Date().toISOString(),
-              })}\n\n`;
-              controller.enqueue(new TextEncoder().encode(contentChunk));
+              // Convert content to string
+              const content = typeof chunk.content === 'string' ? chunk.content : String(chunk.content);
+              
+              // Send content event
+              const contentEvent = StreamEventBuilder.createContentEvent(
+                content,
+                'text',
+                true,
+                tokenSequence++,
+                undefined,
+                options.correlationId
+              );
+              controller.enqueue(new TextEncoder().encode(StreamEventSerializer.serialize(contentEvent)));
+
+              // Also send individual tokens for better streaming UX
+              const tokens = content.split(/(\s+)/);
+              for (const token of tokens) {
+                if (token.trim()) {
+                  const tokenEvent = StreamEventBuilder.createTokenEvent(
+                    token,
+                    tokenSequence++,
+                    undefined,
+                    true,
+                    options.correlationId
+                  );
+                  controller.enqueue(new TextEncoder().encode(StreamEventSerializer.serialize(tokenEvent)));
+                }
+              }
             }
           }
 
           // Send done signal
-          const doneChunk = `data: ${JSON.stringify({
-            type: 'done',
-            timestamp: new Date().toISOString(),
-          })}\n\n`;
-          controller.enqueue(new TextEncoder().encode(doneChunk));
+          const doneEvent = StreamEventBuilder.createDoneEvent(
+            undefined,
+            undefined,
+            undefined,
+            options.correlationId
+          );
+          controller.enqueue(new TextEncoder().encode(StreamEventSerializer.serialize(doneEvent)));
 
           // Send final [DONE] marker
-          controller.enqueue(new TextEncoder().encode('data: [DONE]\n\n'));
+          controller.enqueue(new TextEncoder().encode(StreamEventSerializer.serializeDone()));
           controller.close();
         } catch (error) {
           console.error('Streaming error:', error);
-          const errorChunk = `data: ${JSON.stringify({
-            type: 'error',
-            error: 'Failed to generate response',
-            timestamp: new Date().toISOString(),
-          })}\n\n`;
-          controller.enqueue(new TextEncoder().encode(errorChunk));
+          const errorEvent = StreamEventBuilder.createErrorEvent(
+            'Failed to generate response',
+            'AGENT_ERROR',
+            { error: error.message },
+            true,
+            5000,
+            options.correlationId
+          );
+          controller.enqueue(new TextEncoder().encode(StreamEventSerializer.serialize(errorEvent)));
           controller.close();
         }
       },

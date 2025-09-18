@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import type { ChatRequest } from '@kronos/shared-types';
+import { StreamEventBuilder, StreamEventSerializer } from '@kronos/shared-types';
 import { KronosAgent } from '../agents/kronos/agent';
 import { Conversation, ChatMessage } from '../entities/conversation.entity';
 import { ChatMessageRole } from '../enum/roles.enum';
@@ -33,14 +34,17 @@ export class ChatService {
   async sendMessage(request: ChatRequest, userId: string): Promise<ReadableStream> {
     const kronosAgent = this.kronosAgent; // Capture reference to avoid 'this' context issues
     const conversationRepository = this.conversationRepository; // Capture repository reference
+    const sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const correlationId = `chat_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
     return new ReadableStream({
       async start(controller) {
+        const startTime = Date.now();
+        let conversation: Conversation;
+        let isNewConversation = false;
+
         try {
           // Get or create conversation
-          let conversation: Conversation;
-          let isNewConversation = false;
-
           if (request.conversationId) {
             // Load existing conversation
             conversation = await conversationRepository.findOne({
@@ -63,13 +67,15 @@ export class ChatService {
             await conversationRepository.save(conversation);
           }
 
-          // Send conversation ID first
-          const conversationIdChunk = `data: ${JSON.stringify({
-            type: 'conversationId',
-            data: conversation.id,
-            timestamp: new Date().toISOString(),
-          })}\n\n`;
-          controller.enqueue(new TextEncoder().encode(conversationIdChunk));
+          // Send START event
+          const startEvent = StreamEventBuilder.createStartEvent(
+            conversation.id,
+            isNewConversation,
+            userId,
+            sessionId,
+            correlationId
+          );
+          controller.enqueue(new TextEncoder().encode(StreamEventSerializer.serialize(startEvent)));
 
           // Add user message to conversation
           const userMessage: ChatMessage = {
@@ -84,10 +90,12 @@ export class ChatService {
             request.message,
             request.conversationHistory || [],
             userId,
+            { correlationId }
           );
 
           const reader = stream.getReader();
           let assistantResponse = '';
+          let tokenSequence = 0;
 
           while (true) {
             const { done, value } = await reader.read();
@@ -96,7 +104,7 @@ export class ChatService {
               break;
             }
 
-            // Decode and accumulate assistant response
+            // Decode and process assistant response
             const chunk = new TextDecoder().decode(value);
             if (chunk.includes('data: ')) {
               const lines = chunk.split('\n');
@@ -107,7 +115,24 @@ export class ChatService {
                     try {
                       const parsed = JSON.parse(data);
                       if (parsed.type === 'content' && parsed.data) {
-                        assistantResponse += parsed.data;
+                        // Stream tokens for better UX
+                        const content = parsed.data;
+                        const tokens = content.split(/(\s+)/);
+                        
+                        for (const token of tokens) {
+                          if (token.trim()) {
+                            tokenSequence++;
+                            const tokenEvent = StreamEventBuilder.createTokenEvent(
+                              token,
+                              tokenSequence,
+                              undefined,
+                              true,
+                              correlationId
+                            );
+                            controller.enqueue(new TextEncoder().encode(StreamEventSerializer.serialize(tokenEvent)));
+                            assistantResponse += token;
+                          }
+                        }
                       }
                     } catch (e) {
                       // Skip invalid JSON
@@ -139,20 +164,34 @@ export class ChatService {
             await conversationRepository.save(conversation);
           }
 
+          // Send END event
+          const processingTime = Date.now() - startTime;
+          const endEvent = StreamEventBuilder.createEndEvent(
+            conversation.id,
+            assistantResponse.length,
+            processingTime,
+            assistantResponse,
+            correlationId
+          );
+          controller.enqueue(new TextEncoder().encode(StreamEventSerializer.serialize(endEvent)));
+
           controller.close();
         } catch (error) {
           console.error('Chat service error:', error);
 
-          // Send error message
-          const errorChunk = `data: ${JSON.stringify({
-            type: 'error',
-            error: 'Failed to generate response',
-            timestamp: new Date().toISOString(),
-          })}\n\n`;
-          controller.enqueue(new TextEncoder().encode(errorChunk));
+          // Send error event
+          const errorEvent = StreamEventBuilder.createErrorEvent(
+            'Failed to generate response',
+            'CHAT_SERVICE_ERROR',
+            { error: error.message },
+            true,
+            5000,
+            correlationId
+          );
+          controller.enqueue(new TextEncoder().encode(StreamEventSerializer.serialize(errorEvent)));
 
           // Send final [DONE] marker
-          controller.enqueue(new TextEncoder().encode('data: [DONE]\n\n'));
+          controller.enqueue(new TextEncoder().encode(StreamEventSerializer.serializeDone()));
           controller.close();
         }
       },
