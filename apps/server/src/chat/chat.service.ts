@@ -83,6 +83,7 @@ export class ChatService {
             content: request.message,
             timestamp: new Date().toISOString(),
           };
+
           conversation.messages.push(userMessage);
 
           // Get streaming response from Kronos agent
