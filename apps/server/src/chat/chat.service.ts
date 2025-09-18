@@ -48,7 +48,7 @@ export class ChatService {
           if (request.conversationId) {
             // Load existing conversation
             conversation = await conversationRepository.findOne({
-              where: { id: request.conversationId, created_by: userId }
+              where: { id: request.conversationId, createdBy: userId }
             });
             
             if (!conversation) {
@@ -61,8 +61,8 @@ export class ChatService {
               title: null,
               messages: [],
               metadata: {},
-              created_by: userId,
-              updated_by: userId,
+              createdBy: userId,
+              updatedBy: userId,
             });
             await conversationRepository.save(conversation);
           }
@@ -152,7 +152,7 @@ export class ChatService {
             }
 
             // Save updated conversation
-            conversation.updated_by = userId;
+            conversation.updatedBy = userId;
             await conversationRepository.save(conversation);
           }
 
@@ -185,8 +185,8 @@ export class ChatService {
    */
   async getConversations(userId: string): Promise<Conversation[]> {
     return this.conversationRepository.find({
-      where: { created_by: userId },
-      order: { updated_at: 'DESC' },
+      where: { createdBy: userId },
+      order: { updatedAt: 'DESC' },
     });
   }
 
@@ -201,12 +201,12 @@ export class ChatService {
     userId: string, 
     page: number = 1, 
     limit: number = 10
-  ): Promise<{ data: Conversation[]; currentPage: number; totalPages: number; pageSize: number }> {
+  ): Promise<{ items: Conversation[]; total: number; page: number; limit: number; totalPages: number }> {
     const skip = (page - 1) * limit;
     
     const [conversations, total] = await this.conversationRepository.findAndCount({
-      where: { created_by: userId },
-      order: { updated_at: 'DESC' },
+      where: { createdBy: userId },
+      order: { updatedAt: 'DESC' },
       skip,
       take: limit,
     });
@@ -214,10 +214,11 @@ export class ChatService {
     const totalPages = Math.ceil(total / limit);
 
     return {
-      data: conversations,
-      currentPage: page,
+      items: conversations,
+      total,
+      page,
+      limit,
       totalPages,
-      pageSize: limit,
     };
   }
 
@@ -229,7 +230,7 @@ export class ChatService {
    */
   async getConversationMessages(conversationId: string, userId: string): Promise<Conversation | null> {
     return this.conversationRepository.findOne({
-      where: { id: conversationId, created_by: userId },
+      where: { id: conversationId, createdBy: userId },
     });
   }
 
@@ -242,7 +243,7 @@ export class ChatService {
   async deleteConversation(conversationId: string, userId: string): Promise<{ success: boolean; message: string }> {
     try {
       const conversation = await this.conversationRepository.findOne({
-        where: { id: conversationId, created_by: userId },
+        where: { id: conversationId, createdBy: userId },
       });
 
       if (!conversation) {

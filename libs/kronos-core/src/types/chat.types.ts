@@ -1,3 +1,5 @@
+import { PaginatedResponse } from './api.types';
+
 export interface ChatMessage {
   role: 'user' | 'assistant' | 'system';
   content: string;
@@ -16,7 +18,6 @@ export interface ChatResponse {
   timestamp: string;
 }
 
-
 export interface Conversation {
   id: string;
   title?: string;
@@ -25,10 +26,7 @@ export interface Conversation {
   messages: ChatMessage[];
 }
 
-export interface ConversationsResponse {
-  data: Conversation[];
-  currentPage: number;
-  totalPages: number;
-  pageSize: number;
+export interface ConversationsResponse extends PaginatedResponse<Conversation> {
+  // Inherits items, total, page, limit, totalPages from PaginatedResponse
 }
 

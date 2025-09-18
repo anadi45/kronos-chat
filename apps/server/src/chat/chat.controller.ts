@@ -86,21 +86,7 @@ export class ChatController {
       limitNum
     );
     
-    // Transform the data to match the frontend interface
-    const transformedData = result.data.map(conversation => ({
-      id: conversation.id,
-      title: conversation.title,
-      createdAt: conversation.created_at.toISOString(),
-      updatedAt: conversation.updated_at.toISOString(),
-      messages: conversation.messages
-    }));
-    
-    return {
-      data: transformedData,
-      currentPage: result.currentPage,
-      totalPages: result.totalPages,
-      pageSize: result.pageSize
-    };
+    return result;
   }
 
 
@@ -116,15 +102,8 @@ export class ChatController {
       };
     }
 
-    // Transform messages to match frontend interface
-    const transformedMessages = conversation.messages.map(message => ({
-      role: message.role === 'user' ? 'user' : message.role === 'ai' ? 'assistant' : 'system',
-      content: message.content,
-      timestamp: message.timestamp
-    }));
-
     return {
-      messages: transformedMessages,
+      messages: conversation.messages,
       conversationId: conversationId,
     };
   }

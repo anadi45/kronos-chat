@@ -122,9 +122,9 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
       const response = await apiService.getConversations(page, 10);
       
       if (append) {
-        setConversations(prev => [...prev, ...response.data]);
+        setConversations(prev => [...prev, ...response.items]);
       } else {
-        setConversations(response.data || []);
+        setConversations(response.items || []);
       }
       setHasMoreConversations(page < response.totalPages);
       setCurrentPage(page);
