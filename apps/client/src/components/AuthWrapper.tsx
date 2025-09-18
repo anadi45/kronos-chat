@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { apiService } from '../services/apiService';
 import { type UserProfile } from '@kronos/core';
-import LoginForm from './LoginForm';
-import SignupForm from './SignupForm';
 
 interface AuthWrapperProps {
   children: React.ReactNode;
@@ -11,7 +9,6 @@ interface AuthWrapperProps {
 const AuthWrapper: React.FC<AuthWrapperProps> = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
   const [user, setUser] = useState<UserProfile | null>(null);
 
   useEffect(() => {
@@ -82,9 +79,6 @@ const AuthWrapper: React.FC<AuthWrapperProps> = ({ children }) => {
     setIsLoading(false);
   };
 
-  const handleAuthSuccess = async () => {
-    await checkAuthStatus();
-  };
 
   const handleLogout = async () => {
     await apiService.logout();
@@ -113,30 +107,16 @@ const AuthWrapper: React.FC<AuthWrapperProps> = ({ children }) => {
     );
   }
 
-  if (!isAuthenticated) {
-    if (authMode === 'login') {
-      return (
-        <LoginForm
-          onSuccess={handleAuthSuccess}
-          onSwitchToSignup={() => setAuthMode('signup')}
-        />
-      );
-    } else {
-      return (
-        <SignupForm
-          onSuccess={handleAuthSuccess}
-          onSwitchToLogin={() => setAuthMode('login')}
-        />
-      );
-    }
-  }
+  // Authentication is now handled by routing, so we don't render login/signup forms here
+  // The routing logic in App.tsx will handle showing the appropriate forms
 
-  // Clone children and inject user and logout function
+  // Clone children and inject user, logout function, and authentication status
   return (
     <>
       {React.cloneElement(children as React.ReactElement, {
         user,
-        onLogout: handleLogout
+        onLogout: handleLogout,
+        isAuthenticated
       } as any)}
     </>
   );
