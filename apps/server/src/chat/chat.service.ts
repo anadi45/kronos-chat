@@ -3,9 +3,9 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import type { ChatRequest, PaginatedResponse } from '@kronos/core';
 import { StreamEventFactory, StreamEventSerializer } from '@kronos/core';
-import { KronosAgentBuilder } from '../agents/kronos/builder';
 import { Conversation, ChatMessage } from '../entities/conversation.entity';
 import { ChatMessageRole } from '../enum/roles.enum';
+import { KronosAgent } from '../agents/kronos/agent';
 
 @Injectable()
 export class ChatService {
@@ -24,8 +24,9 @@ export class ChatService {
     request: ChatRequest,
     userId: string
   ): Promise<ReadableStream> {
-    const kronosAgentBuilder = new KronosAgentBuilder(userId);
     const conversationRepository = this.conversationRepository;
+
+    const agent = new KronosAgent(userId).getCompiledAgent();
 
     return new ReadableStream({
       async start(controller) {
@@ -72,137 +73,14 @@ export class ChatService {
 
           conversation.messages.push(userMessage);
 
-          const stream = await kronosAgentBuilder.streamResponse(
-            request.message,
-            request.conversationHistory || [],
-            userId,
-            {
-              conversationId: conversation.id,
-              streamModes: ['updates', 'messages', 'custom'],
-            }
-          );
-
-          const reader = stream.getReader();
-          let assistantResponse = '';
-          let tokenSequence = 0;
-
-          while (true) {
-            const { done, value } = await reader.read();
-
-            if (done) {
-              break;
-            }
-
-            const chunk = new TextDecoder().decode(value);
-            if (chunk.includes('data: ')) {
-              const lines = chunk.split('\n');
-              for (const line of lines) {
-                if (line.startsWith('data: ')) {
-                  const data = line.slice(6);
-                  if (data !== '[DONE]' && data !== '') {
-                    try {
-                      const parsed = JSON.parse(data);
-
-                      // Handle different stream event types from LangGraph
-                      switch (parsed.type) {
-                        case 'agent_progress':
-                          // Agent progress updates - forward to client
-                          const progressEvent =
-                            StreamEventFactory.createTokenEvent(
-                              `🤖 ${parsed.data.node} completed`
-                            );
-                          controller.enqueue(
-                            new TextEncoder().encode(
-                              StreamEventSerializer.serialize(progressEvent)
-                            )
-                          );
-                          break;
-
-                        case 'token':
-                          // LLM tokens - stream to client (avoid duplicates)
-                          if (parsed.data && parsed.data.trim()) {
-                            tokenSequence++;
-                            const tokenEvent =
-                              StreamEventFactory.createTokenEvent(parsed.data);
-                            controller.enqueue(
-                              new TextEncoder().encode(
-                                StreamEventSerializer.serialize(tokenEvent)
-                              )
-                            );
-                            assistantResponse += parsed.data;
-                          }
-                          break;
-
-                        case 'tool_update':
-                          // Tool execution updates - forward to client
-                          const toolEvent = StreamEventFactory.createTokenEvent(
-                            `🔧 ${parsed.data}`
-                          );
-                          controller.enqueue(
-                            new TextEncoder().encode(
-                              StreamEventSerializer.serialize(toolEvent)
-                            )
-                          );
-                          break;
-
-                        case 'completion':
-                          // Final completion event
-                          console.log('LangGraph streaming completed');
-                          break;
-
-                        case 'error':
-                          // Error handling
-                          const errorEvent =
-                            StreamEventFactory.createTokenEvent(
-                              `❌ ${parsed.data.error}`
-                            );
-                          controller.enqueue(
-                            new TextEncoder().encode(
-                              StreamEventSerializer.serialize(errorEvent)
-                            )
-                          );
-                          break;
-                      }
-                    } catch (e) {
-                      // Skip invalid JSON
-                      console.warn('Failed to parse streaming data:', e);
-                    }
-                  }
-                }
-              }
-            } else {
-              // Forward non-data chunks directly to client
-              controller.enqueue(value);
-            }
+          for await (const [streamMode, chunk] of await (agent as any).stream(
+            { messages: [request.message] },
+            { streamMode: ["updates", "messages"] }
+          )) {
+            console.log(streamMode, chunk);
+            console.log("\n");
           }
 
-          // Add assistant message to conversation
-          if (assistantResponse) {
-            const assistantMessage: ChatMessage = {
-              role: ChatMessageRole.AI,
-              content: assistantResponse,
-              timestamp: new Date().toISOString(),
-            };
-            conversation.messages.push(assistantMessage);
-
-            // Update conversation title if it's new and this is the first exchange
-            if (isNewConversation && conversation.messages.length === 2) {
-              conversation.title =
-                request.message.slice(0, 50) +
-                (request.message.length > 50 ? '...' : '');
-            }
-
-            // Save updated conversation
-            conversation.updatedBy = userId;
-            await conversationRepository.save(conversation);
-          }
-
-          // Send END event
-          const processingTime = Date.now() - startTime;
-          const endEvent = StreamEventFactory.createEndEvent(conversation.id);
-          controller.enqueue(
-            new TextEncoder().encode(StreamEventSerializer.serialize(endEvent))
-          );
 
           controller.close();
         } catch (error) {
