@@ -29,6 +29,9 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
   const [isLoadingConversations, setIsLoadingConversations] = useState(false);
   const [hasMoreConversations, setHasMoreConversations] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
+  const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
+  const [conversationToDelete, setConversationToDelete] = useState<Conversation | null>(null);
+  const [isDeletingConversation, setIsDeletingConversation] = useState(false);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -66,21 +69,25 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
     }
   }, []);
 
-  // Handle escape key to close modal
+  // Handle escape key to close modals
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && showConversations) {
-        setShowConversations(false);
+      if (e.key === 'Escape') {
+        if (showDeleteConfirmation) {
+          cancelDeleteConversation();
+        } else if (showConversations) {
+          setShowConversations(false);
+        }
       }
     };
 
-    if (showConversations) {
+    if (showConversations || showDeleteConfirmation) {
       document.addEventListener('keydown', handleEscape);
       return () => document.removeEventListener('keydown', handleEscape);
     }
     
     return undefined;
-  }, [showConversations]);
+  }, [showConversations, showDeleteConfirmation]);
 
   // Handle infinite scroll for conversations
   useEffect(() => {
@@ -155,21 +162,24 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
     }
   };
 
-  const deleteConversation = async (conversationId: string, event: React.MouseEvent) => {
+  const showDeleteConfirmationModal = (conversation: Conversation, event: React.MouseEvent) => {
     event.stopPropagation(); // Prevent triggering the conversation load
-    
-    if (!window.confirm('Are you sure you want to delete this conversation? This action cannot be undone.')) {
-      return;
-    }
+    setConversationToDelete(conversation);
+    setShowDeleteConfirmation(true);
+  };
 
+  const confirmDeleteConversation = async () => {
+    if (!conversationToDelete) return;
+
+    setIsDeletingConversation(true);
     try {
-      const result = await apiService.deleteConversation(conversationId);
+      const result = await apiService.deleteConversation(conversationToDelete.id);
       if (result.success) {
         // Remove from local state
-        setConversations(prev => prev.filter(conv => conv.id !== conversationId));
+        setConversations(prev => prev.filter(conv => conv.id !== conversationToDelete.id));
         
         // If this was the current conversation, clear it
-        if (currentConversationId === conversationId) {
+        if (currentConversationId === conversationToDelete.id) {
           startNewConversation();
         }
         setError(null); // Clear any previous errors
@@ -193,7 +203,16 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
       } else {
         setError('Failed to delete conversation. Please try again.');
       }
+    } finally {
+      setIsDeletingConversation(false);
+      setShowDeleteConfirmation(false);
+      setConversationToDelete(null);
     }
+  };
+
+  const cancelDeleteConversation = () => {
+    setShowDeleteConfirmation(false);
+    setConversationToDelete(null);
   };
 
   const loadConversationMessages = async (conversationId: string) => {
@@ -490,7 +509,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
                       </div>
                     </button>
                     <button
-                      onClick={(e) => deleteConversation(conversation.id, e)}
+                      onClick={(e) => showDeleteConfirmationModal(conversation, e)}
                       className="conversation-delete-btn"
                       title="Delete conversation"
                     >
@@ -514,6 +533,60 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
                   </div>
                 )}
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirmation && conversationToDelete && (
+        <div 
+          className="delete-confirmation-overlay"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              cancelDeleteConversation();
+            }
+          }}
+        >
+          <div className="delete-confirmation-modal">
+            <div className="delete-confirmation-header">
+              <h3>Delete Conversation</h3>
+            </div>
+            <div className="delete-confirmation-content">
+              <p>Are you sure you want to delete this conversation?</p>
+              <div className="conversation-preview">
+                <strong>{conversationToDelete.title || `Conversation ${conversationToDelete.id.slice(-8)}`}</strong>
+                <span className="conversation-date">
+                  {new Date(conversationToDelete.updatedAt).toLocaleDateString()}
+                </span>
+              </div>
+              <p className="warning-text">This action cannot be undone.</p>
+            </div>
+            <div className="delete-confirmation-actions">
+              <button
+                onClick={cancelDeleteConversation}
+                className="delete-confirmation-btn cancel"
+                disabled={isDeletingConversation}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDeleteConversation}
+                className="delete-confirmation-btn delete"
+                disabled={isDeletingConversation}
+              >
+                {isDeletingConversation ? (
+                  <>
+                    <svg className="animate-spin h-4 w-4 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Deleting...
+                  </>
+                ) : (
+                  'Delete'
+                )}
+              </button>
             </div>
           </div>
         </div>
