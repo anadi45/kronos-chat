@@ -8,7 +8,7 @@ import {
 } from '@langchain/core/messages';
 import { RunnableConfig } from '@langchain/core/runnables';
 import { getMathTools } from './math-tools';
-import { signalContextReadinessTool } from '../common/tools';
+import { signalContextReadiness } from '../common/tools';
 import { KronosAgentState, KronosAgentStateSchema } from './state';
 import { MODELS } from '../../constants/models.constants';
 import { formatSystemPrompt } from './prompts';
@@ -91,10 +91,10 @@ export class KronosAgentBuilder {
     try {
       // Load custom math tools
       const mathTools = getMathTools();
-      
+
       // Load common tools
-      const commonTools = [signalContextReadinessTool];
-      
+      const commonTools = [signalContextReadiness.tool];
+
       // Combine all tools
       this.tools = [...mathTools, ...commonTools];
 
@@ -103,10 +103,7 @@ export class KronosAgentBuilder {
         console.log(`  ${index + 1}. ${tool.name}`);
       });
     } catch (error) {
-      console.warn(
-        '⚠️ Failed to load tools, continuing without tools:',
-        error
-      );
+      console.warn('⚠️ Failed to load tools, continuing without tools:', error);
       this.tools = [];
     }
   }
@@ -153,23 +150,17 @@ export class KronosAgentBuilder {
       const aiMessage = lastMessage;
       const toolCalls = aiMessage.tool_calls || [];
 
-      if (toolCalls.length > 0) {
-        const toolNames = toolCalls.map((tc) => tc.name);
-        console.log('Routing: Tool calls requested:', toolNames);
-        
-        // Check if signalContextReadiness was called
-        if (toolNames.includes('signalContextReadiness')) {
-          console.log('Routing: signalContextReadiness called, proceeding to final answer');
-          return 'final_answer';
-        }
-        
-        return 'continue';
-      } else {
+      const toolNames = toolCalls.map((tc) => tc.name);
+      console.log('Routing: Tool calls requested:', toolNames);
+
+      if (toolNames.includes(signalContextReadiness.name)) {
         console.log(
-          'Routing: LLM provided a direct answer, proceeding to completion.'
+          'Routing: signalContextReadiness called, proceeding to final answer'
         );
         return 'final_answer';
       }
+
+      return 'continue';
     }
 
     // Default fallback
