@@ -1891,11 +1891,11 @@ input:focus, textarea:focus, select:focus {
   box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3), 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
-.message-bubble.assistant:hover {
-  background: linear-gradient(135deg, rgba(30, 41, 59, 1), rgba(51, 65, 85, 0.9));
-  border-color: rgba(255, 255, 255, 0.3);
-  transform: translateY(-2px);
-  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.4), 0 4px 12px rgba(0, 0, 0, 0.2);
+.chat-message.assistant .message-bubble.assistant:hover {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.3), rgba(30, 64, 175, 0.2)) !important;
+  border-color: rgba(59, 130, 246, 0.8) !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 12px 35px rgba(59, 130, 246, 0.5), 0 4px 12px rgba(59, 130, 246, 0.3) !important;
 }
 
 .message-timestamp {
@@ -2647,11 +2647,11 @@ input:checked + .toggle-slider:before {
     box-shadow: 0 10px 30px rgba(59, 130, 246, 0.3), 0 4px 12px rgba(59, 130, 246, 0.15);
   }
 
-  .message-bubble.assistant:hover {
-    background: linear-gradient(135deg, rgba(30, 41, 59, 1), rgba(51, 65, 85, 0.9));
-    border-color: rgba(255, 255, 255, 0.3);
-    transform: translateY(-2px);
-    box-shadow: 0 12px 35px rgba(0, 0, 0, 0.4), 0 4px 12px rgba(0, 0, 0, 0.2);
+  .chat-message.assistant .message-bubble.assistant:hover {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.3), rgba(30, 64, 175, 0.2)) !important;
+    border-color: rgba(59, 130, 246, 0.8) !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 12px 35px rgba(59, 130, 246, 0.5), 0 4px 12px rgba(59, 130, 246, 0.3) !important;
   }
 }
 
