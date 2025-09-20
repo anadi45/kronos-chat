@@ -8,7 +8,7 @@ import {
 } from '@langchain/core/messages';
 import { RunnableConfig } from '@langchain/core/runnables';
 import { getMathTools } from './math-tools';
-import { signalContextReadiness } from '../common/tools';
+import { signalContextReadinessTool } from '../common/tools';
 import { KronosAgentState, KronosAgentStateSchema } from './state';
 import { MODELS } from '../../constants/models.constants';
 import { formatSystemPrompt } from './prompts';
@@ -43,27 +43,20 @@ export class KronosAgentBuilder {
     try {
       await this.loadTools(this.userId);
 
-      // Build the workflow graph
       const workflow = new StateGraph(KronosAgentStateSchema);
 
       await this.addNodes(workflow);
       this.configureEdges(workflow);
 
-      // Compile and return with PostgreSQL checkpointer support
       const compileOptions: any = {
         name: this.AGENT_NAME,
         checkpointer: this.checkpointerService.getCheckpointer(),
       };
 
-      console.log(
-        '✅ Kronos agent created successfully with PostgreSQL checkpointer'
-      );
-
       const compiledGraph = workflow.compile(compileOptions);
       return compiledGraph;
     } catch (error) {
-      console.error('❌ Failed to create Kronos agent:', error);
-      throw error;
+      throw new Error(`Failed to build Kronos agent: ${error.message}`);
     }
   }
 
@@ -87,14 +80,12 @@ export class KronosAgentBuilder {
    * Load all available tools for a given user
    */
   private async loadTools(userId: string): Promise<void> {
-    console.log('🔧 Loading Kronos tools');
-
     try {
       // Load custom math tools
       const mathTools = getMathTools();
 
       // Load common tools
-      const commonTools = [signalContextReadiness.tool];
+      const commonTools = [signalContextReadinessTool];
 
       // Combine all tools
       this.tools = [...mathTools, ...commonTools];
@@ -144,28 +135,20 @@ export class KronosAgentBuilder {
   private shouldAct(state: KronosAgentState): string {
     const lastMessage = state.messages[state.messages.length - 1];
 
-    // TODO: Need to fix if case here. It should always call some tool.
-
     // Handle AIMessage with tool routing logic
     if (lastMessage && isAIMessage(lastMessage)) {
       const aiMessage = lastMessage;
       const toolCalls = aiMessage.tool_calls || [];
 
       const toolNames = toolCalls.map((tc) => tc.name);
-      console.log('Routing: Tool calls requested:', toolNames);
 
-      if (toolNames.includes(signalContextReadiness.name)) {
-        console.log(
-          'Routing: signalContextReadiness called, proceeding to final answer'
-        );
+      if (toolNames.includes(signalContextReadinessTool.name)) {
         return 'final_answer';
       }
 
       return 'continue';
     }
 
-    // Default fallback
-    console.log('Routing: Proceeding to final answer processing');
     return 'final_answer';
   }
 
@@ -174,8 +157,6 @@ export class KronosAgentBuilder {
    */
   private createToolNode() {
     return async (state: KronosAgentState, config: RunnableConfig) => {
-      console.log('🔧 Executing tool node');
-
       const lastMessage = state.messages[state.messages.length - 1];
 
       if (!lastMessage || !isAIMessage(lastMessage)) {
@@ -196,10 +177,6 @@ export class KronosAgentBuilder {
       // Get context values for tool execution
       const userId = getContextValue(config, 'userId');
 
-      console.log(`Executing ${toolCalls.length} tool calls with context:`, {
-        userId,
-      });
-
       // Execute tools with enhanced error handling
       const toolResults: ToolMessage[] = [];
 
@@ -218,12 +195,6 @@ export class KronosAgentBuilder {
             continue;
           }
 
-          // Execute the tool with context
-          console.log(
-            `Executing tool: ${toolCall.name} with args:`,
-            toolCall.args
-          );
-
           // Add context to tool arguments if the tool supports it
           const toolArgs = {
             ...toolCall.args,
@@ -232,7 +203,6 @@ export class KronosAgentBuilder {
 
           const result = await tool.invoke(toolArgs);
 
-          console.log(`Tool ${toolCall.name} executed successfully`);
           toolResults.push(
             new ToolMessage({
               name: toolCall.name,
@@ -241,7 +211,6 @@ export class KronosAgentBuilder {
             })
           );
         } catch (error) {
-          console.error(`Error executing tool ${toolCall.name}:`, error);
           toolResults.push(
             new ToolMessage({
               name: toolCall.name,
@@ -272,17 +241,12 @@ export class KronosAgentBuilder {
           ...state.messages,
         ];
 
-        console.log(
-          `Agent using conversation history: ${messages.length} messages`
-        );
-
         const modelWithTools = this.model.bindTools(this.tools, {
           tool_choice: 'any',
         });
 
         const response = await modelWithTools.invoke(messages, config);
 
-        console.log('Agent response generated successfully');
         return {
           messages: [response],
         };
@@ -310,21 +274,15 @@ export class KronosAgentBuilder {
 
       const allMessages = state.messages;
 
-      console.log('All messages:', allMessages);
       const conversationHistory = [
         new SystemMessage(formattedPrompt),
         ...allMessages,
       ];
 
-      console.log(
-        `Final answer using conversation history: ${conversationHistory.length} messages`
-      );
-
       const finalResponse = await this.model.invoke(
         conversationHistory,
         config
       );
-      console.log('Final response:', finalResponse);
 
       let result = 'I apologize, but I was unable to generate a response.';
       if (finalResponse && isAIMessage(finalResponse)) {
