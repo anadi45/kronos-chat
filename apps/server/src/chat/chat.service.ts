@@ -28,11 +28,13 @@ export class ChatService {
   ): Promise<ReadableStream> {
     const conversationRepository = this.conversationRepository;
 
-    const agent = new KronosAgent(userId, this.checkpointerService).getCompiledAgent();
+    const agent = await new KronosAgent(
+      userId,
+      this.checkpointerService
+    ).getCompiledAgent();
 
     return new ReadableStream({
       async start(controller) {
-        // const startTime = Date.now();
         let conversation: Conversation;
         let isNewConversation = false;
 
@@ -76,20 +78,29 @@ export class ChatService {
           conversation.messages.push(userMessage);
 
           let assistantMessage = '';
-          
-          for await (const [streamMode, chunk] of await (agent as unknown as any).stream(
+
+          const config = {
+            configurable: { thread_id: conversation.id },
+            streamMode: ['updates', 'messages'],
+          };
+
+          for await (const [streamMode, chunk] of await (agent as any).stream(
             { messages: [request.message] },
-            { streamMode: ["updates", "messages"] }
+            {
+              config,
+            }
           )) {
             console.log(streamMode, chunk);
-            
-            if (streamMode === "messages" && chunk?.messages) {
+
+            if (streamMode === 'messages' && chunk?.messages) {
               for (const message of chunk.messages) {
                 if (message.role === 'assistant' && message.content) {
                   assistantMessage += message.content;
-                  
+
                   // Send token event
-                  const tokenEvent = StreamEventFactory.createTokenEvent(message.content);
+                  const tokenEvent = StreamEventFactory.createTokenEvent(
+                    message.content
+                  );
                   controller.enqueue(
                     new TextEncoder().encode(
                       StreamEventSerializer.serialize(tokenEvent)
@@ -112,11 +123,8 @@ export class ChatService {
           // Send end event
           const endEvent = StreamEventFactory.createEndEvent(conversation.id);
           controller.enqueue(
-            new TextEncoder().encode(
-              StreamEventSerializer.serialize(endEvent)
-            )
+            new TextEncoder().encode(StreamEventSerializer.serialize(endEvent))
           );
-
 
           controller.close();
         } catch (error) {

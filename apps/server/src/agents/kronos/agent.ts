@@ -10,10 +10,12 @@ export class KronosAgent {
     this.checkpointerService = checkpointerService;
   }
 
-  getCompiledAgent() {
-    return new KronosAgentBuilder(
+  async getCompiledAgent() {
+    const compiledAgent = await new KronosAgentBuilder(
       this.userId,
       this.checkpointerService
     ).build();
+
+    return compiledAgent;
   }
 }
