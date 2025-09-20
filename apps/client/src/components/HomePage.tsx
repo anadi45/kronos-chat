@@ -20,7 +20,7 @@ const HomePage: React.FC<HomePageProps> = ({ user, onLogout }) => {
       title: 'Integrations',
       description: 'Connect with your favorite tools and services',
       icon: '🔗',
-      path: '/integrations',
+      path: '/oauth-integrations',
       color: 'from-green-500 to-emerald-600'
     },
     {

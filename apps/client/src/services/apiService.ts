@@ -226,134 +226,134 @@ class ApiService {
     return response.data;
   }
 
-  // Integration Methods
+  // OAuth Integration Methods
 
   /**
    * Get all available integrations
-   * GET /integrations
+   * GET /oauth-integrations
    */
   async getAvailableIntegrations(): Promise<Integration[]> {
-    const response = await this.client.get('/integrations');
+    const response = await this.client.get('/oauth-integrations');
     return response.data;
   }
 
   /**
    * Get user's connected integrations
-   * GET /integrations/connected
+   * GET /oauth-integrations/connected
    */
   async getConnectedIntegrations(): Promise<Integration[]> {
-    const response = await this.client.get('/integrations/connected');
+    const response = await this.client.get('/oauth-integrations/connected');
     return response.data;
   }
 
   /**
    * Get integration status and configuration
-   * GET /integrations/status
+   * GET /oauth-integrations/status
    */
   async getIntegrationStatus(): Promise<IntegrationStatus> {
-    const response = await this.client.get('/integrations/status');
+    const response = await this.client.get('/oauth-integrations/status');
     return response.data;
   }
 
   /**
    * Connect to a specific integration
-   * POST /integrations/:provider/connect
+   * POST /oauth-integrations/:provider/connect
    */
   async connectIntegration(provider: string): Promise<ConnectIntegrationResponse> {
-    const response = await this.client.post(`/integrations/${provider}/connect`);
+    const response = await this.client.post(`/oauth-integrations/${provider}/connect`);
     return response.data;
   }
 
   /**
    * Disconnect from a specific integration
-   * DELETE /integrations/:provider/disconnect
+   * DELETE /oauth-integrations/:provider/disconnect
    */
   async disconnectIntegration(provider: string): Promise<DisconnectIntegrationResponse> {
-    const response = await this.client.delete(`/integrations/${provider}/disconnect`);
+    const response = await this.client.delete(`/oauth-integrations/${provider}/disconnect`);
     return response.data;
   }
 
   /**
    * Get integration details and capabilities
-   * GET /integrations/:provider
+   * GET /oauth-integrations/:provider
    */
   async getIntegrationDetails(provider: string): Promise<IntegrationDetails> {
-    const response = await this.client.get(`/integrations/${provider}`);
+    const response = await this.client.get(`/oauth-integrations/${provider}`);
     return response.data;
   }
 
-  // Composio-specific endpoints (routed through integrations)
+  // OAuth integrations endpoints
 
   /**
-   * Get available integration providers from Composio
-   * GET /integrations/providers
+   * Get available integration providers from OAuth integrations
+   * GET /oauth-integrations/providers
    */
   async getAvailableProviders(): Promise<any[]> {
-    const response = await this.client.get('/integrations/providers');
+    const response = await this.client.get('/oauth-integrations/providers');
     return response.data;
   }
 
   /**
-   * Create integration connection via Composio
-   * POST /integrations/connections
+   * Create integration connection via OAuth integrations
+   * POST /oauth-integrations/connections
    */
   async createIntegrationConnection(request: any): Promise<any> {
-    const response = await this.client.post('/integrations/connections', request);
+    const response = await this.client.post('/oauth-integrations/connections', request);
     return response.data;
   }
 
   /**
-   * Get connected accounts via Composio
-   * GET /integrations/connections
+   * Get connected accounts via OAuth integrations
+   * GET /oauth-integrations/connections
    */
   async getConnectedAccounts(): Promise<any[]> {
-    const response = await this.client.get('/integrations/connections');
+    const response = await this.client.get('/oauth-integrations/connections');
     return response.data;
   }
 
   /**
-   * Disconnect integration connection via Composio
-   * DELETE /integrations/connections/:connectionId
+   * Disconnect integration connection via OAuth integrations
+   * DELETE /oauth-integrations/connections/:connectionId
    */
   async disconnectIntegrationConnection(connectionId: string): Promise<{ success: boolean }> {
-    const response = await this.client.delete(`/integrations/connections/${connectionId}`);
+    const response = await this.client.delete(`/oauth-integrations/connections/${connectionId}`);
     return response.data;
   }
 
   /**
-   * Get available tools via Composio
-   * GET /integrations/tools
+   * Get available tools via OAuth integrations
+   * GET /oauth-integrations/tools
    */
   async getAvailableTools(toolkits?: string): Promise<any[]> {
     const params = toolkits ? { toolkits } : {};
-    const response = await this.client.get('/integrations/tools', { params });
+    const response = await this.client.get('/oauth-integrations/tools', { params });
     return response.data;
   }
 
   /**
    * Send email via Gmail integration
-   * POST /integrations/email/send
+   * POST /oauth-integrations/email/send
    */
   async sendEmail(request: any): Promise<any> {
-    const response = await this.client.post('/integrations/email/send', request);
+    const response = await this.client.post('/oauth-integrations/email/send', request);
     return response.data;
   }
 
   /**
    * Create auth configuration for a provider
-   * POST /integrations/auth-configs/:provider
+   * POST /oauth-integrations/auth-configs/:provider
    */
   async createAuthConfiguration(provider: string): Promise<any> {
-    const response = await this.client.post(`/integrations/auth-configs/${provider}`);
+    const response = await this.client.post(`/oauth-integrations/auth-configs/${provider}`);
     return response.data;
   }
 
   /**
    * Get service configuration status
-   * GET /integrations/service/status
+   * GET /oauth-integrations/service/status
    */
   async getServiceStatus(): Promise<{ configured: boolean; message: string }> {
-    const response = await this.client.get('/integrations/service/status');
+    const response = await this.client.get('/oauth-integrations/service/status');
     return response.data;
   }
 }

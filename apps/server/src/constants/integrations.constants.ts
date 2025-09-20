@@ -1,4 +1,4 @@
-import { Integration } from '../integrations/integrations.service';
+import { Integration } from '../oauth-integrations/oauth-integrations.service';
 
 /**
  * Available integrations configuration

@@ -79,7 +79,7 @@ function App({ user, onLogout, isAuthenticated }: AppProps) {
         />
         
         <Route 
-          path="/integrations" 
+          path="/oauth-integrations" 
           element={
             isAuthenticated ? (
               <Layout user={user} onLogout={onLogout}>

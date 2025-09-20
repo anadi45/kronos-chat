@@ -6,8 +6,31 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Composio } from '@composio/core';
-import { internalLogger } from '../utils/logger';
-import { LangChainToolConverter } from '../agents/utils/langchain-tool-converter';
+import { AVAILABLE_INTEGRATIONS } from '../constants/integrations.constants';
+
+/**
+ * Integration interface
+ */
+export interface Integration {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  category: string;
+  status: 'available' | 'coming_soon' | 'beta';
+  capabilities: string[];
+  authType: 'oauth' | 'api_key' | 'webhook';
+  isConnected?: boolean;
+  connectedAt?: string;
+}
+
+/**
+ * Integration status interface
+ */
+export interface IntegrationStatus {
+  configured: boolean;
+  integrations: Integration[];
+}
 
 /**
  * Interface for creating a new integration connection
@@ -82,12 +105,12 @@ export interface ConnectedAccount {
 }
 
 /**
- * Professional service for managing Composio integrations
+ * Professional service for managing OAuth integrations
  * Handles OAuth connections, tool management, and integration operations
  */
 @Injectable()
-export class ComposioIntegrationsService {
-  private readonly logger = new Logger(ComposioIntegrationsService.name);
+export class OAuthIntegrationsService {
+  private readonly logger = new Logger(OAuthIntegrationsService.name);
   private readonly composio: Composio;
   constructor(private readonly configService: ConfigService) {
     const apiKey = this.configService.get<string>('COMPOSIO_API_KEY');
@@ -99,7 +122,7 @@ export class ComposioIntegrationsService {
     }
 
     this.composio = new Composio({ apiKey });
-    this.logger.log('Composio integrations service initialized successfully');
+    this.logger.log('OAuth integrations service initialized successfully');
   }
 
   /**
@@ -172,55 +195,6 @@ export class ComposioIntegrationsService {
       this.logger.error(`Failed to create integration connection:`, error);
       throw new BadRequestException(
         `Unable to create integration connection for ${request.provider}. Please try again.`
-      );
-    }
-  }
-
-  /**
-   * Retrieves available tools for a user with specific integration toolkits
-   *
-   * @param userId - The user identifier
-   * @param toolkits - Array of toolkit names to retrieve tools for
-   * @returns Promise<any[]> - Array of LangChain compatible tools
-   */
-  async getAvailableTools(
-    userId: string,
-    toolkits: string[] = ['GMAIL']
-  ): Promise<any[]> {
-    try {
-      this.logger.log(
-        `Retrieving tools for user ${userId} with toolkits: ${toolkits.join(
-          ', '
-        )}`
-      );
-
-      const composioTools = await this.composio.tools.get(userId, {
-        toolkits,
-      });
-
-      internalLogger.info(`Tools retrieved successfully`, { tools: composioTools });
-
-      // Convert Composio tools to LangChain compatible tools
-      const langchainTools = composioTools.map((tool: any) => {
-        try {
-          // Use type assertion to completely bypass strict typing
-          const convertedTool = (LangChainToolConverter as any).convert(tool);
-          return convertedTool;
-        } catch (conversionError) {
-          this.logger.warn(
-            `Failed to convert tool ${tool?.function?.name || 'unknown'}:`,
-            conversionError.message
-          );
-          return null;
-        }
-      }).filter(Boolean); // Remove null values
-
-      this.logger.log(`Successfully converted ${langchainTools.length} tools to LangChain format`);
-      return langchainTools;
-    } catch (error) {
-      this.logger.error(`Failed to retrieve tools:`, error);
-      throw new BadRequestException(
-        'Unable to retrieve available tools. Please ensure your integration is properly connected.'
       );
     }
   }
@@ -374,6 +348,151 @@ export class ComposioIntegrationsService {
     // 3. Reuse existing configs instead of creating new ones
 
     return await this.createAuthConfiguration(provider);
+  }
+
+  /**
+   * Get all available integrations
+   */
+  getAvailableIntegrations(): Integration[] {
+    return AVAILABLE_INTEGRATIONS;
+  }
+
+  /**
+   * Get user's connected integrations
+   */
+  async getConnectedIntegrations(userId: string): Promise<Integration[]> {
+    try {
+      // Get connected accounts from OAuth integrations service
+      const connectedAccounts = await this.getConnectedAccounts(userId);
+      console.dir(connectedAccounts, { depth: null });
+      if (connectedAccounts.length === 0) {
+        return [];
+      }
+
+      // Get all available integrations
+      const allIntegrations = this.getAvailableIntegrations();
+
+      // Map connected accounts to integrations
+      const connectedIntegrations = allIntegrations.map((integration) => {
+        const connectedAccount = connectedAccounts.find(
+          (account) => account.provider.toLowerCase() === integration.id
+        );
+
+        if (connectedAccount) {
+          return {
+            ...integration,
+            isConnected: true,
+            connectedAt: connectedAccount.connectedAt,
+            status: 'available' as const,
+          };
+        }
+
+        return integration;
+      });
+
+      return connectedIntegrations;
+    } catch (error) {
+      this.logger.error(
+        `Failed to get connected integrations for user ${userId}:`,
+        error
+      );
+      return [];
+    }
+  }
+
+  /**
+   * Get integration status and configuration
+   */
+  async getIntegrationStatus(): Promise<IntegrationStatus> {
+    const isConfigured = this.isServiceConfigured();
+    const integrations = this.getAvailableIntegrations();
+
+    return {
+      configured: isConfigured,
+      integrations,
+    };
+  }
+
+  /**
+   * Connect to a specific integration
+   */
+  async connectIntegration(userId: string, provider: string): Promise<any> {
+    try {
+      // For now, delegate to OAuth integrations service for OAuth connections
+      if (provider === 'gmail') {
+        const connectionResult = await this.createIntegrationConnection({
+          userId,
+          provider: 'GMAIL',
+        });
+
+        // Transform the response to match frontend expectations
+        return {
+          success: true,
+          authUrl: connectionResult.redirectUrl,
+          provider: connectionResult.provider,
+          status: 'available' as const,
+          connectionId: connectionResult.connectionId,
+        };
+      }
+
+      // For other integrations, return a placeholder response
+      return {
+        success: false,
+        message: `${provider} integration is coming soon`,
+        status: 'coming_soon' as const,
+        provider,
+      };
+    } catch (error) {
+      this.logger.error(
+        `Failed to connect integration ${provider} for user ${userId}:`,
+        error
+      );
+      return {
+        success: false,
+        message: `Failed to connect ${provider} integration. Please try again.`,
+        provider,
+        status: 'available' as const,
+      };
+    }
+  }
+
+  /**
+   * Disconnect from a specific integration
+   */
+  async disconnectIntegrationByProvider(
+    userId: string,
+    provider: string
+  ): Promise<{ success: boolean }> {
+    try {
+      // Get connected accounts to find the connection ID
+      const connectedAccounts = await this.getConnectedAccounts(userId);
+      const account = connectedAccounts.find(
+        (acc) => acc.provider.toLowerCase() === provider
+      );
+
+      if (account) {
+        await this.disconnectIntegration(userId, account.id);
+        return { success: true };
+      }
+
+      return { success: false };
+    } catch (error) {
+      this.logger.error(
+        `Failed to disconnect integration ${provider} for user ${userId}:`,
+        error
+      );
+      return { success: false };
+    }
+  }
+
+  /**
+   * Get integration details and capabilities
+   */
+  async getIntegrationDetails(provider: string): Promise<Integration | null> {
+    const integrations = this.getAvailableIntegrations();
+    return (
+      integrations.find((integration) => integration.id === provider) || null
+    );
   }
 
   /**

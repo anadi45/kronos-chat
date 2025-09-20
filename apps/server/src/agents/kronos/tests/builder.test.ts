@@ -3,6 +3,9 @@ import { KronosAgentBuilder } from '../builder';
 describe('KronosAgentBuilder', () => {
   let builder: KronosAgentBuilder;
   let mockCheckpointer: any;
+  let mockOAuthIntegrationsService: any;
+  let mockToolsExecutorService: any;
+  let mockToolsProviderService: any;
 
   beforeEach(() => {
     // Mock environment variables
@@ -14,8 +17,29 @@ describe('KronosAgentBuilder', () => {
       isReady: jest.fn().mockReturnValue(true),
       getPostgresSaver: jest.fn().mockReturnValue({}),
     } as any;
+
+    // Mock OAuth integrations service
+    mockOAuthIntegrationsService = {
+      // Add any methods that might be called
+    } as any;
+
+    // Mock tools executor service
+    mockToolsExecutorService = {
+      executeToolsAndReturnMessages: jest.fn(),
+    } as any;
+
+    // Mock tools provider service
+    mockToolsProviderService = {
+      getAvailableTools: jest.fn().mockResolvedValue([]),
+    } as any;
     
-    builder = new KronosAgentBuilder('test-user-id', mockCheckpointer);
+    builder = new KronosAgentBuilder(
+      'test-user-id',
+      mockCheckpointer,
+      mockOAuthIntegrationsService,
+      mockToolsExecutorService,
+      mockToolsProviderService
+    );
   });
 
   afterEach(() => {
@@ -32,7 +56,13 @@ describe('KronosAgentBuilder', () => {
     delete process.env.GEMINI_API_KEY;
     
     expect(() => {
-      new KronosAgentBuilder('test-user-id', mockCheckpointer);
+      new KronosAgentBuilder(
+        'test-user-id',
+        mockCheckpointer,
+        mockOAuthIntegrationsService,
+        mockToolsExecutorService,
+        mockToolsProviderService
+      );
     }).toThrow('GEMINI_API_KEY environment variable is required');
   });
 
@@ -40,7 +70,13 @@ describe('KronosAgentBuilder', () => {
     delete process.env.COMPOSIO_API_KEY;
     
     expect(() => {
-      new KronosAgentBuilder('test-user-id', mockCheckpointer);
+      new KronosAgentBuilder(
+        'test-user-id',
+        mockCheckpointer,
+        mockOAuthIntegrationsService,
+        mockToolsExecutorService,
+        mockToolsProviderService
+      );
     }).toThrow('COMPOSIO_API_KEY environment variable is required');
   });
 
