@@ -1,9 +1,12 @@
 import React, { useState } from 'react';
+import { type UserProfile } from '@kronos/core';
 
-const Settings: React.FC = () => {
-  const [settings, setSettings] = useState({
-    autoSave: true
-  });
+interface SettingsProps {
+  user?: UserProfile;
+}
+
+const Settings: React.FC<SettingsProps> = ({ user }) => {
+  const [settings, setSettings] = useState({});
 
   const handleSettingChange = (key: string, value: any) => {
     setSettings(prev => ({
@@ -20,35 +23,63 @@ const Settings: React.FC = () => {
 
       <div className="page-content">
         <div className="settings-sections">
-
-
-          {/* Chat Section */}
+          {/* Account Section */}
           <div className="settings-section">
-            <h2 className="section-title">Chat</h2>
+            <h2 className="section-title">Account</h2>
             <div className="settings-group">
               <div className="setting-item">
                 <div className="setting-info">
-                  <label className="setting-label">Auto-save Conversations</label>
-                  <p className="setting-description">Automatically save your chat history</p>
+                  <label className="setting-label">Name</label>
+                  <p className="setting-description">Your display name</p>
                 </div>
                 <div className="setting-control">
-                  <label className="toggle-switch">
-                    <input
-                      type="checkbox"
-                      checked={settings.autoSave}
-                      onChange={(e) => handleSettingChange('autoSave', e.target.checked)}
-                    />
-                    <span className="toggle-slider"></span>
-                  </label>
+                  <div className="account-info-display">
+                    <span className="account-info-value">
+                      {user?.firstName && user?.lastName 
+                        ? `${user.firstName} ${user.lastName}` 
+                        : 'Not available'
+                      }
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="setting-item">
+                <div className="setting-info">
+                  <label className="setting-label">Email</label>
+                  <p className="setting-description">Your email address</p>
+                </div>
+                <div className="setting-control">
+                  <div className="account-info-display">
+                    <span className="account-info-value">{user?.email || 'Not available'}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="setting-item">
+                <div className="setting-info">
+                  <label className="setting-label">Change Password</label>
+                  <p className="setting-description">Enter your new password</p>
+                </div>
+                <div className="setting-control">
+                  <input
+                    type="password"
+                    placeholder="Enter new password"
+                    className="chat-input"
+                    style={{ 
+                      minHeight: '2.5rem',
+                      maxHeight: '2.5rem',
+                      resize: 'none'
+                    }}
+                  />
                 </div>
               </div>
             </div>
           </div>
 
-
-          {/* Account Section */}
+          {/* Conversations Section */}
           <div className="settings-section">
-            <h2 className="section-title">Account</h2>
+            <h2 className="section-title">Conversations</h2>
             <div className="settings-group">
               <div className="setting-item">
                 <div className="setting-info">

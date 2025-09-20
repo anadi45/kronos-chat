@@ -97,7 +97,7 @@ function App({ user, onLogout, isAuthenticated }: AppProps) {
           element={
             isAuthenticated ? (
               <Layout user={user} onLogout={onLogout}>
-                <Settings />
+                <Settings user={user} />
               </Layout>
             ) : (
               <Navigate to="/login" replace />
