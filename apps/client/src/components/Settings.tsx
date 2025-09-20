@@ -3,8 +3,7 @@ import React, { useState } from 'react';
 const Settings: React.FC = () => {
   const [settings, setSettings] = useState({
     theme: 'dark',
-    autoSave: true,
-    language: 'en'
+    autoSave: true
   });
 
   const handleSettingChange = (key: string, value: any) => {
@@ -39,7 +38,6 @@ const Settings: React.FC = () => {
                   >
                     <option value="dark">Dark</option>
                     <option value="light">Light</option>
-                    <option value="auto">Auto</option>
                   </select>
                 </div>
               </div>
@@ -71,31 +69,6 @@ const Settings: React.FC = () => {
             </div>
           </div>
 
-          {/* Language Section */}
-          <div className="settings-section">
-            <h2 className="section-title">Language & Region</h2>
-            <div className="settings-group">
-              <div className="setting-item">
-                <div className="setting-info">
-                  <label className="setting-label">Language</label>
-                  <p className="setting-description">Select your preferred language</p>
-                </div>
-                <div className="setting-control">
-                  <select
-                    value={settings.language}
-                    onChange={(e) => handleSettingChange('language', e.target.value)}
-                    className="setting-select"
-                  >
-                    <option value="en">English</option>
-                    <option value="es">Español</option>
-                    <option value="fr">Français</option>
-                    <option value="de">Deutsch</option>
-                    <option value="ja">日本語</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-          </div>
 
           {/* Account Section */}
           <div className="settings-section">
