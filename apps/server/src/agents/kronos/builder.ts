@@ -23,14 +23,14 @@ import { CheckpointerService } from '../../checkpointer';
 export class KronosAgentBuilder {
   private model: ChatGoogleGenerativeAI;
   private tools: any[] = [];
-  private checkpointer: CheckpointerService; // PostgreSQL checkpointer service (mandatory)
+  private checkpointerService: CheckpointerService;
   private userId: string;
 
   AGENT_NAME = 'kronos_agent';
 
-  constructor(userId: string, checkpointer: CheckpointerService) {
+  constructor(userId: string, checkpointerService: CheckpointerService) {
     this.userId = userId;
-    this.checkpointer = checkpointer;
+    this.checkpointerService = checkpointerService;
     this.initializeProviders();
   }
 
@@ -50,7 +50,7 @@ export class KronosAgentBuilder {
       // Compile and return with PostgreSQL checkpointer support
       const compileOptions: any = {
         name: this.AGENT_NAME,
-        checkpointer: this.checkpointer.getPostgresSaver(),
+        checkpointer: this.checkpointerService.getCheckpointer(),
       };
 
       console.log(
@@ -80,7 +80,6 @@ export class KronosAgentBuilder {
       throw new Error(`Failed to initialize Providers: ${error.message}`);
     }
   }
-
 
   /**
    * Load all available tools for a given user

@@ -27,7 +27,7 @@ export const REQUIRED_ENV_VARS = ['DATABASE_URL'] as const;
 @Injectable()
 export class CheckpointerService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(CheckpointerService.name);
-  private postgresSaver: PostgresSaver;
+  private checkpointer: PostgresSaver;
   private isInitialized = false;
   private pool: Pool;
 
@@ -70,22 +70,22 @@ export class CheckpointerService implements OnModuleInit, OnModuleDestroy {
       },
     });
 
-    // Create PostgresSaver with the pool
-    this.postgresSaver = new PostgresSaver(this.pool);
+    // Create Checkpointer with the pool
+    this.checkpointer = new PostgresSaver(this.pool);
 
-    await this.postgresSaver.setup();
+    await this.checkpointer.setup();
     this.isInitialized = true;
   }
 
   /**
-   * Get the underlying PostgresSaver instance
+   * Get the underlying Checkpointer instance
    * @returns PostgresSaver instance
    */
-  getPostgresSaver(): PostgresSaver {
+  getCheckpointer(): PostgresSaver {
     if (!this.isInitialized) {
       throw new Error('CheckpointerService has not been initialized yet');
     }
-    return this.postgresSaver;
+    return this.checkpointer;
   }
 
   /**
