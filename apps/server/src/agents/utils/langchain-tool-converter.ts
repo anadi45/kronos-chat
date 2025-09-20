@@ -16,22 +16,18 @@ export class LangChainToolConverter {
       throw new Error('Invalid tool structure: missing function name');
     }
 
-    // Convert the function parameters schema to Zod
-    // Use a simple schema to avoid deep type recursion issues
-    let zodSchema: any;
+    // Use the original JSON Schema format for Google API compatibility
+    // Clean the schema but keep it in JSON Schema format
+    let jsonSchema: any;
 
     try {
       if (fn.parameters && fn.parameters.properties) {
-        zodSchema = LangChainToolConverter.jsonSchemaToZod(fn.parameters);
-        // Ensure it's an object schema
-        if (!(zodSchema instanceof z.ZodObject)) {
-          zodSchema = z.object({ input: zodSchema });
-        }
+        jsonSchema = LangChainToolConverter.cleanSchema(fn.parameters);
       } else {
         throw new Error('Invalid tool structure: missing function parameters');
       }
     } catch (error) {
-      throw new Error('Failed to convert tool parameters to Zod schema');
+      throw new Error('Failed to clean tool parameters schema');
     }
 
     // Enhance description with examples if available
@@ -48,7 +44,7 @@ export class LangChainToolConverter {
     return new DynamicStructuredTool({
       name: fn.name,
       description: enhancedDescription,
-      schema: zodSchema,
+      schema: jsonSchema,
       func: async (input: any) => {
         console.log(`[Tool Executed]: ${fn.name}`, input);
         return { success: true, input };
@@ -277,13 +273,15 @@ export class LangChainToolConverter {
 
     const cleaned = { ...schema };
 
-    // Remove unsupported fields that might cause issues
-    // Note: We keep examples for now to use in descriptions, but remove them after processing
+    // Remove unsupported fields that might cause issues with Google API
     delete cleaned.$schema;
     delete cleaned.$id;
     delete cleaned.$ref;
     delete cleaned.definitions;
     delete cleaned.$defs;
+    delete cleaned.examples; // Remove examples from schema as they cause issues
+    delete cleaned.title; // Remove title as it's not needed in Google API
+    delete cleaned.file_uploadable; // Remove file_uploadable flag
 
     // Handle file_uploadable fields - convert to string with special description
     if (cleaned.file_uploadable === true) {
@@ -293,7 +291,6 @@ export class LangChainToolConverter {
       } else {
         cleaned.description = 'File upload required';
       }
-      delete cleaned.file_uploadable;
     }
 
     // Clean properties recursively
@@ -316,25 +313,32 @@ export class LangChainToolConverter {
       }
     }
 
-    // Clean oneOf schemas
-    if (cleaned.oneOf) {
-      cleaned.oneOf = cleaned.oneOf.map((subSchema: any) =>
-        LangChainToolConverter.cleanSchema(subSchema)
-      );
+    // Simplify oneOf schemas - take the first option to avoid complexity
+    if (cleaned.oneOf && Array.isArray(cleaned.oneOf) && cleaned.oneOf.length > 0) {
+      const firstOption = LangChainToolConverter.cleanSchema(cleaned.oneOf[0]);
+      Object.assign(cleaned, firstOption);
+      delete cleaned.oneOf;
     }
 
-    // Clean allOf schemas
-    if (cleaned.allOf) {
-      cleaned.allOf = cleaned.allOf.map((subSchema: any) =>
-        LangChainToolConverter.cleanSchema(subSchema)
-      );
+    // Simplify allOf schemas - merge properties
+    if (cleaned.allOf && Array.isArray(cleaned.allOf)) {
+      const mergedSchema = { type: 'object', properties: {}, required: [] };
+      for (const subSchema of cleaned.allOf) {
+        const cleanedSub = LangChainToolConverter.cleanSchema(subSchema);
+        if (cleanedSub.properties) {
+          Object.assign(mergedSchema.properties, cleanedSub.properties);
+        }
+        if (cleanedSub.required) {
+          mergedSchema.required.push(...cleanedSub.required);
+        }
+      }
+      Object.assign(cleaned, mergedSchema);
+      delete cleaned.allOf;
     }
 
-    // Clean anyOf schemas
+    // Remove anyOf schemas as Google API doesn't support them well
     if (cleaned.anyOf) {
-      cleaned.anyOf = cleaned.anyOf.map((subSchema: any) =>
-        LangChainToolConverter.cleanSchema(subSchema)
-      );
+      delete cleaned.anyOf;
     }
 
     return cleaned;
