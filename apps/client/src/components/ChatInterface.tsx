@@ -425,7 +425,9 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
             className="chat-control-btn"
             title="Conversations"
           >
-            📋
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
           </button>
           <p className="text-sm text-gray-300">
             {currentConversationId ? `Conversation: ${currentConversationId.slice(-8)}` : 'New conversation'}

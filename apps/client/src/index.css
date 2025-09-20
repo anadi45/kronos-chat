@@ -1843,7 +1843,7 @@ input:focus, textarea:focus, select:focus {
 /* Plus button (New conversation) specific styling */
 .chat-controls .chat-control-btn:not(.stop):not(.clear) {
   background: rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, 0.8);
+  color: white !important;
   border-color: rgba(255, 255, 255, 0.2);
   position: relative;
   overflow: hidden;
@@ -1862,7 +1862,7 @@ input:focus, textarea:focus, select:focus {
 
 .chat-controls .chat-control-btn:not(.stop):not(.clear):hover {
   background: rgba(255, 255, 255, 0.2);
-  color: white;
+  color: white !important;
   transform: scale(1.05);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
