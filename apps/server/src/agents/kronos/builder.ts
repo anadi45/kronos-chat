@@ -12,7 +12,8 @@ import { signalContextReadiness } from '../common/tools';
 import { KronosAgentState, KronosAgentStateSchema } from './state';
 import { MODELS } from '../../constants/models.constants';
 import { formatSystemPrompt } from './prompts';
-import { getContextValue, extractToolCalls, getCurrentDate } from './utils';
+import { getContextValue, extractToolCalls } from './utils';
+import { getCurrentDate } from '@kronos/core';
 import { CheckpointerService } from '../../checkpointer';
 
 /**
