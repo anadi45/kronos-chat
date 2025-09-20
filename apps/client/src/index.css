@@ -1765,9 +1765,9 @@ input:focus, textarea:focus, select:focus {
 }
 
 .chat-header {
-  background: rgba(30, 41, 59, 0.8);
-  backdrop-filter: blur(10px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  background: transparent;
+  backdrop-filter: none;
+  border-bottom: none;
   padding: 1rem 1.5rem;
   display: flex;
   align-items: center;
@@ -1840,39 +1840,29 @@ input:focus, textarea:focus, select:focus {
 }
 
 .message-bubble {
-  max-width: 70%;
-  padding: 1rem 1.25rem;
-  border-radius: 1rem;
+  max-width: 100%;
+  padding: 0;
+  border-radius: 0;
   position: relative;
   word-wrap: break-word;
   line-height: 1.5;
+  background: transparent;
+  border: none;
+  backdrop-filter: none;
 }
 
 .message-bubble.user {
-  background: linear-gradient(135deg, #3b82f6, #1e40af);
   color: white;
-  border-bottom-right-radius: 0.25rem;
 }
 
 .message-bubble.assistant {
-  background: rgba(30, 41, 59, 0.6);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
   color: white;
-  border-bottom-left-radius: 0.25rem;
 }
 
 .message-timestamp {
   font-size: 0.75rem;
   margin-top: 0.5rem;
   opacity: 0.7;
-}
-
-.message-bubble.user .message-timestamp {
-  color: rgba(255, 255, 255, 0.8);
-}
-
-.message-bubble.assistant .message-timestamp {
   color: rgba(255, 255, 255, 0.6);
 }
 

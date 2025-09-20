@@ -594,7 +594,6 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
       <div className="chat-messages">
         {messages.length === 0 && !streamingMessage && (
           <div className="chat-welcome">
-            <div className="chat-welcome-icon">💬</div>
             <h3>Welcome to Kronos AI</h3>
             <p>
               Start a conversation with our AI assistant. Ask questions, get help, or just chat!
