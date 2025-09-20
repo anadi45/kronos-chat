@@ -7,6 +7,8 @@ import { Conversation, ChatMessage } from '../entities/conversation.entity';
 import { ChatMessageRole } from '../enum/roles.enum';
 import { KronosAgent } from '../agents/kronos/agent';
 import { CheckpointerService } from '../checkpointer';
+import { internalLogger } from '../utils/logger';
+import { HumanMessage } from '@langchain/core/messages';
 
 @Injectable()
 export class ChatService {
@@ -79,23 +81,89 @@ export class ChatService {
 
           let assistantMessage = '';
 
-          const config = {
-            // configurable: { thread_id: conversation.id },
-            streamMode: ['updates', 'messages'],
+          const agentInput = {
+            messages: new HumanMessage(request.message),
           };
 
-          const eventStream = agent.streamEvents(
-            { query: request.message },
-            {
-              configurable: { thread_id: conversation.id },
-              context: { userId },
-              version: 'v2',
-            }
-          );
+          const eventStream = agent.streamEvents(agentInput, {
+            configurable: { thread_id: conversation.id },
+            context: { userId },
+            version: 'v2',
+          });
 
           for await (const event of eventStream) {
-            console.log('event', event);
-            console.dir(event, { depth: null });
+            // Log the event using the standard info method
+            internalLogger.info('Chat Event', {
+              userId,
+              conversationId: conversation.id,
+              event
+            });
+            
+            try {
+              // Stream content chunks to client
+              if (event.event === 'on_chat_model_stream' && event.data?.chunk?.content) {
+                const content = event.data.chunk.content;
+                if (typeof content === 'string' && content.trim()) {
+                  // Send token event for each content chunk
+                  const tokenEvent = StreamEventFactory.createTokenEvent(content);
+                  controller.enqueue(
+                    new TextEncoder().encode(StreamEventSerializer.serialize(tokenEvent))
+                  );
+                  assistantMessage += content;
+                }
+              }
+              
+              // Handle final content from on_chat_model_end
+              if (event.event === 'on_chat_model_end' && event.data?.output?.content) {
+                const content = event.data.output.content;
+                if (typeof content === 'string' && content.trim()) {
+                  // Send token event for final content
+                  const tokenEvent = StreamEventFactory.createTokenEvent(content);
+                  controller.enqueue(
+                    new TextEncoder().encode(StreamEventSerializer.serialize(tokenEvent))
+                  );
+                  assistantMessage += content;
+                }
+              }
+              
+              // Handle chain stream events that contain the final result
+              if (event.event === 'on_chain_stream' && event.data?.chunk) {
+                const chunk = event.data.chunk;
+                
+                // Check for final_answer result
+                if (chunk.final_answer?.result) {
+                  const result = chunk.final_answer.result;
+                  if (typeof result === 'string' && result.trim()) {
+                    const tokenEvent = StreamEventFactory.createTokenEvent(result);
+                    controller.enqueue(
+                      new TextEncoder().encode(StreamEventSerializer.serialize(tokenEvent))
+                    );
+                    assistantMessage += result;
+                  }
+                }
+                
+                // Check for agent messages
+                if (chunk.agent?.messages) {
+                  const messages = chunk.agent.messages;
+                  for (const message of messages) {
+                    if (message.content && typeof message.content === 'string' && message.content.trim()) {
+                      const tokenEvent = StreamEventFactory.createTokenEvent(message.content);
+                      controller.enqueue(
+                        new TextEncoder().encode(StreamEventSerializer.serialize(tokenEvent))
+                      );
+                      assistantMessage += message.content;
+                    }
+                  }
+                }
+              }
+            } catch (streamError) {
+              internalLogger.error('Error processing stream event', {
+                error: streamError.message,
+                event: event.event,
+                stack: streamError.stack,
+              });
+              // Continue processing other events even if one fails
+            }
           }
 
           // Add assistant message to conversation
@@ -115,7 +183,10 @@ export class ChatService {
 
           controller.close();
         } catch (error) {
-          console.error('Chat service error:', error);
+          internalLogger.error('Chat service error', {
+            error: error.message,
+            stack: error.stack,
+          });
 
           // Send error event
           const errorEvent = StreamEventFactory.createTokenEvent(
@@ -215,7 +286,10 @@ export class ChatService {
       await this.conversationRepository.remove(conversation);
       return { success: true, message: 'Conversation deleted successfully' };
     } catch (error) {
-      console.error('Error deleting conversation:', error);
+      internalLogger.error('Error deleting conversation', {
+        error: error.message,
+        stack: error.stack,
+      });
       return { success: false, message: 'Failed to delete conversation' };
     }
   }
