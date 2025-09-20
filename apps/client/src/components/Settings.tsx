@@ -3,10 +3,8 @@ import React, { useState } from 'react';
 const Settings: React.FC = () => {
   const [settings, setSettings] = useState({
     theme: 'dark',
-    notifications: true,
     autoSave: true,
-    language: 'en',
-    fontSize: 'medium'
+    language: 'en'
   });
 
   const handleSettingChange = (key: string, value: any) => {
@@ -46,48 +44,9 @@ const Settings: React.FC = () => {
                 </div>
               </div>
 
-              <div className="setting-item">
-                <div className="setting-info">
-                  <label className="setting-label">Font Size</label>
-                  <p className="setting-description">Adjust the text size for better readability</p>
-                </div>
-                <div className="setting-control">
-                  <select
-                    value={settings.fontSize}
-                    onChange={(e) => handleSettingChange('fontSize', e.target.value)}
-                    className="setting-select"
-                  >
-                    <option value="small">Small</option>
-                    <option value="medium">Medium</option>
-                    <option value="large">Large</option>
-                  </select>
-                </div>
-              </div>
             </div>
           </div>
 
-          {/* Notifications Section */}
-          <div className="settings-section">
-            <h2 className="section-title">Notifications</h2>
-            <div className="settings-group">
-              <div className="setting-item">
-                <div className="setting-info">
-                  <label className="setting-label">Enable Notifications</label>
-                  <p className="setting-description">Receive notifications for new messages and updates</p>
-                </div>
-                <div className="setting-control">
-                  <label className="toggle-switch">
-                    <input
-                      type="checkbox"
-                      checked={settings.notifications}
-                      onChange={(e) => handleSettingChange('notifications', e.target.checked)}
-                    />
-                    <span className="toggle-slider"></span>
-                  </label>
-                </div>
-              </div>
-            </div>
-          </div>
 
           {/* Chat Section */}
           <div className="settings-section">
