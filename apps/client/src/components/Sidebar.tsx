@@ -56,44 +56,41 @@ const Sidebar: React.FC<SidebarProps> = ({
     <div className={`sidebar ${isCollapsed ? 'collapsed' : ''}`}>
       {/* Sidebar Header */}
       <div className="sidebar-header">
-        <div className="flex items-center space-x-3">
-          <div className="h-8 w-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center shadow-lg">
-            <svg className="h-5 w-5 text-white" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M18 10c0 3.866-3.582 7-8 7a8.841 8.841 0 01-4.083-.98L2 17l1.338-3.123C2.493 12.767 2 11.434 2 10c0-3.866 3.582-7 8-7s8 3.134 8 7zM7 9H5v2h2V9zm8 0h-2v2h2V9zM9 9h2v2H9V9z" clipRule="evenodd" />
-            </svg>
-          </div>
+        <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'space-x-3'}`}>
           {!isCollapsed && (
-            <h2 className="text-lg font-semibold text-white">Kronos</h2>
+            <h2 className="text-5xl font-semibold text-white whitespace-nowrap">Kronos</h2>
+          )}
+          {isCollapsed && (
+            <div 
+              className="cursor-pointer hover:scale-105 transition-transform"
+              onClick={onToggle}
+              title="Click to expand sidebar"
+            >
+              <h2 className="text-5xl font-semibold text-white whitespace-nowrap">K</h2>
+            </div>
           )}
         </div>
-        <button
-          onClick={onToggle}
-          className="sidebar-toggle"
-          aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-        >
-          <svg 
-            className="w-5 h-5 transition-all duration-300 ease-in-out" 
-            fill="currentColor" 
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth="2"
+        {!isCollapsed && (
+          <button
+            onClick={onToggle}
+            className="sidebar-toggle"
+            aria-label="Collapse sidebar"
           >
-            {isCollapsed ? (
-              // Hamburger menu icon (3 lines)
-              <g>
-                <line x1="3" y1="6" x2="21" y2="6" strokeLinecap="round"/>
-                <line x1="3" y1="12" x2="21" y2="12" strokeLinecap="round"/>
-                <line x1="3" y1="18" x2="21" y2="18" strokeLinecap="round"/>
-              </g>
-            ) : (
-              // X icon (close)
+            <svg 
+              className="w-5 h-5 transition-all duration-300 ease-in-out" 
+              fill="currentColor" 
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              {/* X icon (close) */}
               <g>
                 <line x1="18" y1="6" x2="6" y2="18" strokeLinecap="round"/>
                 <line x1="6" y1="6" x2="18" y2="18" strokeLinecap="round"/>
               </g>
-            )}
-          </svg>
-        </button>
+            </svg>
+          </button>
+        )}
       </div>
 
       {/* Navigation Menu */}
