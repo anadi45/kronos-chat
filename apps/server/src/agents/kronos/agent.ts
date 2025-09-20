@@ -3,14 +3,17 @@ import { CheckpointerService } from '../../checkpointer';
 
 export class KronosAgent {
   private userId: string;
-  private checkpointer: CheckpointerService;
+  private checkpointerService: CheckpointerService;
 
-  constructor(userId: string, checkpointer: CheckpointerService) {
+  constructor(userId: string, checkpointerService: CheckpointerService) {
     this.userId = userId;
-    this.checkpointer = checkpointer;
+    this.checkpointerService = checkpointerService;
   }
 
   getCompiledAgent() {
-    return new KronosAgentBuilder(this.userId, this.checkpointer).build();
+    return new KronosAgentBuilder(
+      this.userId,
+      this.checkpointerService
+    ).build();
   }
 }
