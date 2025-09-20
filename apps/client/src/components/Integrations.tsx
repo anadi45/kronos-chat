@@ -138,8 +138,10 @@ const IntegrationCard: React.FC<IntegrationCardProps> = ({
 
   return (
     <div className="integration-card">
-      <IntegrationIcon integrationId={integration.id} className="w-8 h-8" />
-      <h3 className="integration-title">{integration.name}</h3>
+      <div className="integration-header">
+        <IntegrationIcon integrationId={integration.id} className="w-8 h-8" />
+        <h3 className="integration-title">{integration.name}</h3>
+      </div>
       <p className="integration-description">
         {integration.description}
       </p>
