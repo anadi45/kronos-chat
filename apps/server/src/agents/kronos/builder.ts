@@ -1,4 +1,4 @@
-import { StateGraph, END } from '@langchain/langgraph';
+import { StateGraph, END, CompiledGraph } from '@langchain/langgraph';
 import { ChatGoogleGenerativeAI } from '@langchain/google-genai';
 import {
   SystemMessage,
@@ -37,7 +37,7 @@ export class KronosAgentBuilder {
   /**
    * Build and return the complete Kronos agent graph
    */
-  async build(): Promise<any> {
+  async build(): Promise<ReturnType<StateGraph<any>['compile']>> {
     try {
       await this.loadTools(this.userId);
 

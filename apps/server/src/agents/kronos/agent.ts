@@ -1,5 +1,6 @@
 import { KronosAgentBuilder } from './builder';
 import { CheckpointerService } from '../../checkpointer';
+import { StateGraph } from '@langchain/langgraph';
 
 export class KronosAgent {
   private userId: string;
@@ -10,7 +11,7 @@ export class KronosAgent {
     this.checkpointerService = checkpointerService;
   }
 
-  async getCompiledAgent() {
+  async getCompiledAgent(): Promise<ReturnType<StateGraph<any>['compile']>> {
     const compiledAgent = await new KronosAgentBuilder(
       this.userId,
       this.checkpointerService
