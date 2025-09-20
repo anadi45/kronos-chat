@@ -1,33 +1,18 @@
-import { StateGraph, END, Annotation, CompiledStateGraph } from '@langchain/langgraph';
+import { StateGraph, END } from '@langchain/langgraph';
 import { ChatGoogleGenerativeAI } from '@langchain/google-genai';
 import {
-  HumanMessage,
   SystemMessage,
   AIMessage,
   ToolMessage,
   isAIMessage,
-  isHumanMessage,
 } from '@langchain/core/messages';
-import { Runnable, RunnableConfig } from '@langchain/core/runnables';
+import { RunnableConfig } from '@langchain/core/runnables';
 import { getMathTools } from './math-tools';
-import {
-  KronosAgentState,
-  KronosAgentConfig,
-  KronosAgentStateSchema,
-} from './state';
-import type { ChatMessage } from '@kronos/core';
+import { KronosAgentState, KronosAgentStateSchema } from './state';
 import { MODELS } from '../../constants/models.constants';
 import { formatSystemPrompt } from './prompts';
-import {
-  getContextValue,
-  extractToolCalls,
-  getCurrentDate,
-  generateConversationId,
-} from './utils';
-import {
-  createKronosCheckpointerFromEnv,
-  createKronosCheckpointer,
-} from './checkpointer';
+import { getContextValue, extractToolCalls, getCurrentDate } from './utils';
+import { createKronosCheckpointer } from './checkpointer';
 
 /**
  * Kronos Agent Builder
@@ -312,15 +297,6 @@ export class KronosAgentBuilder {
           ...state.messages,
         ];
 
-        if (
-          state.currentMessage &&
-          !messages.some(
-            (msg) => isHumanMessage(msg) && msg.content === state.currentMessage
-          )
-        ) {
-          messages.push(new HumanMessage(state.currentMessage));
-        }
-
         console.log(
           `Agent using conversation history: ${messages.length} messages`
         );
@@ -354,47 +330,34 @@ export class KronosAgentBuilder {
    */
   private createFinalAnswerNode() {
     return async (state: KronosAgentState, config: RunnableConfig) => {
-      try {
-        const todayDate = getCurrentDate();
-        const formattedPrompt = formatSystemPrompt(todayDate);
+      const todayDate = getCurrentDate();
+      const formattedPrompt = formatSystemPrompt(todayDate);
 
-        const allMessages = state.messages;
-        const conversationHistory = [
-          new SystemMessage(formattedPrompt),
-          ...allMessages,
-        ];
+      const allMessages = state.messages;
+      const conversationHistory = [
+        new SystemMessage(formattedPrompt),
+        ...allMessages,
+      ];
 
-        console.log(
-          `Final answer using conversation history: ${conversationHistory.length} messages`
-        );
+      console.log(
+        `Final answer using conversation history: ${conversationHistory.length} messages`
+      );
 
-        const finalResponse = await this.model.invoke(
-          conversationHistory,
-          config
-        );
+      const finalResponse = await this.model.invoke(
+        conversationHistory,
+        config
+      );
 
-        let responseContent =
-          'I apologize, but I was unable to generate a response.';
-        if (finalResponse && finalResponse.content) {
-          responseContent = finalResponse.content as string;
-        }
-
-        console.log('Final answer generated successfully');
-        return {
-          result: finalResponse,
-          response: responseContent,
-          messages: [finalResponse],
-          isComplete: true,
-        };
-      } catch (error) {
-        console.error('❌ Final answer node execution failed:', error);
-        return {
-          response:
-            'I apologize, but I encountered an error while finalizing my response.',
-          isComplete: true,
-          error: `Final answer generation failed: ${error.message}`,
-        };
+      let result = 'I apologize, but I was unable to generate a response.';
+      if (finalResponse && isAIMessage(finalResponse)) {
+        result = finalResponse.content as string;
       }
+
+      console.log('Final answer generated successfully');
+      return {
+        result,
+        messages: [new AIMessage(result)],
+      };
     };
   }
 }
