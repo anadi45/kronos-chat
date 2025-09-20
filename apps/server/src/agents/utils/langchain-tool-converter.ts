@@ -1,5 +1,5 @@
-import { z } from "zod";
-import { DynamicStructuredTool } from "@langchain/core/tools";
+import { z } from 'zod';
+import { DynamicStructuredTool } from '@langchain/core/tools';
 
 export type ComposioTool = any;
 
@@ -11,111 +11,357 @@ export class LangChainToolConverter {
     }
 
     const fn = composioTool.function;
-    
+
     if (!fn.name) {
       throw new Error('Invalid tool structure: missing function name');
     }
 
-    // Use a simple schema to avoid deep recursion issues
-    const zodSchema = z.record(z.any());
+    // Convert the function parameters schema to Zod
+    // Use a simple schema to avoid deep type recursion issues
+    let zodSchema: any;
+
+    try {
+      if (fn.parameters && fn.parameters.properties) {
+        zodSchema = LangChainToolConverter.jsonSchemaToZod(fn.parameters);
+        // Ensure it's an object schema
+        if (!(zodSchema instanceof z.ZodObject)) {
+          zodSchema = z.object({ input: zodSchema });
+        }
+      } else {
+        throw new Error('Invalid tool structure: missing function parameters');
+      }
+    } catch (error) {
+      throw new Error('Failed to convert tool parameters to Zod schema');
+    }
+
+    // Enhance description with examples if available
+    let enhancedDescription = fn.description || `Tool: ${fn.name}`;
+    if (fn.parameters && fn.parameters.properties) {
+      const examples = LangChainToolConverter.extractExamplesFromSchema(
+        fn.parameters
+      );
+      if (examples.length > 0) {
+        enhancedDescription += `\n\nExamples:\n${examples.join('\n')}`;
+      }
+    }
 
     return new DynamicStructuredTool({
       name: fn.name,
-      description: fn.description || `Tool: ${fn.name}`,
+      description: enhancedDescription,
       schema: zodSchema,
-      func: async (input: Record<string, any>) => {
+      func: async (input: any) => {
         console.log(`[Tool Executed]: ${fn.name}`, input);
         return { success: true, input };
       },
     });
   }
 
-  /** JSON Schema → Zod with extras in .describe() */
-  private static jsonSchemaToZod(schema: any, depth = 0): z.ZodTypeAny {
-    if (!schema || typeof schema !== "object") return z.any();
-    
+  /** JSON Schema → Zod with proper type conversion */
+  private static jsonSchemaToZod(schema: any, depth = 0): any {
+    if (!schema || typeof schema !== 'object') return z.any();
+
     // Prevent infinite recursion
-    if (depth > 5) return z.any();
+    if (depth > 10) return z.any();
 
-    // Clean the schema to remove unsupported fields for Gemini API
-    const cleanedSchema = LangChainToolConverter.cleanSchemaForGemini(schema);
+    // Clean the schema to remove unsupported fields
+    const cleanedSchema = LangChainToolConverter.cleanSchema(schema);
 
-    let zod: z.ZodTypeAny;
+    let zod: any;
 
-    switch (cleanedSchema.type) {
-      case "string":
-        zod = z.string();
-        break;
+    // Handle const values (literals)
+    if (cleanedSchema.const !== undefined) {
+      zod = z.literal(cleanedSchema.const);
+    }
+    // Handle enum values
+    else if (cleanedSchema.enum && Array.isArray(cleanedSchema.enum)) {
+      zod = z.enum(cleanedSchema.enum);
+    }
+    // Handle union types (oneOf)
+    else if (cleanedSchema.oneOf && Array.isArray(cleanedSchema.oneOf)) {
+      const unionTypes = cleanedSchema.oneOf.map((subSchema: any) =>
+        LangChainToolConverter.jsonSchemaToZod(subSchema, depth + 1)
+      );
+      zod = z.union(
+        unionTypes as [z.ZodTypeAny, z.ZodTypeAny, ...z.ZodTypeAny[]]
+      );
+    }
+    // Handle intersection types (allOf)
+    else if (cleanedSchema.allOf && Array.isArray(cleanedSchema.allOf)) {
+      const intersectionTypes = cleanedSchema.allOf.map((subSchema: any) =>
+        LangChainToolConverter.jsonSchemaToZod(subSchema, depth + 1)
+      );
+      zod = z.intersection(intersectionTypes[0], intersectionTypes[1]);
+    }
+    // Handle primitive types
+    else {
+      switch (cleanedSchema.type) {
+        case 'string': {
+          let stringZod = z.string();
 
-      case "boolean":
-        zod = z.boolean();
-        break;
-
-      case "integer":
-      case "number":
-        zod = z.number();
-        break;
-
-      case "array":
-        // Simplified array handling
-        zod = z.array(z.any());
-        break;
-
-      case "object": {
-        // Simplified object handling - use record to avoid deep recursion
-        if (depth > 2) {
-          zod = z.record(z.any());
-        } else {
-          const props: Record<string, z.ZodTypeAny> = {};
-          const properties = cleanedSchema.properties || {};
-          const propKeys = Object.keys(properties).slice(0, 10); // Limit properties
-          
-          for (const k of propKeys) {
-            props[k] = LangChainToolConverter.jsonSchemaToZod(properties[k], depth + 1);
+          // Add string constraints
+          if (typeof cleanedSchema.minLength === 'number') {
+            stringZod = stringZod.min(cleanedSchema.minLength);
           }
-          zod = z.object(props);
-        }
-        break;
-      }
+          if (typeof cleanedSchema.maxLength === 'number') {
+            stringZod = stringZod.max(cleanedSchema.maxLength);
+          }
+          if (cleanedSchema.pattern) {
+            stringZod = stringZod.regex(new RegExp(cleanedSchema.pattern));
+          }
+          if (cleanedSchema.format === 'email') {
+            stringZod = stringZod.email();
+          }
+          if (cleanedSchema.format === 'uri') {
+            stringZod = stringZod.url();
+          }
+          if (cleanedSchema.format === 'uuid') {
+            stringZod = stringZod.uuid();
+          }
+          if (cleanedSchema.format === 'date-time') {
+            stringZod = stringZod.datetime();
+          }
+          if (cleanedSchema.format === 'path') {
+            // Handle file path format
+            if (cleanedSchema.description) {
+              cleanedSchema.description += ' (File path required)';
+            } else {
+              cleanedSchema.description = 'File path required';
+            }
+          }
 
-      default:
-        zod = z.any();
+          zod = stringZod;
+          break;
+        }
+
+        case 'boolean':
+          zod = z.boolean();
+          break;
+
+        case 'integer': {
+          let intZod = z.number().int();
+
+          if (typeof cleanedSchema.minimum === 'number') {
+            intZod = intZod.min(cleanedSchema.minimum);
+          }
+          if (typeof cleanedSchema.maximum === 'number') {
+            intZod = intZod.max(cleanedSchema.maximum);
+          }
+
+          zod = intZod;
+          break;
+        }
+
+        case 'number': {
+          let numZod = z.number();
+
+          if (typeof cleanedSchema.minimum === 'number') {
+            numZod = numZod.min(cleanedSchema.minimum);
+          }
+          if (typeof cleanedSchema.maximum === 'number') {
+            numZod = numZod.max(cleanedSchema.maximum);
+          }
+
+          zod = numZod;
+          break;
+        }
+
+        case 'null':
+          zod = z.null();
+          break;
+
+        case 'array': {
+          let arrayZod: any;
+
+          if (cleanedSchema.items) {
+            const itemSchema = LangChainToolConverter.jsonSchemaToZod(
+              cleanedSchema.items,
+              depth + 1
+            );
+            arrayZod = z.array(itemSchema);
+          } else {
+            arrayZod = z.array(z.any());
+          }
+
+          // Add array constraints
+          if (typeof cleanedSchema.minItems === 'number') {
+            arrayZod = arrayZod.min(cleanedSchema.minItems);
+          }
+          if (typeof cleanedSchema.maxItems === 'number') {
+            arrayZod = arrayZod.max(cleanedSchema.maxItems);
+          }
+
+          zod = arrayZod;
+          break;
+        }
+
+        case 'object': {
+          if (cleanedSchema.properties) {
+            const props: Record<string, z.ZodTypeAny> = {};
+            const required = cleanedSchema.required || [];
+
+            // Convert each property
+            for (const [key, value] of Object.entries(
+              cleanedSchema.properties
+            )) {
+              let propZod = LangChainToolConverter.jsonSchemaToZod(
+                value,
+                depth + 1
+              );
+
+              // Make optional if not in required array
+              if (!required.includes(key)) {
+                propZod = propZod.optional();
+              }
+
+              props[key] = propZod;
+            }
+
+            zod = z.object(props);
+          } else if (cleanedSchema.additionalProperties) {
+            // Handle record types
+            const valueSchema = LangChainToolConverter.jsonSchemaToZod(
+              cleanedSchema.additionalProperties,
+              depth + 1
+            );
+            zod = z.record(valueSchema);
+          } else {
+            zod = z.record(z.any());
+          }
+          break;
+        }
+
+        default:
+          zod = z.any();
+      }
     }
 
-    // Add description if available
-    if (cleanedSchema.description) {
-      zod = zod.describe(cleanedSchema.description);
+    // Handle nullable fields
+    if (cleanedSchema.nullable === true) {
+      zod = zod.nullable();
+    }
+
+    // Add description if available (enhanced with examples)
+    let description = cleanedSchema.description || '';
+    if (
+      cleanedSchema.examples &&
+      Array.isArray(cleanedSchema.examples) &&
+      cleanedSchema.examples.length > 0
+    ) {
+      const examplesText = cleanedSchema.examples
+        .map((ex: any) => `  - ${JSON.stringify(ex)}`)
+        .join('\n');
+      if (description) {
+        description += `\n\nExamples:\n${examplesText}`;
+      } else {
+        description = `Examples:\n${examplesText}`;
+      }
+    }
+
+    if (description) {
+      zod = zod.describe(description);
+    }
+
+    // Handle default values
+    if (cleanedSchema.default !== undefined) {
+      zod = zod.default(cleanedSchema.default);
     }
 
     return zod;
   }
 
   /**
-   * Clean schema to remove fields not supported by Gemini API
+   * Clean schema to remove fields not supported by LangChain
    */
-  private static cleanSchemaForGemini(schema: any): any {
-    if (!schema || typeof schema !== "object") return schema;
+  private static cleanSchema(schema: any): any {
+    if (!schema || typeof schema !== 'object') return schema;
 
     const cleaned = { ...schema };
 
-    // Remove unsupported fields
-    delete cleaned.examples;
-    delete cleaned.file_uploadable;
+    // Remove unsupported fields that might cause issues
+    // Note: We keep examples for now to use in descriptions, but remove them after processing
+    delete cleaned.$schema;
+    delete cleaned.$id;
+    delete cleaned.$ref;
+    delete cleaned.definitions;
+    delete cleaned.$defs;
+
+    // Handle file_uploadable fields - convert to string with special description
+    if (cleaned.file_uploadable === true) {
+      cleaned.type = 'string';
+      if (cleaned.description) {
+        cleaned.description += ' (File upload required)';
+      } else {
+        cleaned.description = 'File upload required';
+      }
+      delete cleaned.file_uploadable;
+    }
 
     // Clean properties recursively
     if (cleaned.properties) {
       const cleanedProperties: Record<string, any> = {};
       for (const [key, value] of Object.entries(cleaned.properties)) {
-        cleanedProperties[key] = LangChainToolConverter.cleanSchemaForGemini(value);
+        cleanedProperties[key] = LangChainToolConverter.cleanSchema(value);
       }
       cleaned.properties = cleanedProperties;
     }
 
     // Clean items for arrays
     if (cleaned.items) {
-      cleaned.items = LangChainToolConverter.cleanSchemaForGemini(cleaned.items);
+      if (Array.isArray(cleaned.items)) {
+        cleaned.items = cleaned.items.map((item: any) =>
+          LangChainToolConverter.cleanSchema(item)
+        );
+      } else {
+        cleaned.items = LangChainToolConverter.cleanSchema(cleaned.items);
+      }
+    }
+
+    // Clean oneOf schemas
+    if (cleaned.oneOf) {
+      cleaned.oneOf = cleaned.oneOf.map((subSchema: any) =>
+        LangChainToolConverter.cleanSchema(subSchema)
+      );
+    }
+
+    // Clean allOf schemas
+    if (cleaned.allOf) {
+      cleaned.allOf = cleaned.allOf.map((subSchema: any) =>
+        LangChainToolConverter.cleanSchema(subSchema)
+      );
+    }
+
+    // Clean anyOf schemas
+    if (cleaned.anyOf) {
+      cleaned.anyOf = cleaned.anyOf.map((subSchema: any) =>
+        LangChainToolConverter.cleanSchema(subSchema)
+      );
     }
 
     return cleaned;
+  }
+
+  /**
+   * Extract examples from schema for tool description
+   */
+  private static extractExamplesFromSchema(schema: any): string[] {
+    const examples: string[] = [];
+
+    if (!schema || !schema.properties) return examples;
+
+    for (const [key, value] of Object.entries(schema.properties)) {
+      const prop = value as any;
+      if (
+        prop.examples &&
+        Array.isArray(prop.examples) &&
+        prop.examples.length > 0
+      ) {
+        const propExamples = prop.examples.map(
+          (ex: any) => `${key}: ${JSON.stringify(ex)}`
+        );
+        examples.push(...propExamples);
+      }
+    }
+
+    return examples;
   }
 }
