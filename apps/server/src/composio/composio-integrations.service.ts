@@ -87,34 +87,17 @@ export interface ConnectedAccount {
 export class ComposioIntegrationsService {
   private readonly logger = new Logger(ComposioIntegrationsService.name);
   private readonly composio: Composio;
-  private readonly isConfigured: boolean;
-
   constructor(private readonly configService: ConfigService) {
     const apiKey = this.configService.get<string>('COMPOSIO_API_KEY');
 
     if (!apiKey) {
-      this.logger.warn(
-        'COMPOSIO_API_KEY not configured. Integration features will be limited.'
+      throw new Error(
+        'COMPOSIO_API_KEY is required but not configured. Please set the COMPOSIO_API_KEY environment variable.'
       );
-      this.isConfigured = false;
-      // Initialize with empty API key for development
-      this.composio = new Composio({ apiKey: '' });
-    } else {
-      this.isConfigured = true;
-      this.composio = new Composio({ apiKey });
-      this.logger.log('Composio integrations service initialized successfully');
     }
-  }
 
-  /**
-   * Validates if the service is properly configured
-   */
-  private validateConfiguration(): void {
-    if (!this.isConfigured) {
-      throw new BadRequestException(
-        'Composio service is not properly configured. Please check COMPOSIO_API_KEY environment variable.'
-      );
-    }
+    this.composio = new Composio({ apiKey });
+    this.logger.log('Composio integrations service initialized successfully');
   }
 
   /**
@@ -125,8 +108,6 @@ export class ComposioIntegrationsService {
    * @returns Promise<string> - The authentication configuration ID
    */
   async createAuthConfiguration(provider: string): Promise<string> {
-    this.validateConfiguration();
-
     try {
       this.logger.log(
         `Creating authentication configuration for provider: ${provider}`
@@ -158,8 +139,6 @@ export class ComposioIntegrationsService {
   async createIntegrationConnection(
     request: CreateIntegrationRequest
   ): Promise<CreateIntegrationResponse> {
-    this.validateConfiguration();
-
     try {
       this.logger.log(
         `Initiating integration connection for user ${request.userId} with provider ${request.provider}`
@@ -206,8 +185,6 @@ export class ComposioIntegrationsService {
     userId: string,
     toolkits: string[] = ['GMAIL']
   ): Promise<any[]> {
-    this.validateConfiguration();
-
     try {
       this.logger.log(
         `Retrieving tools for user ${userId} with toolkits: ${toolkits.join(
@@ -236,8 +213,6 @@ export class ComposioIntegrationsService {
    * @returns Promise<ConnectedAccount[]> - Array of connected accounts
    */
   async getConnectedAccounts(userId: string): Promise<ConnectedAccount[]> {
-    this.validateConfiguration();
-
     try {
       this.logger.log(`Retrieving connected accounts for user ${userId}`);
 
@@ -274,8 +249,6 @@ export class ComposioIntegrationsService {
     userId: string,
     connectionId: string
   ): Promise<{ success: boolean }> {
-    this.validateConfiguration();
-
     try {
       this.logger.log(
         `Disconnecting integration ${connectionId} for user ${userId}`
@@ -386,10 +359,12 @@ export class ComposioIntegrationsService {
 
   /**
    * Checks if the service is properly configured
+   * Since we throw an error during initialization if not configured,
+   * this will always return true if the service instance exists
    *
    * @returns boolean - Configuration status
    */
   isServiceConfigured(): boolean {
-    return this.isConfigured;
+    return true;
   }
 }
