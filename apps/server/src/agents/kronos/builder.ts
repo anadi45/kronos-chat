@@ -8,6 +8,7 @@ import {
 } from '@langchain/core/messages';
 import { RunnableConfig } from '@langchain/core/runnables';
 import { getMathTools } from './math-tools';
+import { signalContextReadinessTool } from '../common/tools';
 import { KronosAgentState, KronosAgentStateSchema } from './state';
 import { MODELS } from '../../constants/models.constants';
 import { formatSystemPrompt } from './prompts';
@@ -85,19 +86,25 @@ export class KronosAgentBuilder {
    * Load all available tools for a given user
    */
   private async loadTools(userId: string): Promise<void> {
-    console.log('🔧 Loading Kronos math tools');
+    console.log('🔧 Loading Kronos tools');
 
     try {
       // Load custom math tools
-      this.tools = getMathTools();
+      const mathTools = getMathTools();
+      
+      // Load common tools
+      const commonTools = [signalContextReadinessTool];
+      
+      // Combine all tools
+      this.tools = [...mathTools, ...commonTools];
 
-      console.log(`✅ Loaded ${this.tools.length} math tools`);
+      console.log(`✅ Loaded ${this.tools.length} tools`);
       this.tools.forEach((tool, index) => {
         console.log(`  ${index + 1}. ${tool.name}`);
       });
     } catch (error) {
       console.warn(
-        '⚠️ Failed to load math tools, continuing without tools:',
+        '⚠️ Failed to load tools, continuing without tools:',
         error
       );
       this.tools = [];
@@ -139,6 +146,8 @@ export class KronosAgentBuilder {
   private shouldAct(state: KronosAgentState): string {
     const lastMessage = state.messages[state.messages.length - 1];
 
+    // TODO: Need to fix if case here. It should always call some tool.
+
     // Handle AIMessage with tool routing logic
     if (lastMessage && isAIMessage(lastMessage)) {
       const aiMessage = lastMessage;
@@ -147,6 +156,13 @@ export class KronosAgentBuilder {
       if (toolCalls.length > 0) {
         const toolNames = toolCalls.map((tc) => tc.name);
         console.log('Routing: Tool calls requested:', toolNames);
+        
+        // Check if signalContextReadiness was called
+        if (toolNames.includes('signalContextReadiness')) {
+          console.log('Routing: signalContextReadiness called, proceeding to final answer');
+          return 'final_answer';
+        }
+        
         return 'continue';
       } else {
         console.log(
@@ -168,92 +184,85 @@ export class KronosAgentBuilder {
     return async (state: KronosAgentState, config: RunnableConfig) => {
       console.log('🔧 Executing tool node');
 
-      try {
-        const lastMessage = state.messages[state.messages.length - 1];
+      const lastMessage = state.messages[state.messages.length - 1];
 
-        if (!lastMessage || !isAIMessage(lastMessage)) {
-          console.log('No AI message found, skipping tool execution');
-          return {};
-        }
-
-        const aiMessage = lastMessage;
-        const toolCalls = extractToolCalls(aiMessage);
-
-        if (toolCalls.length === 0) {
-          console.log(
-            'No tool calls found in last message, skipping tool execution'
-          );
-          return {};
-        }
-
-        // Get context values for tool execution
-        const userId = getContextValue(config, 'userId');
-
-        console.log(`Executing ${toolCalls.length} tool calls with context:`, {
-          userId,
-        });
-
-        // Execute tools with enhanced error handling
-        const toolResults: ToolMessage[] = [];
-
-        for (const toolCall of toolCalls) {
-          try {
-            // Find the tool
-            const tool = this.tools.find((t) => t.name === toolCall.name);
-            if (!tool) {
-              console.warn(
-                `Tool ${toolCall.name} not found in available tools`
-              );
-              toolResults.push(
-                new ToolMessage({
-                  content: `Tool ${toolCall.name} not found`,
-                  tool_call_id: toolCall.id,
-                })
-              );
-              continue;
-            }
-
-            // Execute the tool with context
-            console.log(
-              `Executing tool: ${toolCall.name} with args:`,
-              toolCall.args
-            );
-
-            // Add context to tool arguments if the tool supports it
-            const toolArgs = {
-              ...toolCall.args,
-              ...(userId && { userId }),
-            };
-
-            const result = await tool.invoke(toolArgs);
-
-            console.log(`Tool ${toolCall.name} executed successfully`);
-            toolResults.push(
-              new ToolMessage({
-                content: JSON.stringify(result),
-                tool_call_id: toolCall.id,
-              })
-            );
-          } catch (error) {
-            console.error(`Error executing tool ${toolCall.name}:`, error);
-            toolResults.push(
-              new ToolMessage({
-                content: `Error executing ${toolCall.name}: ${error.message}`,
-                tool_call_id: toolCall.id,
-              })
-            );
-          }
-        }
-
-        return {
-          messages: toolResults,
-        };
-      } catch (error) {
-        console.error('❌ Tool node execution failed:', error);
-        return {
-          error: `Tool execution failed: ${error.message}`,
-        };
+      if (!lastMessage || !isAIMessage(lastMessage)) {
+        console.log('No AI message found, skipping tool execution');
+        return {};
       }
+
+      const aiMessage = lastMessage;
+      const toolCalls = extractToolCalls(aiMessage);
+
+      if (toolCalls.length === 0) {
+        console.log(
+          'No tool calls found in last message, skipping tool execution'
+        );
+        return {};
+      }
+
+      // Get context values for tool execution
+      const userId = getContextValue(config, 'userId');
+
+      console.log(`Executing ${toolCalls.length} tool calls with context:`, {
+        userId,
+      });
+
+      // Execute tools with enhanced error handling
+      const toolResults: ToolMessage[] = [];
+
+      for (const toolCall of toolCalls) {
+        try {
+          // Find the tool
+          const tool = this.tools.find((t) => t.name === toolCall.name);
+          if (!tool) {
+            console.warn(`Tool ${toolCall.name} not found in available tools`);
+            toolResults.push(
+              new ToolMessage({
+                content: `Tool ${toolCall.name} not found`,
+                tool_call_id: toolCall.id,
+              })
+            );
+            continue;
+          }
+
+          // Execute the tool with context
+          console.log(
+            `Executing tool: ${toolCall.name} with args:`,
+            toolCall.args
+          );
+
+          // Add context to tool arguments if the tool supports it
+          const toolArgs = {
+            ...toolCall.args,
+            ...(userId && { userId }),
+          };
+
+          const result = await tool.invoke(toolArgs);
+
+          console.log(`Tool ${toolCall.name} executed successfully`);
+          toolResults.push(
+            new ToolMessage({
+              name: toolCall.name,
+              content: JSON.stringify(result),
+              tool_call_id: toolCall.id,
+            })
+          );
+        } catch (error) {
+          console.error(`Error executing tool ${toolCall.name}:`, error);
+          toolResults.push(
+            new ToolMessage({
+              name: toolCall.name,
+              content: `Error executing ${toolCall.name}: ${error.message}`,
+              tool_call_id: toolCall.id,
+            })
+          );
+        }
+      }
+
+      return {
+        messages: toolResults,
+      };
     };
   }
 
@@ -276,7 +285,7 @@ export class KronosAgentBuilder {
         );
 
         const modelWithTools = this.model.bindTools(this.tools, {
-          tool_choice: 'auto',
+          tool_choice: 'any',
         });
 
         const response = await modelWithTools.invoke(messages, config);
@@ -308,6 +317,8 @@ export class KronosAgentBuilder {
       const formattedPrompt = formatSystemPrompt(todayDate);
 
       const allMessages = state.messages;
+
+      console.log('All messages:', allMessages);
       const conversationHistory = [
         new SystemMessage(formattedPrompt),
         ...allMessages,
@@ -321,6 +332,7 @@ export class KronosAgentBuilder {
         conversationHistory,
         config
       );
+      console.log('Final response:', finalResponse);
 
       let result = 'I apologize, but I was unable to generate a response.';
       if (finalResponse && isAIMessage(finalResponse)) {
