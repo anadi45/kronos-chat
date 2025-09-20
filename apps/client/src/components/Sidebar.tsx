@@ -1,16 +1,21 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { type UserProfile } from '@kronos/core';
 
 interface SidebarProps {
   isCollapsed: boolean;
   onToggle: () => void;
   activeSection: string;
   onSectionChange: (section: string) => void;
+  user?: UserProfile;
+  onLogout?: () => void;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ 
   isCollapsed, 
-  onToggle
+  onToggle,
+  user,
+  onLogout
 }) => {
   const location = useLocation();
   
@@ -98,6 +103,36 @@ const Sidebar: React.FC<SidebarProps> = ({
 
       {/* Sidebar Footer */}
       <div className="sidebar-footer">
+        {/* User info and logout */}
+        {user && (
+          <div className="mb-4">
+            {!isCollapsed && (
+              <div className="text-sm text-gray-300 mb-3 px-2">
+                <div className="font-medium text-white">
+                  {user.firstName || user.email}
+                </div>
+                <div className="text-xs text-gray-400">
+                  {user.email}
+                </div>
+              </div>
+            )}
+            <button
+              onClick={onLogout}
+              className="sidebar-item w-full text-left"
+              title={isCollapsed ? 'Logout' : undefined}
+            >
+              <span className="sidebar-icon">
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M3 3a1 1 0 00-1 1v12a1 1 0 102 0V4a1 1 0 00-1-1zm10.293 9.293a1 1 0 001.414 1.414l3-3a1 1 0 000-1.414l-3-3a1 1 0 10-1.414 1.414L14.586 9H7a1 1 0 100 2h7.586l-1.293 1.293z" clipRule="evenodd" />
+                </svg>
+              </span>
+              {!isCollapsed && (
+                <span className="sidebar-label">Logout</span>
+              )}
+            </button>
+          </div>
+        )}
+        
         {!isCollapsed && (
           <div className="text-xs text-gray-400 text-center">
             Kronos Chat v1.0
