@@ -6,6 +6,8 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Composio } from '@composio/core';
+import { internalLogger } from '../utils/logger';
+import { LangChainToolConverter } from '../agents/utils/langchain-tool-converter';
 
 /**
  * Interface for creating a new integration connection
@@ -179,7 +181,7 @@ export class ComposioIntegrationsService {
    *
    * @param userId - The user identifier
    * @param toolkits - Array of toolkit names to retrieve tools for
-   * @returns Promise<any[]> - Array of available tools
+   * @returns Promise<any[]> - Array of LangChain compatible tools
    */
   async getAvailableTools(
     userId: string,
@@ -192,12 +194,29 @@ export class ComposioIntegrationsService {
         )}`
       );
 
-      const tools = await this.composio.tools.get(userId, {
+      const composioTools = await this.composio.tools.get(userId, {
         toolkits,
       });
 
-      this.logger.log(`Successfully retrieved ${tools.length} tools`);
-      return tools;
+      internalLogger.info(`Tools retrieved successfully`, { tools: composioTools });
+
+      // Convert Composio tools to LangChain compatible tools
+      const langchainTools = composioTools.map((tool: any) => {
+        try {
+          // Use type assertion to completely bypass strict typing
+          const convertedTool = (LangChainToolConverter as any).convert(tool);
+          return convertedTool;
+        } catch (conversionError) {
+          this.logger.warn(
+            `Failed to convert tool ${tool?.function?.name || 'unknown'}:`,
+            conversionError.message
+          );
+          return null;
+        }
+      }).filter(Boolean); // Remove null values
+
+      this.logger.log(`Successfully converted ${langchainTools.length} tools to LangChain format`);
+      return langchainTools;
     } catch (error) {
       this.logger.error(`Failed to retrieve tools:`, error);
       throw new BadRequestException(

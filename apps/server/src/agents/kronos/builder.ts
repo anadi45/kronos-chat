@@ -99,9 +99,6 @@ export class KronosAgentBuilder {
       this.tools = [...tools, ...commonTools];
 
       this.logger.log(`Loaded ${this.tools.length} tools`);
-      this.tools.forEach((tool, index) => {
-        this.logger.debug(`Tool ${index + 1}: ${tool.name}`);
-      });
     } catch (error) {
       this.logger.warn(
         'Failed to load tools, continuing without tools',

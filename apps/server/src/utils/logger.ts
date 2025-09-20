@@ -8,7 +8,7 @@ export class InternalLogger {
   private logDir: string;
   private logFile: string;
 
-  constructor(logDir = 'logs', logFileName = 'chat-events.log') {
+  constructor(logDir = 'logs', logFileName = 'internal-events.log') {
     this.logDir = path.resolve(logDir);
     this.logFile = path.join(this.logDir, logFileName);
     
