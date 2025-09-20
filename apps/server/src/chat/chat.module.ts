@@ -3,10 +3,11 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ChatController } from './chat.controller';
 import { ChatService } from './chat.service';
 import { Conversation } from '../entities/conversation.entity';
+import { ComposioIntegrationsService } from '../composio/composio-integrations.service';
 
 @Module({
   imports: [TypeOrmModule.forFeature([Conversation])],
   controllers: [ChatController],
-  providers: [ChatService],
+  providers: [ChatService, ComposioIntegrationsService],
 })
 export class ChatModule {}

@@ -7,6 +7,7 @@ import { Conversation, ChatMessage } from '../entities/conversation.entity';
 import { ChatMessageRole } from '../enum/roles.enum';
 import { KronosAgent } from '../agents/kronos/agent';
 import { CheckpointerService } from '../checkpointer';
+import { ComposioIntegrationsService } from '../composio/composio-integrations.service';
 import { internalLogger } from '../utils/logger';
 import { HumanMessage } from '@langchain/core/messages';
 
@@ -15,7 +16,8 @@ export class ChatService {
   constructor(
     @InjectRepository(Conversation)
     private conversationRepository: Repository<Conversation>,
-    private readonly checkpointerService: CheckpointerService
+    private readonly checkpointerService: CheckpointerService,
+    private readonly toolProviderService: ComposioIntegrationsService
   ) {}
 
   /**
@@ -32,7 +34,8 @@ export class ChatService {
 
     const agent = await new KronosAgent(
       userId,
-      this.checkpointerService
+      this.checkpointerService,
+      this.toolProviderService
     ).getCompiledAgent();
 
     return new ReadableStream({
@@ -96,26 +99,35 @@ export class ChatService {
             internalLogger.info('Chat Event', {
               userId,
               conversationId: conversation.id,
-              event
+              event,
             });
-            
+
             try {
               // Only stream from on_chat_model_stream events to avoid duplication
               // These events contain the actual streaming chunks from the model
-              if (event.event === 'on_chat_model_stream' && event.data?.chunk?.content) {
+              if (
+                event.event === 'on_chat_model_stream' &&
+                event.data?.chunk?.content
+              ) {
                 const content = event.data.chunk.content;
                 if (typeof content === 'string' && content.trim()) {
                   // Send token event for each content chunk
-                  const tokenEvent = StreamEventFactory.createTokenEvent(content);
+                  const tokenEvent =
+                    StreamEventFactory.createTokenEvent(content);
                   controller.enqueue(
-                    new TextEncoder().encode(StreamEventSerializer.serialize(tokenEvent))
+                    new TextEncoder().encode(
+                      StreamEventSerializer.serialize(tokenEvent)
+                    )
                   );
                   assistantMessage += content;
                 }
               }
-              
+
               // Collect final content from other events for logging but don't stream to avoid duplication
-              if (event.event === 'on_chat_model_end' && event.data?.output?.content) {
+              if (
+                event.event === 'on_chat_model_end' &&
+                event.data?.output?.content
+              ) {
                 const content = event.data.output.content;
                 if (typeof content === 'string' && content.trim()) {
                   // Only add to assistantMessage if not already included
@@ -124,24 +136,32 @@ export class ChatService {
                   }
                 }
               }
-              
+
               // Collect final result from chain stream events but don't stream to avoid duplication
               if (event.event === 'on_chain_stream' && event.data?.chunk) {
                 const chunk = event.data.chunk;
-                
+
                 // Check for final_answer result
                 if (chunk.final_answer?.result) {
                   const result = chunk.final_answer.result;
-                  if (typeof result === 'string' && result.trim() && !assistantMessage.includes(result)) {
+                  if (
+                    typeof result === 'string' &&
+                    result.trim() &&
+                    !assistantMessage.includes(result)
+                  ) {
                     assistantMessage += result;
                   }
                 }
-                
+
                 // Collect agent messages but don't stream to avoid duplication
                 if (chunk.agent?.messages) {
                   const messages = chunk.agent.messages;
                   for (const message of messages) {
-                    if (message.content && typeof message.content === 'string' && message.content.trim()) {
+                    if (
+                      message.content &&
+                      typeof message.content === 'string' &&
+                      message.content.trim()
+                    ) {
                       if (!assistantMessage.includes(message.content)) {
                         assistantMessage += message.content;
                       }
