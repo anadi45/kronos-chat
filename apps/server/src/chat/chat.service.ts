@@ -84,34 +84,18 @@ export class ChatService {
             streamMode: ['updates', 'messages'],
           };
 
-          // @ts-ignore
-          for await (const { streamMode, chunk } of agent.stream(
-            { messages: [request.message] },
+          const eventStream = agent.streamEvents(
+            { query: request.message },
             {
-              streamMode: ['updates', 'messages'],
               configurable: { thread_id: conversation.id },
               context: { userId },
+              version: 'v2',
             }
-          )) {
-            console.log(streamMode, chunk);
+          );
 
-            if (streamMode === 'messages' && chunk?.messages) {
-              for (const message of chunk.messages) {
-                if (message.role === 'assistant' && message.content) {
-                  assistantMessage += message.content;
-
-                  // Send token event
-                  const tokenEvent = StreamEventFactory.createTokenEvent(
-                    message.content
-                  );
-                  controller.enqueue(
-                    new TextEncoder().encode(
-                      StreamEventSerializer.serialize(tokenEvent)
-                    )
-                  );
-                }
-              }
-            }
+          for await (const event of eventStream) {
+            console.log('event', event);
+            console.dir(event, { depth: null });
           }
 
           // Add assistant message to conversation
