@@ -1,28 +1,38 @@
 import { KronosAgentBuilder } from './builder';
 import { CheckpointerService } from '../../checkpointer';
-import { ComposioIntegrationsService } from '../../composio/composio-integrations.service';
+import { OAuthIntegrationsService } from '../../oauth-integrations/oauth-integrations.service';
+import { ToolsExecutorService } from '../../tools/tools-executor.service';
+import { ToolsProviderService } from '../../tools/tools-provider.service';
 import { StateGraph } from '@langchain/langgraph';
 
 export class KronosAgent {
   private userId: string;
   private checkpointerService: CheckpointerService;
-  private toolProviderService: ComposioIntegrationsService;
+  private oauthIntegrationsService: OAuthIntegrationsService;
+  private toolsExecutorService: ToolsExecutorService;
+  private toolsProviderService: ToolsProviderService;
 
   constructor(
     userId: string,
     checkpointerService: CheckpointerService,
-    toolProviderService: ComposioIntegrationsService
+    oauthIntegrationsService: OAuthIntegrationsService,
+    toolsExecutorService: ToolsExecutorService,
+    toolsProviderService: ToolsProviderService
   ) {
     this.userId = userId;
     this.checkpointerService = checkpointerService;
-    this.toolProviderService = toolProviderService;
+    this.oauthIntegrationsService = oauthIntegrationsService;
+    this.toolsExecutorService = toolsExecutorService;
+    this.toolsProviderService = toolsProviderService;
   }
 
   async getCompiledAgent(): Promise<ReturnType<StateGraph<any>['compile']>> {
     const compiledAgent = await new KronosAgentBuilder(
       this.userId,
       this.checkpointerService,
-      this.toolProviderService
+      this.oauthIntegrationsService,
+      this.toolsExecutorService,
+      this.toolsProviderService
     ).build();
 
     return compiledAgent;

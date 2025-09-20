@@ -8,14 +8,15 @@ import {
 } from '@langchain/core/messages';
 import { RunnableConfig } from '@langchain/core/runnables';
 import { Logger } from '@nestjs/common';
-import { signalContextReadinessTool } from '../common/tools';
 import { KronosAgentState, KronosAgentStateSchema } from './state';
 import { MODELS } from '../../constants/models.constants';
 import { formatSystemPrompt } from './prompts';
 import { getContextValue, extractToolCalls } from './utils';
 import { getCurrentDate } from '@kronos/core';
 import { CheckpointerService } from '../../checkpointer';
-import { ComposioIntegrationsService } from '../../composio/composio-integrations.service';
+import { OAuthIntegrationsService } from '../../oauth-integrations/oauth-integrations.service';
+import { ToolsExecutorService } from '../../tools/tools-executor.service';
+import { ToolsProviderService } from '../../tools/tools-provider.service';
 
 /**
  * Kronos Agent Builder
@@ -27,7 +28,9 @@ export class KronosAgentBuilder {
   private model: ChatGoogleGenerativeAI;
   private tools: any[] = [];
   private checkpointerService: CheckpointerService;
-  private toolProviderService: ComposioIntegrationsService;
+  private oauthIntegrationsService: OAuthIntegrationsService;
+  private toolsExecutorService: ToolsExecutorService;
+  private toolsProviderService: ToolsProviderService;
   private userId: string;
   private readonly logger = new Logger(KronosAgentBuilder.name);
 
@@ -36,11 +39,15 @@ export class KronosAgentBuilder {
   constructor(
     userId: string,
     checkpointerService: CheckpointerService,
-    composioService: ComposioIntegrationsService
+    oauthIntegrationsService: OAuthIntegrationsService,
+    toolsExecutorService: ToolsExecutorService,
+    toolsProviderService: ToolsProviderService
   ) {
     this.userId = userId;
     this.checkpointerService = checkpointerService;
-    this.toolProviderService = composioService;
+    this.oauthIntegrationsService = oauthIntegrationsService;
+    this.toolsExecutorService = toolsExecutorService;
+    this.toolsProviderService = toolsProviderService;
     this.initializeProviders();
   }
 
@@ -74,8 +81,7 @@ export class KronosAgentBuilder {
   private initializeProviders(): void {
     try {
       this.model = new ChatGoogleGenerativeAI({
-        model: MODELS.GEMINI_2_0_FLASH,
-        temperature: 0.7,
+        model: MODELS.GEMINI_2_5_FLASH_LITE,
         maxOutputTokens: 2048,
         apiKey: process.env.GEMINI_API_KEY,
         streaming: true,
@@ -90,15 +96,10 @@ export class KronosAgentBuilder {
    */
   private async loadTools(userId: string): Promise<void> {
     try {
-      const tools = await this.toolProviderService.getAvailableTools(userId);
+      // Use the tools provider service to get all available tools
+      this.tools = await this.toolsProviderService.getAvailableTools(userId);
 
-      // Load common tools
-      const commonTools = [signalContextReadinessTool];
-
-      // Combine all tools
-      this.tools = [...tools, ...commonTools];
-
-      this.logger.log(`Loaded ${this.tools.length} tools`);
+      this.logger.log(`Loaded ${this.tools.length} tools using ToolsProviderService`);
     } catch (error) {
       this.logger.warn(
         'Failed to load tools, continuing without tools',
@@ -150,7 +151,7 @@ export class KronosAgentBuilder {
 
       const toolNames = toolCalls.map((tc) => tc.name);
 
-      if (toolNames.includes(signalContextReadinessTool.name)) {
+      if (toolNames.includes('signalContextReadiness')) {
         return 'final_answer';
       }
 
@@ -185,55 +186,42 @@ export class KronosAgentBuilder {
       // Get context values for tool execution
       const userId = getContextValue(config, 'userId');
 
-      // Execute tools with enhanced error handling
-      const toolResults: ToolMessage[] = [];
+      // Convert tool calls to the format expected by ToolExecutorService
+      const toolCallInfos = toolCalls.map(toolCall => ({
+        name: toolCall.name,
+        args: toolCall.args,
+        id: toolCall.id,
+        type: (this.toolsProviderService.isInhouseTool(toolCall.name) ? 'inhouse' : 'mcp') as 'inhouse' | 'mcp'
+      }));
 
-      for (const toolCall of toolCalls) {
-        try {
-          // Find the tool
-          const tool = this.tools.find((t) => t.name === toolCall.name);
-          if (!tool) {
-            this.logger.warn(
-              `Tool ${toolCall.name} not found in available tools`
-            );
-            toolResults.push(
-              new ToolMessage({
-                content: `Tool ${toolCall.name} not found`,
-                tool_call_id: toolCall.id,
-              })
-            );
-            continue;
-          }
+      try {
+        // Use the tools executor service to execute all tools
+        const toolResults = await this.toolsExecutorService.executeToolsAndReturnMessages(
+          toolCallInfos,
+          userId
+        );
 
-          // Add context to tool arguments if the tool supports it
-          const toolArgs = {
-            ...toolCall.args,
-            ...(userId && { userId }),
-          };
+        this.logger.debug(`Executed ${toolResults.length} tools using ToolExecutorService`);
 
-          const result = await tool.invoke(toolArgs);
+        return {
+          messages: toolResults,
+        };
+      } catch (error) {
+        this.logger.error('Tool execution failed:', error);
+        
+        // Return error messages for all tool calls
+        const errorResults = toolCalls.map(toolCall => 
+          new ToolMessage({
+            name: toolCall.name,
+            content: `Error executing ${toolCall.name}: ${error.message}`,
+            tool_call_id: toolCall.id,
+          })
+        );
 
-          toolResults.push(
-            new ToolMessage({
-              name: toolCall.name,
-              content: JSON.stringify(result),
-              tool_call_id: toolCall.id,
-            })
-          );
-        } catch (error) {
-          toolResults.push(
-            new ToolMessage({
-              name: toolCall.name,
-              content: `Error executing ${toolCall.name}: ${error.message}`,
-              tool_call_id: toolCall.id,
-            })
-          );
-        }
+        return {
+          messages: errorResults,
+        };
       }
-
-      return {
-        messages: toolResults,
-      };
     };
   }
 

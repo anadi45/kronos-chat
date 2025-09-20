@@ -21,7 +21,7 @@ const Layout: React.FC<LayoutProps> = ({ user, onLogout, children }) => {
   const getCurrentSection = () => {
     const path = location.pathname;
     if (path.startsWith('/chat')) return 'chat';
-    if (path.startsWith('/integrations')) return 'integrations';
+    if (path.startsWith('/oauth-integrations')) return 'integrations';
     if (path.startsWith('/settings')) return 'settings';
     return 'chat'; // default
   };

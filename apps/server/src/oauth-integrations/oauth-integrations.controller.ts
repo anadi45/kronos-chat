@@ -13,19 +13,17 @@ import {
   Query,
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { IntegrationsService } from './integrations.service';
-import { ComposioIntegrationsService } from '../composio/composio-integrations.service';
+import { OAuthIntegrationsService } from './oauth-integrations.service';
 
 /**
- * Controller for managing all integrations
- * Provides unified endpoints for listing integrations, managing connections, and integration operations
+ * Controller for managing OAuth integrations
+ * Provides endpoints for OAuth connections, integration operations
  */
-@Controller('integrations')
+@Controller('oauth-integrations')
 @UseGuards(JwtAuthGuard)
-export class IntegrationsController {
+export class OAuthIntegrationsController {
   constructor(
-    private readonly integrationsService: IntegrationsService,
-    private readonly composioService: ComposioIntegrationsService
+    private readonly oauthIntegrationsService: OAuthIntegrationsService
   ) {}
 
   /**
@@ -35,7 +33,7 @@ export class IntegrationsController {
    */
   @Get()
   async getAvailableIntegrations(): Promise<any[]> {
-    return this.integrationsService.getAvailableIntegrations();
+    return this.oauthIntegrationsService.getAvailableIntegrations();
   }
 
   /**
@@ -46,7 +44,7 @@ export class IntegrationsController {
    */
   @Get('connected')
   async getConnectedIntegrations(@Request() req: any): Promise<any[]> {
-    return this.integrationsService.getConnectedIntegrations(req.user.id);
+    return this.oauthIntegrationsService.getConnectedIntegrations(req.user.id);
   }
 
   /**
@@ -59,7 +57,7 @@ export class IntegrationsController {
     configured: boolean;
     integrations: any[];
   }> {
-    return this.integrationsService.getIntegrationStatus();
+    return this.oauthIntegrationsService.getIntegrationStatus();
   }
 
   /**
@@ -74,7 +72,7 @@ export class IntegrationsController {
     @Param('provider') provider: string,
     @Request() req: any
   ): Promise<any> {
-    return this.integrationsService.connectIntegration(req.user.id, provider);
+    return this.oauthIntegrationsService.connectIntegration(req.user.id, provider);
   }
 
   /**
@@ -90,7 +88,7 @@ export class IntegrationsController {
     @Param('provider') provider: string,
     @Request() req: any
   ): Promise<{ success: boolean }> {
-    return this.integrationsService.disconnectIntegration(req.user.id, provider);
+    return this.oauthIntegrationsService.disconnectIntegrationByProvider(req.user.id, provider);
   }
 
   /**
@@ -103,10 +101,8 @@ export class IntegrationsController {
   async getIntegrationDetails(
     @Param('provider') provider: string
   ): Promise<any> {
-    return this.integrationsService.getIntegrationDetails(provider);
+    return this.oauthIntegrationsService.getIntegrationDetails(provider);
   }
-
-  // Composio-specific endpoints (routed through integrations)
 
   /**
    * Retrieves all available integration providers from Composio
@@ -115,7 +111,7 @@ export class IntegrationsController {
    */
   @Get('providers')
   async getAvailableProviders(): Promise<any[]> {
-    return this.composioService.getAvailableProviders();
+    return this.oauthIntegrationsService.getAvailableProviders();
   }
 
   /**
@@ -131,7 +127,7 @@ export class IntegrationsController {
     @Request() req: any
   ): Promise<any> {
 
-    return this.composioService.createIntegrationConnection({
+    return this.oauthIntegrationsService.createIntegrationConnection({
       ...request,
       userId: req.user.id,
     });
@@ -145,7 +141,7 @@ export class IntegrationsController {
    */
   @Get('connections')
   async getConnectedAccounts(@Request() req: any): Promise<any[]> {
-    return this.composioService.getConnectedAccounts(req.user.id);
+    return this.oauthIntegrationsService.getConnectedAccounts(req.user.id);
   }
 
   /**
@@ -161,24 +157,7 @@ export class IntegrationsController {
     @Param('connectionId') connectionId: string,
     @Request() req: any
   ): Promise<{ success: boolean }> {
-    return this.composioService.disconnectIntegration(req.user.id, connectionId);
-  }
-
-  /**
-   * Retrieves available tools for the authenticated user
-   *
-   * @param req - Express request object containing user information
-   * @param toolkits - Optional query parameter for specific toolkits
-   * @returns Promise<any[]> - List of available tools
-   */
-  @Get('tools')
-  async getAvailableTools(
-    @Request() req: any,
-    @Query('toolkits') toolkits?: string
-  ): Promise<any[]> {
-    const toolkitArray = toolkits ? toolkits.split(',') : ['GMAIL'];
-
-    return this.composioService.getAvailableTools(req.user.id, toolkitArray);
+    return this.oauthIntegrationsService.disconnectIntegration(req.user.id, connectionId);
   }
 
   /**
@@ -192,7 +171,7 @@ export class IntegrationsController {
   async createAuthConfiguration(
     @Param('provider') provider: string
   ): Promise<{ provider: string; authConfigId: string; message: string }> {
-    const authConfigId = await this.composioService.createAuthConfiguration(
+    const authConfigId = await this.oauthIntegrationsService.createAuthConfiguration(
       provider
     );
 
@@ -210,13 +189,13 @@ export class IntegrationsController {
    */
   @Get('service/status')
   async getServiceStatus(): Promise<{ configured: boolean; message: string }> {
-    const isConfigured = this.composioService.isServiceConfigured();
+    const isConfigured = this.oauthIntegrationsService.isServiceConfigured();
 
     return {
       configured: isConfigured,
       message: isConfigured
-        ? 'Integration service is properly configured and ready to use'
-        : 'Integration service is not configured. Please check COMPOSIO_API_KEY environment variable',
+        ? 'OAuth integration service is properly configured and ready to use'
+        : 'OAuth integration service is not configured. Please check COMPOSIO_API_KEY environment variable',
     };
   }
 }
