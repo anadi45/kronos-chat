@@ -12,7 +12,7 @@ import { KronosAgentState, KronosAgentStateSchema } from './state';
 import { MODELS } from '../../constants/models.constants';
 import { formatSystemPrompt } from './prompts';
 import { getContextValue, extractToolCalls, getCurrentDate } from './utils';
-import { createCheckpointer } from '../common/checkpointer';
+import { CheckpointerService } from '../../checkpointer';
 
 /**
  * Kronos Agent Builder
@@ -23,13 +23,14 @@ import { createCheckpointer } from '../common/checkpointer';
 export class KronosAgentBuilder {
   private model: ChatGoogleGenerativeAI;
   private tools: any[] = [];
-  private checkpointer?: any; // PostgreSQL checkpointer instance
+  private checkpointer: CheckpointerService; // PostgreSQL checkpointer service (mandatory)
   private userId: string;
 
   AGENT_NAME = 'kronos_agent';
 
-  constructor(userId: string) {
+  constructor(userId: string, checkpointer: CheckpointerService) {
     this.userId = userId;
+    this.checkpointer = checkpointer;
     this.initializeProviders();
   }
 
@@ -39,7 +40,6 @@ export class KronosAgentBuilder {
   async build(): Promise<any> {
     try {
       await this.loadTools(this.userId);
-      await this.initializeCheckpointer();
 
       // Build the workflow graph
       const workflow = new StateGraph(KronosAgentStateSchema);
@@ -50,24 +50,14 @@ export class KronosAgentBuilder {
       // Compile and return with PostgreSQL checkpointer support
       const compileOptions: any = {
         name: this.AGENT_NAME,
+        checkpointer: this.checkpointer.getPostgresSaver(),
       };
 
-      // Only add checkpointer if it's available
-      if (this.checkpointer) {
-        compileOptions.checkpointer = this.checkpointer.getPostgresSaver();
-      }
+      console.log(
+        '✅ Kronos agent created successfully with PostgreSQL checkpointer'
+      );
 
       const compiledGraph = workflow.compile(compileOptions);
-
-      if (this.checkpointer) {
-        console.log(
-          '✅ Kronos agent created successfully with PostgreSQL checkpointer'
-        );
-      } else {
-        console.log(
-          '✅ Kronos agent created successfully without persistence (checkpointer unavailable)'
-        );
-      }
       return compiledGraph;
     } catch (error) {
       console.error('❌ Failed to create Kronos agent:', error);
@@ -91,21 +81,6 @@ export class KronosAgentBuilder {
     }
   }
 
-  /**
-   * Initialize PostgreSQL Checkpointer
-   */
-  private async initializeCheckpointer(): Promise<void> {
-    try {
-      this.checkpointer = await createCheckpointer();
-      console.log('✅ PostgreSQL checkpointer initialized successfully');
-    } catch (error) {
-      console.warn(
-        '⚠️ Failed to initialize PostgreSQL checkpointer, continuing without persistence:',
-        error
-      );
-      this.checkpointer = undefined;
-    }
-  }
 
   /**
    * Load all available tools for a given user

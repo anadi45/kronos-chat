@@ -1,7 +1,21 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { CheckpointerService } from '../checkpointer';
 
 @Injectable()
-export class AppService {
+export class AppService implements OnModuleInit {
+  private readonly logger = new Logger(AppService.name);
+
+  constructor(private readonly checkpointerService: CheckpointerService) {}
+
+  async onModuleInit(): Promise<void> {
+    // The checkpointer is automatically initialized by CheckpointerService
+    // This method demonstrates how to verify the checkpointer is ready
+    if (this.checkpointerService.isReady()) {
+      this.logger.log('✅ Checkpointer is ready and available');
+    } else {
+      this.logger.warn('⚠️ Checkpointer is not ready yet');
+    }
+  }
   getAppInfo() {
     return {
       name: 'Kronos Chat API',
@@ -22,6 +36,10 @@ export class AppService {
       database: {
         status: 'healthy', // TODO: Add actual database health check
         configured: true,
+      },
+      checkpointer: {
+        status: this.checkpointerService.isReady() ? 'ready' : 'not_ready',
+        initialized: this.checkpointerService.isReady(),
       },
     };
   }

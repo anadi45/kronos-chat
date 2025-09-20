@@ -6,12 +6,14 @@ import { StreamEventFactory, StreamEventSerializer } from '@kronos/core';
 import { Conversation, ChatMessage } from '../entities/conversation.entity';
 import { ChatMessageRole } from '../enum/roles.enum';
 import { KronosAgent } from '../agents/kronos/agent';
+import { CheckpointerService } from '../checkpointer';
 
 @Injectable()
 export class ChatService {
   constructor(
     @InjectRepository(Conversation)
-    private conversationRepository: Repository<Conversation>
+    private conversationRepository: Repository<Conversation>,
+    private readonly checkpointerService: CheckpointerService
   ) {}
 
   /**
@@ -26,7 +28,7 @@ export class ChatService {
   ): Promise<ReadableStream> {
     const conversationRepository = this.conversationRepository;
 
-    const agent = new KronosAgent(userId).getCompiledAgent();
+    const agent = new KronosAgent(userId, this.checkpointerService).getCompiledAgent();
 
     return new ReadableStream({
       async start(controller) {
