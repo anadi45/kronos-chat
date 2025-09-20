@@ -1,35 +1,18 @@
-import { StateGraph, END, Annotation } from '@langchain/langgraph';
+import { StateGraph, END } from '@langchain/langgraph';
 import { ChatGoogleGenerativeAI } from '@langchain/google-genai';
 import {
-  HumanMessage,
   SystemMessage,
   AIMessage,
   ToolMessage,
+  isAIMessage,
 } from '@langchain/core/messages';
 import { RunnableConfig } from '@langchain/core/runnables';
-import { Composio } from '@composio/core';
-import {
-  LangChainToolConverter,
-  ComposioTool,
-} from '../utils/langchain-tool-converter';
-import {
-  KronosAgentState,
-  KronosAgentConfig,
-  KronosAgentStateSchema,
-} from './state';
-import type { ChatMessage } from '@kronos/core';
+import { getMathTools } from './math-tools';
+import { KronosAgentState, KronosAgentStateSchema } from './state';
 import { MODELS } from '../../constants/models.constants';
 import { formatSystemPrompt } from './prompts';
-import {
-  getContextValue,
-  extractToolCalls,
-  getCurrentDate,
-  generateConversationId,
-} from './utils';
-import {
-  createKronosCheckpointerFromEnv,
-  createKronosCheckpointer,
-} from './checkpointer';
+import { getContextValue, extractToolCalls, getCurrentDate } from './utils';
+import { CheckpointerService } from '../../checkpointer';
 
 /**
  * Kronos Agent Builder
@@ -40,14 +23,14 @@ import {
 export class KronosAgentBuilder {
   private model: ChatGoogleGenerativeAI;
   private tools: any[] = [];
-  private toolProvider: Composio;
-  private checkpointer?: any; // PostgreSQL checkpointer instance
+  private checkpointer: CheckpointerService; // PostgreSQL checkpointer service (mandatory)
   private userId: string;
 
   AGENT_NAME = 'kronos_agent';
 
-  constructor(userId: string) {
+  constructor(userId: string, checkpointer: CheckpointerService) {
     this.userId = userId;
+    this.checkpointer = checkpointer;
     this.initializeProviders();
   }
 
@@ -56,9 +39,7 @@ export class KronosAgentBuilder {
    */
   async build(): Promise<any> {
     try {
-      console.log('🚀 Starting Kronos agent creation');
       await this.loadTools(this.userId);
-      await this.initializeCheckpointer();
 
       // Build the workflow graph
       const workflow = new StateGraph(KronosAgentStateSchema);
@@ -69,24 +50,14 @@ export class KronosAgentBuilder {
       // Compile and return with PostgreSQL checkpointer support
       const compileOptions: any = {
         name: this.AGENT_NAME,
+        checkpointer: this.checkpointer.getPostgresSaver(),
       };
 
-      // Only add checkpointer if it's available
-      if (this.checkpointer) {
-        compileOptions.checkpointer = this.checkpointer.getPostgresSaver();
-      }
+      console.log(
+        '✅ Kronos agent created successfully with PostgreSQL checkpointer'
+      );
 
       const compiledGraph = workflow.compile(compileOptions);
-
-      if (this.checkpointer) {
-        console.log(
-          '✅ Kronos agent created successfully with PostgreSQL checkpointer'
-        );
-      } else {
-        console.log(
-          '✅ Kronos agent created successfully without persistence (checkpointer unavailable)'
-        );
-      }
       return compiledGraph;
     } catch (error) {
       console.error('❌ Failed to create Kronos agent:', error);
@@ -105,54 +76,29 @@ export class KronosAgentBuilder {
         maxOutputTokens: 2048,
         apiKey: process.env.GEMINI_API_KEY,
       });
-      this.toolProvider = new Composio({
-        apiKey: process.env.COMPOSIO_API_KEY,
-      });
     } catch (error) {
       throw new Error(`Failed to initialize Providers: ${error.message}`);
     }
   }
 
-  /**
-   * Initialize PostgreSQL Checkpointer
-   */
-  private async initializeCheckpointer(): Promise<void> {
-    try {
-      this.checkpointer = await createKronosCheckpointer();
-      console.log('✅ PostgreSQL checkpointer initialized successfully');
-    } catch (error) {
-      console.warn(
-        '⚠️ Failed to initialize PostgreSQL checkpointer, continuing without persistence:',
-        error
-      );
-      this.checkpointer = undefined;
-    }
-  }
 
   /**
    * Load all available tools for a given user
    */
   private async loadTools(userId: string): Promise<void> {
-    console.log('🔧 Loading Kronos tools');
+    console.log('🔧 Loading Kronos math tools');
 
     try {
-      // Get tools from Composio (using a default user ID for now)
-      const composioTools = await this.toolProvider.tools.get(userId, {
-        tools: ['GMAIL_FETCH_EMAILS'],
-      });
+      // Load custom math tools
+      this.tools = getMathTools();
 
-      // Convert Composio tools to LangChain tools
-      this.tools = composioTools.map((tool) =>
-        LangChainToolConverter.convert(tool as ComposioTool)
-      );
-
-      console.log(`✅ Loaded ${this.tools.length} tools`);
+      console.log(`✅ Loaded ${this.tools.length} math tools`);
       this.tools.forEach((tool, index) => {
         console.log(`  ${index + 1}. ${tool.name}`);
       });
     } catch (error) {
       console.warn(
-        '⚠️ Failed to load Composio tools, continuing without tools:',
+        '⚠️ Failed to load math tools, continuing without tools:',
         error
       );
       this.tools = [];
@@ -163,20 +109,15 @@ export class KronosAgentBuilder {
    * Add all nodes to the workflow graph
    */
   private async addNodes(workflow: any): Promise<void> {
-    console.log('📝 Adding nodes to Kronos workflow');
-
     workflow.addNode('agent', this.createAgentNode());
     workflow.addNode('tool', this.createToolNode());
     workflow.addNode('final_answer', this.createFinalAnswerNode());
-    workflow.addNode('complete', this.createCompleteNode());
   }
 
   /**
    * Configure the workflow execution flow
    */
   private configureEdges(workflow: any): void {
-    console.log('🔗 Configuring Kronos workflow edges');
-
     // Set entry point
     workflow.setEntryPoint('agent');
 
@@ -184,17 +125,13 @@ export class KronosAgentBuilder {
     workflow.addConditionalEdges('agent', this.shouldAct, {
       continue: 'tool',
       final_answer: 'final_answer',
-      complete: 'complete',
     });
 
     // Tool -> agent (loop back)
     workflow.addEdge('tool', 'agent');
 
-    // Final answer -> complete
-    workflow.addEdge('final_answer', 'complete');
-
-    // Complete -> END
-    workflow.addEdge('complete', END);
+    // Final answer -> END
+    workflow.addEdge('final_answer', END);
   }
 
   /**
@@ -204,8 +141,8 @@ export class KronosAgentBuilder {
     const lastMessage = state.messages[state.messages.length - 1];
 
     // Handle AIMessage with tool routing logic
-    if (lastMessage && lastMessage instanceof AIMessage) {
-      const aiMessage = lastMessage as AIMessage;
+    if (lastMessage && isAIMessage(lastMessage)) {
+      const aiMessage = lastMessage;
       const toolCalls = aiMessage.tool_calls || [];
 
       if (toolCalls.length > 0) {
@@ -216,13 +153,13 @@ export class KronosAgentBuilder {
         console.log(
           'Routing: LLM provided a direct answer, proceeding to completion.'
         );
-        return 'complete';
+        return 'final_answer';
       }
     }
 
     // Default fallback
     console.log('Routing: Proceeding to final answer processing');
-    return 'complete';
+    return 'final_answer';
   }
 
   /**
@@ -235,12 +172,12 @@ export class KronosAgentBuilder {
       try {
         const lastMessage = state.messages[state.messages.length - 1];
 
-        if (!lastMessage || !(lastMessage instanceof AIMessage)) {
+        if (!lastMessage || !isAIMessage(lastMessage)) {
           console.log('No AI message found, skipping tool execution');
           return {};
         }
 
-        const aiMessage = lastMessage as AIMessage;
+        const aiMessage = lastMessage;
         const toolCalls = extractToolCalls(aiMessage);
 
         if (toolCalls.length === 0) {
@@ -251,16 +188,10 @@ export class KronosAgentBuilder {
         }
 
         // Get context values for tool execution
-        const authToken = getContextValue(state, config, 'authToken');
-        const workspaceId = getContextValue(state, config, 'workspaceId');
         const userId = getContextValue(state, config, 'userId');
-        const conversationId = getContextValue(state, config, 'conversationId');
 
         console.log(`Executing ${toolCalls.length} tool calls with context:`, {
-          hasAuthToken: !!authToken,
-          workspaceId,
           userId,
-          conversationId,
         });
 
         // Execute tools with enhanced error handling
@@ -292,10 +223,7 @@ export class KronosAgentBuilder {
             // Add context to tool arguments if the tool supports it
             const toolArgs = {
               ...toolCall.args,
-              ...(authToken && { authToken }),
-              ...(workspaceId && { workspaceId }),
               ...(userId && { userId }),
-              ...(conversationId && { conversationId }),
             };
 
             const result = await tool.invoke(toolArgs);
@@ -335,42 +263,23 @@ export class KronosAgentBuilder {
    */
   private createAgentNode() {
     return async (state: KronosAgentState, config: RunnableConfig) => {
-      console.log('🤖 Executing agent node');
-
       try {
-        // Get current date for dynamic prompt
         const todayDate = getCurrentDate();
         const formattedPrompt = formatSystemPrompt(todayDate);
 
-        // Build messages array with proper conversation history
         const messages = [
           new SystemMessage(formattedPrompt),
-          ...state.messages, // Use existing messages from state
+          ...state.messages,
         ];
-
-        // Add current message if not already in messages
-        if (
-          state.currentMessage &&
-          !messages.some(
-            (msg) =>
-              msg instanceof HumanMessage &&
-              msg.content === state.currentMessage
-          )
-        ) {
-          messages.push(new HumanMessage(state.currentMessage));
-        }
 
         console.log(
           `Agent using conversation history: ${messages.length} messages`
         );
 
-        // Bind tools to the model with tool choice
-        const modelWithTools =
-          this.tools.length > 0
-            ? this.model.bindTools(this.tools, { tool_choice: 'any' })
-            : this.model;
+        const modelWithTools = this.model.bindTools(this.tools, {
+          tool_choice: 'any',
+        });
 
-        // Generate response
         const response = await modelWithTools.invoke(messages, config);
 
         console.log('Agent response generated successfully');
@@ -396,258 +305,34 @@ export class KronosAgentBuilder {
    */
   private createFinalAnswerNode() {
     return async (state: KronosAgentState, config: RunnableConfig) => {
-      console.log('💬 Executing final answer node');
+      const todayDate = getCurrentDate();
+      const formattedPrompt = formatSystemPrompt(todayDate);
 
-      try {
-        // Generate LLM-based response using conversation history
-        const todayDate = getCurrentDate();
-        const formattedPrompt = formatSystemPrompt(todayDate);
-
-        // Build conversation history for final response generation
-        const allMessages = state.messages;
-        const conversationHistory = [
-          new SystemMessage(formattedPrompt),
-          ...allMessages,
-        ];
-
-        console.log(
-          `Final answer using conversation history: ${conversationHistory.length} messages`
-        );
-
-        // Generate comprehensive final response using LLM
-        const finalResponse = await this.model.invoke(
-          conversationHistory,
-          config
-        );
-
-        // Extract content from the response
-        let responseContent =
-          'I apologize, but I was unable to generate a response.';
-        if (finalResponse && finalResponse.content) {
-          responseContent = finalResponse.content as string;
-        }
-
-        console.log('Final answer generated successfully');
-        return {
-          result: finalResponse,
-          response: responseContent,
-          messages: [finalResponse],
-          isComplete: true,
-        };
-      } catch (error) {
-        console.error('❌ Final answer node execution failed:', error);
-        return {
-          response:
-            'I apologize, but I encountered an error while finalizing my response.',
-          isComplete: true,
-          error: `Final answer generation failed: ${error.message}`,
-        };
-      }
-    };
-  }
-
-  /**
-   * Create the completion node
-   */
-  private createCompleteNode() {
-    return async (state: KronosAgentState, config: RunnableConfig) => {
-      console.log('✅ Graph execution completed');
-      return {};
-    };
-  }
-
-  /**
-   * Create a streaming response using LangGraph's proper streaming capabilities
-   * Supports multiple stream modes: updates, messages, and custom tool updates
-   */
-  async streamResponse(
-    message: string,
-    conversationHistory: ChatMessage[] = [],
-    userId: string,
-    options: {
-      authToken?: string;
-      workspaceId?: string;
-      conversationId?: string;
-      threadId?: string;
-      streamModes?: ('updates' | 'messages' | 'custom')[];
-    } = {}
-  ): Promise<ReadableStream> {
-    try {
-      const graph = await this.build();
-
-      // Create initial state with context
-      const initialState: KronosAgentState = {
-        messages: [],
-        conversationHistory,
-        userId,
-        currentMessage: message,
-        toolCalls: [],
-        toolResults: [],
-        response: '',
-        isComplete: false,
-      };
-
-      // Create config with context and thread ID for checkpointer
-      const threadId =
-        options.threadId || options.conversationId || generateConversationId();
-      const config: RunnableConfig = {
-        configurable: {
-          authToken: options.authToken,
-          workspaceId: options.workspaceId,
-          conversationId: options.conversationId,
-          userId: userId,
-          thread_id: threadId,
-        },
-      };
-
-      // Default stream modes if not specified
-      const streamModes = options.streamModes || [
-        'updates',
-        'messages',
-        'custom',
+      const allMessages = state.messages;
+      const conversationHistory = [
+        new SystemMessage(formattedPrompt),
+        ...allMessages,
       ];
 
-      // Create streaming response using LangGraph's streaming
-      return new ReadableStream({
-        async start(controller) {
-          try {
-            console.log(
-              'Starting LangGraph streaming with modes:',
-              streamModes
-            );
-            console.log('Context:', {
-              hasAuthToken: !!options.authToken,
-              workspaceId: options.workspaceId,
-              conversationId: options.conversationId,
-              userId: userId,
-              threadId: threadId,
-            });
+      console.log(
+        `Final answer using conversation history: ${conversationHistory.length} messages`
+      );
 
-            // Use LangGraph's stream method with multiple modes
-            const stream = await graph.stream(initialState, {
-              ...config,
-              streamMode: streamModes,
-            });
+      const finalResponse = await this.model.invoke(
+        conversationHistory,
+        config
+      );
 
-            let assistantResponse = '';
-            let tokenSequence = 0;
+      let result = 'I apologize, but I was unable to generate a response.';
+      if (finalResponse && isAIMessage(finalResponse)) {
+        result = finalResponse.content as string;
+      }
 
-            // Process the stream based on the modes
-            for await (const [streamMode, chunk] of stream) {
-              console.log(`Stream mode: ${streamMode}`, chunk);
-
-              switch (streamMode) {
-                case 'updates':
-                  // Agent progress updates - emit after each node execution
-                  if (chunk && typeof chunk === 'object') {
-                    const updateEvent = {
-                      type: 'agent_progress',
-                      data: {
-                        node: chunk.node || 'unknown',
-                        status: 'completed',
-                        timestamp: new Date().toISOString(),
-                      },
-                    };
-                    controller.enqueue(
-                      new TextEncoder().encode(
-                        `data: ${JSON.stringify(updateEvent)}\n\n`
-                      )
-                    );
-                  }
-                  break;
-
-                case 'messages':
-                  // LLM tokens - stream tokens as they are generated
-                  if (chunk && chunk.content) {
-                    const content =
-                      typeof chunk.content === 'string'
-                        ? chunk.content
-                        : String(chunk.content);
-
-                    // Stream content as single token to avoid splitting issues
-                    if (content.trim()) {
-                      tokenSequence++;
-                      const tokenEvent = {
-                        type: 'token',
-                        data: content,
-                        sequence: tokenSequence,
-                        timestamp: new Date().toISOString(),
-                      };
-                      controller.enqueue(
-                        new TextEncoder().encode(
-                          `data: ${JSON.stringify(tokenEvent)}\n\n`
-                        )
-                      );
-                      assistantResponse += content;
-                    }
-                  }
-                  break;
-
-                case 'custom':
-                  // Custom tool updates - emit custom data from tools
-                  if (chunk && typeof chunk === 'object') {
-                    const customEvent = {
-                      type: 'tool_update',
-                      data: chunk,
-                      timestamp: new Date().toISOString(),
-                    };
-                    controller.enqueue(
-                      new TextEncoder().encode(
-                        `data: ${JSON.stringify(customEvent)}\n\n`
-                      )
-                    );
-                  }
-                  break;
-              }
-            }
-
-            console.log('LangGraph streaming completed');
-
-            // Send completion event
-            const completionEvent = {
-              type: 'completion',
-              data: {
-                response: assistantResponse,
-                totalTokens: tokenSequence,
-                timestamp: new Date().toISOString(),
-              },
-            };
-            controller.enqueue(
-              new TextEncoder().encode(
-                `data: ${JSON.stringify(completionEvent)}\n\n`
-              )
-            );
-
-            // Close the stream without duplicate [DONE] markers
-            controller.close();
-          } catch (error) {
-            console.error('LangGraph streaming error:', error);
-            const errorEvent = {
-              type: 'error',
-              data: {
-                error: error.message,
-                timestamp: new Date().toISOString(),
-              },
-            };
-            controller.enqueue(
-              new TextEncoder().encode(
-                `data: ${JSON.stringify(errorEvent)}\n\n`
-              )
-            );
-            controller.close();
-          }
-        },
-      });
-    } catch (error) {
-      console.error('Failed to create LangGraph streaming response:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Generate conversation ID for the current session
-   */
-  generateConversationId(): string {
-    return generateConversationId();
+      console.log('Final answer generated successfully');
+      return {
+        result,
+        messages: [new AIMessage(result)],
+      };
+    };
   }
 }
