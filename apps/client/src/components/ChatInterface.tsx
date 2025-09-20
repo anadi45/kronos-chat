@@ -761,7 +761,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
           <button
             onClick={handleSendMessage}
             disabled={!input.trim() || isStreaming}
-            className="chat-send-btn"
+            className={`chat-send-btn ${isStreaming ? 'streaming' : ''}`}
           >
             {isStreaming ? (
               <>
@@ -773,8 +773,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
               </>
             ) : (
               <>
-                <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" />
+                <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
                 </svg>
                 <span>Send</span>
               </>
