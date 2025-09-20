@@ -417,59 +417,64 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
 
   return (
     <div className="chat-container">
-      {/* Chat Controls */}
-      <div className="chat-header">
-        <div className="chat-header-left">
-          <button
-            onClick={() => setShowConversations(!showConversations)}
-            className="chat-control-btn"
-            title="Conversations"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          </button>
-          <p className="text-sm text-gray-300">
-            {currentConversationId ? `Conversation: ${currentConversationId.slice(-8)}` : 'New conversation'}
-          </p>
-        </div>
-        <div className="chat-controls">
-          {isStreaming && (
+      {/* Chat Header Section */}
+      <div className="chat-header-section">
+        <div className="chat-header">
+          <div className="chat-header-left">
             <button
-              onClick={handleStopStreaming}
-              className="chat-control-btn stop"
+              onClick={() => setShowConversations(!showConversations)}
+              className="chat-control-btn"
+              title="Conversations"
             >
-              Stop
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
             </button>
-          )}
-          <button
-            onClick={startNewConversation}
-            disabled={isStreaming}
-            className="chat-control-btn"
-            title="New conversation"
-          >
-            ➕
-          </button>
-          <button
-            onClick={clearConversation}
-            disabled={isStreaming}
-            className="chat-control-btn clear"
-          >
-            Clear
-          </button>
+            <p className="text-sm text-gray-300">
+              {currentConversationId ? `Conversation: ${currentConversationId.slice(-8)}` : 'New conversation'}
+            </p>
+          </div>
+          <div className="chat-controls">
+            {isStreaming && (
+              <button
+                onClick={handleStopStreaming}
+                className="chat-control-btn stop"
+              >
+                Stop
+              </button>
+            )}
+            <button
+              onClick={startNewConversation}
+              disabled={isStreaming}
+              className="chat-control-btn"
+              title="New conversation"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+            </button>
+            <button
+              onClick={clearConversation}
+              disabled={isStreaming}
+              className="chat-control-btn clear"
+            >
+              Clear
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* Conversations Modal */}
+      {/* Past Conversations Section */}
       {showConversations && (
-        <div 
-          className="conversations-modal-overlay"
-          onClick={(e) => {
-            if (e.target === e.currentTarget) {
-              setShowConversations(false);
-            }
-          }}
-        >
+        <div className="conversations-section">
+          <div 
+            className="conversations-modal-overlay"
+            onClick={(e) => {
+              if (e.target === e.currentTarget) {
+                setShowConversations(false);
+              }
+            }}
+          >
           <div className="conversations-modal">
             <div className="conversations-modal-header">
               <div className="conversations-header-content">
@@ -569,6 +574,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
               </div>
             </div>
           </div>
+        </div>
         </div>
       )}
 
