@@ -81,8 +81,7 @@ export class KronosAgentBuilder {
   private initializeProviders(): void {
     try {
       this.model = new ChatGoogleGenerativeAI({
-        model: MODELS.GEMINI_2_0_FLASH,
-        temperature: 0.7,
+        model: MODELS.GEMINI_2_5_FLASH_LITE,
         maxOutputTokens: 2048,
         apiKey: process.env.GEMINI_API_KEY,
         streaming: true,
@@ -98,9 +97,7 @@ export class KronosAgentBuilder {
   private async loadTools(userId: string): Promise<void> {
     try {
       // Use the tools provider service to get all available tools
-      const tools = await this.toolsProviderService.getAvailableTools(userId);
-
-      this.tools = tools;
+      this.tools = await this.toolsProviderService.getAvailableTools(userId);
 
       this.logger.log(`Loaded ${this.tools.length} tools using ToolsProviderService`);
     } catch (error) {
@@ -194,7 +191,7 @@ export class KronosAgentBuilder {
         name: toolCall.name,
         args: toolCall.args,
         id: toolCall.id,
-        type: 'unknown' as 'inhouse' | 'mcp' // Will be determined by the service
+        type: (this.toolsProviderService.isInhouseTool(toolCall.name) ? 'inhouse' : 'mcp') as 'inhouse' | 'mcp'
       }));
 
       try {

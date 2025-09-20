@@ -29,7 +29,7 @@ export class McpToolExecutorService {
   }
 
   /**
-   * Execute MCP tools through Composio
+   * Execute MCP tools through Composio concurrently
    * 
    * @param userId - User ID for the Composio session
    * @param tools - Array of tool names to get from Composio
@@ -42,38 +42,50 @@ export class McpToolExecutorService {
     parameters?: any
   ): Promise<any> {
     try {
-      this.logger.debug(`Executing MCP tools for user ${userId}: ${tools.join(', ')}`);
+      this.logger.debug(`Executing MCP tools concurrently for user ${userId}: ${tools.join(', ')}`);
 
-      // Get tools for this user
-      const composioTools = await this.composio.tools.get(userId, {
-        tools,
-      });
-
-      this.logger.debug(`Retrieved ${composioTools.length} tools from Composio`);
-
-      // Execute tools directly with parameters
-      const results = [];
-      for (const tool of composioTools) {
+      // Execute tools concurrently using Promise.allSettled for better performance
+      const toolPromises = tools.map(async (toolName) => {
         try {
-          const result = await tool.function.invoke(parameters || {});
-          results.push({
-            toolName: tool.function.name,
+          const result = await this.composio.tools.execute(toolName, {
+            userId,
+            arguments: parameters || {}
+          });
+          
+          return {
+            toolName,
             result,
             success: true
-          });
+          };
         } catch (toolError) {
-          this.logger.error(`Tool ${tool.function.name} execution failed:`, toolError);
-          results.push({
-            toolName: tool.function.name,
+          this.logger.error(`Tool ${toolName} execution failed:`, toolError);
+          return {
+            toolName,
             result: null,
             success: false,
             error: toolError.message
-          });
+          };
         }
-      }
+      });
+
+      const results = await Promise.allSettled(toolPromises);
+      
+      // Extract results from settled promises
+      const executionResults = results.map((result, index) => {
+        if (result.status === 'fulfilled') {
+          return result.value;
+        } else {
+          return {
+            toolName: tools[index],
+            result: null,
+            success: false,
+            error: result.reason?.message || 'Unknown error'
+          };
+        }
+      });
       
       this.logger.debug('MCP tool execution completed');
-      return results;
+      return executionResults;
     } catch (error) {
       this.logger.error('MCP tool execution failed:', error);
       throw error;
@@ -96,19 +108,11 @@ export class McpToolExecutorService {
     try {
       this.logger.debug(`Executing specific MCP tool: ${toolName} for user ${userId}`);
 
-      // Get the specific tool
-      const tools = await this.composio.tools.get(userId, {
-        tools: [toolName],
+      // Execute the tool using the new Composio API
+      const result = await this.composio.tools.execute(toolName, {
+        userId,
+        arguments: parameters
       });
-
-      if (tools.length === 0) {
-        throw new Error(`Tool ${toolName} not found`);
-      }
-
-      const tool = tools[0];
-
-      // Execute the tool directly
-      const result = await tool.function.invoke(parameters);
       
       this.logger.debug(`Tool ${toolName} executed successfully`);
       return result;
@@ -129,8 +133,9 @@ export class McpToolExecutorService {
     try {
       this.logger.debug(`Getting available MCP tools for user ${userId}`);
 
+      // Use the new Composio API to get available tools
       const tools = await this.composio.tools.get(userId, {
-        toolkits: toolkits || ['GMAIL', 'GOOGLECALENDAR', 'SLACK', 'NOTION'],
+        toolkits: toolkits || ['GMAIL', 'GOOGLECALENDAR', 'SLACK', 'NOTION', 'GITHUB'],
       });
 
       this.logger.debug(`Found ${tools.length} available MCP tools`);
@@ -188,47 +193,4 @@ export class McpToolExecutorService {
     }
   }
 
-  /**
-   * Execute calendar tools (example)
-   * 
-   * @param userId - User ID
-   * @param days - Number of days to look ahead
-   * @returns Promise<any> - Calendar events
-   */
-  async getCalendarEvents(userId: string, days: number = 7): Promise<any> {
-    try {
-      const today = new Date();
-      const parameters = {
-        timeMin: today.toISOString(),
-        timeMax: new Date(today.getTime() + days * 24 * 60 * 60 * 1000).toISOString(),
-        maxResults: 10
-      };
-      
-      return await this.executeSpecificTool(userId, 'GOOGLECALENDAR_EVENTS_LIST', parameters);
-    } catch (error) {
-      this.logger.error('Failed to get calendar events:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Execute email tools (example)
-   * 
-   * @param userId - User ID
-   * @param query - Email search query
-   * @returns Promise<any> - Email results
-   */
-  async searchEmails(userId: string, query: string): Promise<any> {
-    try {
-      const parameters = {
-        q: query,
-        maxResults: 10
-      };
-      
-      return await this.executeSpecificTool(userId, 'GMAIL_MESSAGES_LIST', parameters);
-    } catch (error) {
-      this.logger.error('Failed to search emails:', error);
-      throw error;
-    }
-  }
 }
