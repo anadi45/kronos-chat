@@ -122,11 +122,11 @@ const Sidebar: React.FC<SidebarProps> = ({
         {user && (
           <div className="mb-4">
             {!isCollapsed && (
-              <div className="text-sm text-gray-300 mb-3 px-2">
-                <div className="font-medium text-white">
+              <div className="text-xs text-gray-300 mb-2 px-1">
+                <div className="font-medium text-white text-sm">
                   {user.firstName || user.email}
                 </div>
-                <div className="text-xs text-gray-400">
+                <div className="text-xs text-gray-400 truncate">
                   {user.email}
                 </div>
               </div>
@@ -149,7 +149,7 @@ const Sidebar: React.FC<SidebarProps> = ({
         )}
         
         {!isCollapsed && (
-          <div className="text-xs text-gray-400 text-center">
+          <div className="text-xs text-gray-500 text-center mt-2">
             Kronos Chat v1.0
           </div>
         )}
