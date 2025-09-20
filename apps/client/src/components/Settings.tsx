@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 
 const Settings: React.FC = () => {
   const [settings, setSettings] = useState({
-    theme: 'dark',
     autoSave: true
   });
 
@@ -21,29 +20,6 @@ const Settings: React.FC = () => {
 
       <div className="page-content">
         <div className="settings-sections">
-          {/* Appearance Section */}
-          <div className="settings-section">
-            <h2 className="section-title">Appearance</h2>
-            <div className="settings-group">
-              <div className="setting-item">
-                <div className="setting-info">
-                  <label className="setting-label">Theme</label>
-                  <p className="setting-description">Choose your preferred color scheme</p>
-                </div>
-                <div className="setting-control">
-                  <select
-                    value={settings.theme}
-                    onChange={(e) => handleSettingChange('theme', e.target.value)}
-                    className="setting-select"
-                  >
-                    <option value="dark">Dark</option>
-                    <option value="light">Light</option>
-                  </select>
-                </div>
-              </div>
-
-            </div>
-          </div>
 
 
           {/* Chat Section */}
@@ -76,24 +52,24 @@ const Settings: React.FC = () => {
             <div className="settings-group">
               <div className="setting-item">
                 <div className="setting-info">
-                  <label className="setting-label">Export Data</label>
-                  <p className="setting-description">Download your chat history and settings</p>
+                  <label className="setting-label">Export Conversations</label>
+                  <p className="setting-description">Download your chat history and conversations</p>
                 </div>
                 <div className="setting-control">
                   <button className="btn btn-primary">
-                    Export Data
+                    Export Conversations
                   </button>
                 </div>
               </div>
 
               <div className="setting-item">
                 <div className="setting-info">
-                  <label className="setting-label">Clear All Data</label>
-                  <p className="setting-description">Permanently delete all your conversations and settings</p>
+                  <label className="setting-label">Clear All Conversations</label>
+                  <p className="setting-description">Permanently delete all your conversations</p>
                 </div>
                 <div className="setting-control">
                   <button className="btn btn-danger">
-                    Clear All Data
+                    Clear All Conversations
                   </button>
                 </div>
               </div>
