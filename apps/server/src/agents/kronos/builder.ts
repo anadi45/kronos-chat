@@ -187,7 +187,7 @@ export class KronosAgentBuilder {
         }
 
         // Get context values for tool execution
-        const userId = getContextValue(state, config, 'userId');
+        const userId = getContextValue(config, 'userId');
 
         console.log(`Executing ${toolCalls.length} tool calls with context:`, {
           userId,
@@ -276,7 +276,7 @@ export class KronosAgentBuilder {
         );
 
         const modelWithTools = this.model.bindTools(this.tools, {
-          tool_choice: 'any',
+          tool_choice: 'auto',
         });
 
         const response = await modelWithTools.invoke(messages, config);

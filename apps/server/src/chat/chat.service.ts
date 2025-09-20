@@ -80,14 +80,17 @@ export class ChatService {
           let assistantMessage = '';
 
           const config = {
-            configurable: { thread_id: conversation.id },
+            // configurable: { thread_id: conversation.id },
             streamMode: ['updates', 'messages'],
           };
 
-          for await (const [streamMode, chunk] of await (agent as any).stream(
+          // @ts-ignore
+          for await (const { streamMode, chunk } of agent.stream(
             { messages: [request.message] },
             {
-              config,
+              streamMode: ['updates', 'messages'],
+              configurable: { thread_id: conversation.id },
+              context: { userId },
             }
           )) {
             console.log(streamMode, chunk);

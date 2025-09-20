@@ -2,25 +2,14 @@ import { RunnableConfig } from '@langchain/core/runnables';
 import { KronosAgentState } from './state';
 
 /**
- * Extract context values from state and config
- * Similar to the Python get_context_value function
+ * Extract values from context.
  */
 export function getContextValue(
-  state: KronosAgentState,
   config: RunnableConfig,
   key: string
 ): string | undefined {
-  // First check config metadata
-  if (config?.configurable?.[key]) {
-    return config.configurable[key];
-  }
-  
-  // Then check state
-  if (state[key as keyof KronosAgentState]) {
-    return state[key as keyof KronosAgentState] as string;
-  }
-  
-  return undefined;
+  // @ts-ignore
+  return config.context[key];
 }
 
 /**
@@ -35,13 +24,6 @@ export function extractToolCalls(message: any): any[] {
 }
 
 /**
- * Generate a unique conversation ID
- */
-export function generateConversationId(): string {
-  return `conv_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-}
-
-/**
  * Format current date for prompts
  */
 export function getCurrentDate(): string {
@@ -49,6 +31,6 @@ export function getCurrentDate(): string {
     weekday: 'long',
     year: 'numeric',
     month: 'long',
-    day: 'numeric'
+    day: 'numeric',
   });
 }
