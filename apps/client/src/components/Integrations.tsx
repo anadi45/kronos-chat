@@ -250,12 +250,29 @@ const Integrations: React.FC = () => {
   if (loading) {
     return (
       <div className="integrations-page">
-      <div className="page-header">
-        <p className="text-gray-300">Connect Kronos with your favorite tools and services</p>
-      </div>
+        <div className="page-header">
+          <p className="text-gray-300">Connect Kronos with your favorite tools and services</p>
+        </div>
         <div className="page-content">
-          <div className="flex justify-center items-center h-64">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+          <div className="integrations-loader">
+            <div className="integrations-loader-spinner"></div>
+            <div className="integrations-loader-text">Loading integrations...</div>
+            <div className="integrations-loader-subtext">Fetching available services and connection status</div>
+          </div>
+          
+          <div className="skeleton-grid">
+            {[...Array(6)].map((_, index) => (
+              <div key={index} className="skeleton-card">
+                <div className="skeleton-icon"></div>
+                <div className="skeleton-title"></div>
+                <div className="skeleton-description"></div>
+                <div className="skeleton-description"></div>
+                <div className="skeleton-status">
+                  <div className="skeleton-badge"></div>
+                  <div className="skeleton-button"></div>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </div>

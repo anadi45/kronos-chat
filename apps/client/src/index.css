@@ -2571,6 +2571,134 @@ input:checked + .toggle-slider:before {
   animation: spin 1s linear infinite;
 }
 
+/* Enhanced Integrations Loader */
+.integrations-loader {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 2rem;
+  text-align: center;
+}
+
+.integrations-loader-spinner {
+  width: 3rem;
+  height: 3rem;
+  border: 3px solid rgba(59, 130, 246, 0.2);
+  border-top: 3px solid var(--accent-blue-light);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 1.5rem;
+}
+
+.integrations-loader-text {
+  color: var(--text-secondary);
+  font-size: 1rem;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+}
+
+.integrations-loader-subtext {
+  color: var(--text-muted);
+  font-size: 0.875rem;
+}
+
+/* Skeleton Loading Cards */
+.skeleton-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.skeleton-card {
+  background: var(--gradient-card);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 1.5rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.skeleton-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.1),
+    transparent
+  );
+  animation: shimmer 2s infinite;
+}
+
+.skeleton-icon {
+  width: 3rem;
+  height: 3rem;
+  background: var(--tertiary-bg);
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.skeleton-title {
+  height: 1.5rem;
+  background: var(--tertiary-bg);
+  border-radius: 4px;
+  margin-bottom: 0.75rem;
+  width: 70%;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.skeleton-description {
+  height: 1rem;
+  background: var(--tertiary-bg);
+  border-radius: 4px;
+  margin-bottom: 0.5rem;
+  width: 100%;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.skeleton-description:last-child {
+  width: 60%;
+}
+
+.skeleton-status {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 1rem;
+}
+
+.skeleton-badge {
+  width: 5rem;
+  height: 1.5rem;
+  background: var(--tertiary-bg);
+  border-radius: 20px;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.skeleton-button {
+  width: 6rem;
+  height: 2rem;
+  background: var(--tertiary-bg);
+  border-radius: 6px;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    left: -100%;
+  }
+  100% {
+    left: 100%;
+  }
+}
+
 .conversations-end {
   display: flex;
   align-items: center;
