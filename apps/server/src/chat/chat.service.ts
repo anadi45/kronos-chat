@@ -32,7 +32,7 @@ export class ChatService {
 
     return new ReadableStream({
       async start(controller) {
-        const startTime = Date.now();
+        // const startTime = Date.now();
         let conversation: Conversation;
         let isNewConversation = false;
 
@@ -75,13 +75,47 @@ export class ChatService {
 
           conversation.messages.push(userMessage);
 
-          for await (const [streamMode, chunk] of await (agent as any).stream(
+          let assistantMessage = '';
+          
+          for await (const [streamMode, chunk] of await (agent as unknown as any).stream(
             { messages: [request.message] },
             { streamMode: ["updates", "messages"] }
           )) {
             console.log(streamMode, chunk);
-            console.log("\n");
+            
+            if (streamMode === "messages" && chunk?.messages) {
+              for (const message of chunk.messages) {
+                if (message.role === 'assistant' && message.content) {
+                  assistantMessage += message.content;
+                  
+                  // Send token event
+                  const tokenEvent = StreamEventFactory.createTokenEvent(message.content);
+                  controller.enqueue(
+                    new TextEncoder().encode(
+                      StreamEventSerializer.serialize(tokenEvent)
+                    )
+                  );
+                }
+              }
+            }
           }
+
+          // Add assistant message to conversation
+          const assistantChatMessage: ChatMessage = {
+            role: ChatMessageRole.AI,
+            content: assistantMessage,
+            timestamp: new Date().toISOString(),
+          };
+          conversation.messages.push(assistantChatMessage);
+          await conversationRepository.save(conversation);
+
+          // Send end event
+          const endEvent = StreamEventFactory.createEndEvent(conversation.id);
+          controller.enqueue(
+            new TextEncoder().encode(
+              StreamEventSerializer.serialize(endEvent)
+            )
+          );
 
 
           controller.close();
@@ -125,8 +159,8 @@ export class ChatService {
    */
   async getConversationsPaginated(
     userId: string,
-    page: number = 1,
-    limit: number = 10
+    page = 1,
+    limit = 10
   ): Promise<PaginatedResponse<Conversation>> {
     const skip = (page - 1) * limit;
 

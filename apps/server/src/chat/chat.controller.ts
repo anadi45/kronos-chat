@@ -24,7 +24,8 @@ export class ChatController {
   async sendMessage(
     @Request() req,
     @Body() chatRequest: ChatRequest,
-    @Res() res: Response
+    @Res() res: Response,
+    @Query('conversationId') conversationId?: string
   ): Promise<void> {
     // Set headers for Server-Sent Events
     res.setHeader('Content-Type', 'text/event-stream');
@@ -34,8 +35,15 @@ export class ChatController {
     res.setHeader('Access-Control-Allow-Headers', 'Cache-Control');
 
     try {
+      // Add conversationId to the request if provided as query parameter
+      const finalConversationId = conversationId || chatRequest.conversationId;
+      const requestWithConversationId = {
+        ...chatRequest,
+        ...(finalConversationId && { conversationId: finalConversationId })
+      };
+      
       const stream = await this.chatService.sendMessage(
-        chatRequest,
+        requestWithConversationId,
         req.user.id
       );
       const reader = stream.getReader();

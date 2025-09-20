@@ -272,18 +272,16 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
     setStreamingMessage('');
 
     try {
-      // Create stream request
+      // Create stream request - only message, no conversationId or history for new conversations
       const streamRequest: ChatRequest = {
-        message: userMessage.content,
-        conversationHistory: messages,
-        conversationId: currentConversationId || undefined,
+        message: userMessage.content
       };
 
       // Create abort controller for this request
       abortControllerRef.current = new AbortController();
 
-      // Get readable stream
-      const stream = await apiService.sendChatMessage(streamRequest);
+      // Get readable stream - only pass conversationId if it's an existing conversation
+      const stream = await apiService.sendChatMessage(streamRequest, currentConversationId && currentConversationId.trim() !== '' ? currentConversationId : undefined);
       const reader = stream.getReader();
       const decoder = new TextDecoder();
 

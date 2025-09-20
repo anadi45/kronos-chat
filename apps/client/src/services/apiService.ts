@@ -167,9 +167,15 @@ class ApiService {
 
 
   // Chat Methods
-  async sendChatMessage(request: ChatRequest): Promise<ReadableStream> {
+  async sendChatMessage(request: ChatRequest, conversationId?: string): Promise<ReadableStream> {
+    // Build URL with conversationId as query parameter if provided
+    const url = new URL(`${this.client.defaults.baseURL}/chat`);
+    if (conversationId) {
+      url.searchParams.set('conversationId', conversationId);
+    }
+    
     const response = await fetch(
-      `${this.client.defaults.baseURL}/chat`,
+      url.toString(),
       {
         method: 'POST',
         headers: {
