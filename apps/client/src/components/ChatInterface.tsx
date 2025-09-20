@@ -488,22 +488,6 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
             </div>
             <div className="conversations-modal-content">
               <div className="conversations-list" ref={conversationsListRef}>
-                {/* New Conversation Button */}
-                <button
-                  onClick={startNewConversation}
-                  className={`conversation-item new-conversation ${!currentConversationId ? 'active' : ''}`}
-                >
-                  <div className="conversation-icon">
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                    </svg>
-                  </div>
-                  <div className="conversation-content">
-                    <div className="conversation-title">Start New Conversation</div>
-                    <div className="conversation-time">Begin a fresh chat</div>
-                  </div>
-                </button>
-
                 {/* Conversations List */}
                 {conversations.length === 0 && !isLoadingConversations ? (
                   <div className="conversations-empty">
