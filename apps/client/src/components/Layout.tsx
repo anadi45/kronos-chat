@@ -72,10 +72,9 @@ const Layout: React.FC<LayoutProps> = ({ user, onLogout, children }) => {
       <div className="flex-1 flex flex-col overflow-hidden main-content">
         {/* Header */}
         {shouldShowHeader() && (
-          <header className={shouldShowHeaderBox() ? "glass border-b border-white/10 shadow-lg" : ""}>
-            <div className="px-6">
-              <div className="flex justify-between items-center py-4">
-                <div className="flex items-center space-x-4">
+          <header className={shouldShowHeaderBox() ? "glass border-b border-white/10 shadow-lg px-6" : "px-6"}>
+            <div className="flex justify-between items-center pt-4 pb-1">
+                <div className="flex items-center space-x-4" style={{ paddingTop: '3rem' }}>
                   <div className="flex items-center space-x-3">
                     {shouldShowLogo() && (
                       <div className="h-8 w-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center shadow-lg">
@@ -93,7 +92,6 @@ const Layout: React.FC<LayoutProps> = ({ user, onLogout, children }) => {
                   {/* User info can be shown here if needed, but logout is now in sidebar */}
                 </div>
               </div>
-            </div>
           </header>
         )}
 

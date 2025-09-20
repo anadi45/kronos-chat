@@ -250,10 +250,9 @@ const Integrations: React.FC = () => {
   if (loading) {
     return (
       <div className="integrations-page">
-        <div className="page-header">
-          <h1 className="text-2xl font-bold text-white mb-2">Integrations</h1>
-          <p className="text-gray-300">Connect Kronos with your favorite tools and services</p>
-        </div>
+      <div className="page-header">
+        <p className="text-gray-300">Connect Kronos with your favorite tools and services</p>
+      </div>
         <div className="page-content">
           <div className="flex justify-center items-center h-64">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
@@ -266,7 +265,6 @@ const Integrations: React.FC = () => {
   return (
     <div className="integrations-page">
       <div className="page-header">
-        <h1 className="text-2xl font-bold text-white mb-2">Integrations</h1>
         <p className="text-gray-300">Connect Kronos with your favorite tools and services</p>
       </div>
 

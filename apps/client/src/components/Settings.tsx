@@ -19,7 +19,6 @@ const Settings: React.FC = () => {
   return (
     <div className="settings-page">
       <div className="page-header">
-        <h1 className="text-2xl font-bold text-white mb-2">Settings</h1>
         <p className="text-gray-300">Customize your Kronos experience</p>
       </div>
 
