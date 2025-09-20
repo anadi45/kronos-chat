@@ -47,12 +47,12 @@ describe('KronosAgentBuilder', () => {
   it('should build a graph successfully', async () => {
     const graph = await builder.build();
     expect(graph).toBeDefined();
-    expect(typeof graph.compile).toBe('function');
+    expect(typeof graph.invoke).toBe('function');
   });
 
   it('should build a graph with checkpointer', async () => {
     const graph = await builder.build();
     expect(graph).toBeDefined();
-    expect(typeof graph.compile).toBe('function');
+    expect(typeof graph.invoke).toBe('function');
   });
 });
