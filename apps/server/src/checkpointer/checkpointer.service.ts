@@ -1,6 +1,12 @@
-import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  OnModuleInit,
+  OnModuleDestroy,
+} from '@nestjs/common';
 import { PostgresSaver } from '@langchain/langgraph-checkpoint-postgres';
 import { ConfigService } from '@nestjs/config';
+import { Pool } from 'pg';
 
 /**
  * Configuration for PostgreSQL Checkpointer
@@ -19,10 +25,11 @@ export const REQUIRED_ENV_VARS = ['DATABASE_URL'] as const;
  * Handles initialization and provides access to the PostgresSaver instance
  */
 @Injectable()
-export class CheckpointerService implements OnModuleInit {
+export class CheckpointerService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(CheckpointerService.name);
   private postgresSaver: PostgresSaver;
   private isInitialized = false;
+  private pool: Pool;
 
   constructor(private readonly configService: ConfigService) {}
 
@@ -56,7 +63,15 @@ export class CheckpointerService implements OnModuleInit {
       throw new Error('DATABASE_URL is not set');
     }
 
-    this.postgresSaver = PostgresSaver.fromConnString(databaseUrl);
+    this.pool = new Pool({
+      connectionString: databaseUrl,
+      ssl: {
+        rejectUnauthorized: false,
+      },
+    });
+
+    // Create PostgresSaver with the pool
+    this.postgresSaver = new PostgresSaver(this.pool);
 
     await this.postgresSaver.setup();
     this.isInitialized = true;
@@ -79,5 +94,15 @@ export class CheckpointerService implements OnModuleInit {
    */
   isReady(): boolean {
     return this.isInitialized;
+  }
+
+  /**
+   * Cleanup resources when the service is destroyed
+   */
+  async onModuleDestroy(): Promise<void> {
+    if (this.pool) {
+      await this.pool.end();
+      this.logger.log('✅ PostgreSQL pool connection closed');
+    }
   }
 }
