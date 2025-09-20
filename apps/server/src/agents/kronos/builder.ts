@@ -70,6 +70,7 @@ export class KronosAgentBuilder {
         temperature: 0.7,
         maxOutputTokens: 2048,
         apiKey: process.env.GEMINI_API_KEY,
+        streaming: true,
       });
     } catch (error) {
       throw new Error(`Failed to initialize Providers: ${error.message}`);

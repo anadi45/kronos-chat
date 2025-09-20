@@ -100,7 +100,8 @@ export class ChatService {
             });
             
             try {
-              // Stream content chunks to client
+              // Only stream from on_chat_model_stream events to avoid duplication
+              // These events contain the actual streaming chunks from the model
               if (event.event === 'on_chat_model_stream' && event.data?.chunk?.content) {
                 const content = event.data.chunk.content;
                 if (typeof content === 'string' && content.trim()) {
@@ -113,45 +114,37 @@ export class ChatService {
                 }
               }
               
-              // Handle final content from on_chat_model_end
+              // Collect final content from other events for logging but don't stream to avoid duplication
               if (event.event === 'on_chat_model_end' && event.data?.output?.content) {
                 const content = event.data.output.content;
                 if (typeof content === 'string' && content.trim()) {
-                  // Send token event for final content
-                  const tokenEvent = StreamEventFactory.createTokenEvent(content);
-                  controller.enqueue(
-                    new TextEncoder().encode(StreamEventSerializer.serialize(tokenEvent))
-                  );
-                  assistantMessage += content;
+                  // Only add to assistantMessage if not already included
+                  if (!assistantMessage.includes(content)) {
+                    assistantMessage += content;
+                  }
                 }
               }
               
-              // Handle chain stream events that contain the final result
+              // Collect final result from chain stream events but don't stream to avoid duplication
               if (event.event === 'on_chain_stream' && event.data?.chunk) {
                 const chunk = event.data.chunk;
                 
                 // Check for final_answer result
                 if (chunk.final_answer?.result) {
                   const result = chunk.final_answer.result;
-                  if (typeof result === 'string' && result.trim()) {
-                    const tokenEvent = StreamEventFactory.createTokenEvent(result);
-                    controller.enqueue(
-                      new TextEncoder().encode(StreamEventSerializer.serialize(tokenEvent))
-                    );
+                  if (typeof result === 'string' && result.trim() && !assistantMessage.includes(result)) {
                     assistantMessage += result;
                   }
                 }
                 
-                // Check for agent messages
+                // Collect agent messages but don't stream to avoid duplication
                 if (chunk.agent?.messages) {
                   const messages = chunk.agent.messages;
                   for (const message of messages) {
                     if (message.content && typeof message.content === 'string' && message.content.trim()) {
-                      const tokenEvent = StreamEventFactory.createTokenEvent(message.content);
-                      controller.enqueue(
-                        new TextEncoder().encode(StreamEventSerializer.serialize(tokenEvent))
-                      );
-                      assistantMessage += message.content;
+                      if (!assistantMessage.includes(message.content)) {
+                        assistantMessage += message.content;
+                      }
                     }
                   }
                 }
