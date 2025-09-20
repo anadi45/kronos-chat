@@ -2,6 +2,52 @@ import React, { useState, useEffect } from 'react';
 import { apiService } from '../services/apiService';
 import type { Integration } from '@kronos/core';
 
+interface IntegrationIconProps {
+  integrationId: string;
+  className?: string;
+}
+
+const IntegrationIcon: React.FC<IntegrationIconProps> = ({ integrationId, className = "w-8 h-8" }) => {
+  // https://icon-icons.com/
+  const getImageSrc = (id: string) => {
+    switch (id.toLowerCase()) {
+      case 'slack':
+        return '/images/integrations/slack.png';
+      case 'discord':
+        return '/images/integrations/discord.png';
+      case 'github':
+        return '/images/integrations/github.png';
+      case 'notion':
+        return '/images/integrations/notion.png';
+      case 'gmail':
+        return '/images/integrations/gmail.png';
+      case 'google_calendar':
+        return '/images/integrations/google-calendar.png';
+      case 'google_drive':
+        return '/images/integrations/google-drive.png';
+      case 'trello':
+        return '/images/integrations/trello.png';
+      default:
+        return '/images/integrations/default.png';
+    }
+  };
+
+  return (
+    <div className="integration-icon-wrapper">
+      <img 
+        src={getImageSrc(integrationId)} 
+        alt={`${integrationId} icon`}
+        className={className}
+        style={{ objectFit: 'contain' }}
+        onError={(e) => {
+          // Fallback to a default icon if image fails to load
+          e.currentTarget.src = '/images/integrations/default.png';
+        }}
+      />
+    </div>
+  );
+};
+
 interface IntegrationCardProps {
   integration: Integration;
   onConnect: (provider: string) => Promise<void>;
@@ -92,11 +138,7 @@ const IntegrationCard: React.FC<IntegrationCardProps> = ({
 
   return (
     <div className="integration-card">
-      <div className="integration-icon">
-        <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
-          <path d={integration.icon} />
-        </svg>
-      </div>
+      <IntegrationIcon integrationId={integration.id} className="w-8 h-8" />
       <h3 className="integration-title">{integration.name}</h3>
       <p className="integration-description">
         {integration.description}
