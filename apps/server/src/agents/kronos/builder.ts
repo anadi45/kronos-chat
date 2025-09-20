@@ -7,6 +7,7 @@ import {
   isAIMessage,
 } from '@langchain/core/messages';
 import { RunnableConfig } from '@langchain/core/runnables';
+import { Logger } from '@nestjs/common';
 import { signalContextReadinessTool } from '../common/tools';
 import { KronosAgentState, KronosAgentStateSchema } from './state';
 import { MODELS } from '../../constants/models.constants';
@@ -28,6 +29,7 @@ export class KronosAgentBuilder {
   private checkpointerService: CheckpointerService;
   private toolProviderService: ComposioIntegrationsService;
   private userId: string;
+  private readonly logger = new Logger(KronosAgentBuilder.name);
 
   AGENT_NAME = 'kronos_agent';
 
@@ -96,12 +98,15 @@ export class KronosAgentBuilder {
       // Combine all tools
       this.tools = [...tools, ...commonTools];
 
-      console.log(`✅ Loaded ${this.tools.length} tools`);
+      this.logger.log(`Loaded ${this.tools.length} tools`);
       this.tools.forEach((tool, index) => {
-        console.log(`  ${index + 1}. ${tool.name}`);
+        this.logger.debug(`Tool ${index + 1}: ${tool.name}`);
       });
     } catch (error) {
-      console.warn('⚠️ Failed to load tools, continuing without tools:', error);
+      this.logger.warn(
+        'Failed to load tools, continuing without tools',
+        error.message
+      );
       this.tools = [];
     }
   }
@@ -166,7 +171,7 @@ export class KronosAgentBuilder {
       const lastMessage = state.messages[state.messages.length - 1];
 
       if (!lastMessage || !isAIMessage(lastMessage)) {
-        console.log('No AI message found, skipping tool execution');
+        this.logger.debug('No AI message found, skipping tool execution');
         return {};
       }
 
@@ -174,7 +179,7 @@ export class KronosAgentBuilder {
       const toolCalls = extractToolCalls(aiMessage);
 
       if (toolCalls.length === 0) {
-        console.log(
+        this.logger.debug(
           'No tool calls found in last message, skipping tool execution'
         );
         return {};
@@ -191,7 +196,9 @@ export class KronosAgentBuilder {
           // Find the tool
           const tool = this.tools.find((t) => t.name === toolCall.name);
           if (!tool) {
-            console.warn(`Tool ${toolCall.name} not found in available tools`);
+            this.logger.warn(
+              `Tool ${toolCall.name} not found in available tools`
+            );
             toolResults.push(
               new ToolMessage({
                 content: `Tool ${toolCall.name} not found`,
@@ -238,35 +245,20 @@ export class KronosAgentBuilder {
    */
   private createAgentNode() {
     return async (state: KronosAgentState, config: RunnableConfig) => {
-      try {
-        const todayDate = getCurrentDate();
-        const formattedPrompt = formatSystemPrompt(todayDate);
+      const todayDate = getCurrentDate();
+      const formattedPrompt = formatSystemPrompt(todayDate);
 
-        const messages = [
-          new SystemMessage(formattedPrompt),
-          ...state.messages,
-        ];
+      const messages = [new SystemMessage(formattedPrompt), ...state.messages];
 
-        const modelWithTools = this.model.bindTools(this.tools, {
-          tool_choice: 'any',
-        });
+      const modelWithTools = this.model.bindTools(this.tools, {
+        tool_choice: 'any',
+      });
 
-        const response = await modelWithTools.invoke(messages, config);
+      const response = await modelWithTools.invoke(messages, config);
 
-        return {
-          messages: [response],
-        };
-      } catch (error) {
-        console.error('❌ Agent node execution failed:', error);
-        return {
-          messages: [
-            new AIMessage(
-              'I apologize, but I encountered an error while processing your request.'
-            ),
-          ],
-          error: `Agent execution failed: ${error.message}`,
-        };
-      }
+      return {
+        messages: [response],
+      };
     };
   }
 
@@ -290,12 +282,9 @@ export class KronosAgentBuilder {
         config
       );
 
-      let result = 'I apologize, but I was unable to generate a response.';
-      if (finalResponse && isAIMessage(finalResponse)) {
-        result = finalResponse.content as string;
-      }
+      const result = finalResponse.content as string;
 
-      console.log('Final answer generated successfully');
+      this.logger.log('Final answer generated successfully');
       return {
         result,
         messages: [new AIMessage(result)],
