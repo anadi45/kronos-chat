@@ -72,11 +72,26 @@ const Sidebar: React.FC<SidebarProps> = ({
           aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
         >
           <svg 
-            className={`w-5 h-5 transition-transform duration-200 ${isCollapsed ? 'rotate-180' : ''}`} 
+            className="w-5 h-5 transition-all duration-300 ease-in-out" 
             fill="currentColor" 
-            viewBox="0 0 20 20"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth="2"
           >
-            <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
+            {isCollapsed ? (
+              // Hamburger menu icon (3 lines)
+              <g>
+                <line x1="3" y1="6" x2="21" y2="6" strokeLinecap="round"/>
+                <line x1="3" y1="12" x2="21" y2="12" strokeLinecap="round"/>
+                <line x1="3" y1="18" x2="21" y2="18" strokeLinecap="round"/>
+              </g>
+            ) : (
+              // X icon (close)
+              <g>
+                <line x1="18" y1="6" x2="6" y2="18" strokeLinecap="round"/>
+                <line x1="6" y1="6" x2="18" y2="18" strokeLinecap="round"/>
+              </g>
+            )}
           </svg>
         </button>
       </div>
