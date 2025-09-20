@@ -12,7 +12,7 @@ import { KronosAgentState, KronosAgentStateSchema } from './state';
 import { MODELS } from '../../constants/models.constants';
 import { formatSystemPrompt } from './prompts';
 import { getContextValue, extractToolCalls, getCurrentDate } from './utils';
-import { createKronosCheckpointer } from './checkpointer';
+import { createCheckpointer } from '../common/checkpointer';
 
 /**
  * Kronos Agent Builder
@@ -96,7 +96,7 @@ export class KronosAgentBuilder {
    */
   private async initializeCheckpointer(): Promise<void> {
     try {
-      this.checkpointer = await createKronosCheckpointer();
+      this.checkpointer = await createCheckpointer();
       console.log('✅ PostgreSQL checkpointer initialized successfully');
     } catch (error) {
       console.warn(
