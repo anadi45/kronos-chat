@@ -1,4 +1,4 @@
-import { StateGraph, END, CompiledGraph } from '@langchain/langgraph';
+import { StateGraph, END } from '@langchain/langgraph';
 import { ChatGoogleGenerativeAI } from '@langchain/google-genai';
 import {
   SystemMessage,
@@ -7,7 +7,6 @@ import {
   isAIMessage,
 } from '@langchain/core/messages';
 import { RunnableConfig } from '@langchain/core/runnables';
-import { getMathTools } from './math-tools';
 import { signalContextReadinessTool } from '../common/tools';
 import { KronosAgentState, KronosAgentStateSchema } from './state';
 import { MODELS } from '../../constants/models.constants';
@@ -15,6 +14,7 @@ import { formatSystemPrompt } from './prompts';
 import { getContextValue, extractToolCalls } from './utils';
 import { getCurrentDate } from '@kronos/core';
 import { CheckpointerService } from '../../checkpointer';
+import { ComposioIntegrationsService } from '../../composio/composio-integrations.service';
 
 /**
  * Kronos Agent Builder
@@ -26,13 +26,19 @@ export class KronosAgentBuilder {
   private model: ChatGoogleGenerativeAI;
   private tools: any[] = [];
   private checkpointerService: CheckpointerService;
+  private toolProviderService: ComposioIntegrationsService;
   private userId: string;
 
   AGENT_NAME = 'kronos_agent';
 
-  constructor(userId: string, checkpointerService: CheckpointerService) {
+  constructor(
+    userId: string,
+    checkpointerService: CheckpointerService,
+    composioService: ComposioIntegrationsService
+  ) {
     this.userId = userId;
     this.checkpointerService = checkpointerService;
+    this.toolProviderService = composioService;
     this.initializeProviders();
   }
 
@@ -82,14 +88,13 @@ export class KronosAgentBuilder {
    */
   private async loadTools(userId: string): Promise<void> {
     try {
-      // Load custom math tools
-      const mathTools = getMathTools();
+      const tools = await this.toolProviderService.getAvailableTools(userId);
 
       // Load common tools
       const commonTools = [signalContextReadinessTool];
 
       // Combine all tools
-      this.tools = [...mathTools, ...commonTools];
+      this.tools = [...tools, ...commonTools];
 
       console.log(`✅ Loaded ${this.tools.length} tools`);
       this.tools.forEach((tool, index) => {
