@@ -7,6 +7,8 @@ import { Conversation, ChatMessage } from '../entities/conversation.entity';
 import { ChatMessageRole } from '../enum/roles.enum';
 import { KronosAgent } from '../agents/kronos/agent';
 import { CheckpointerService } from '../checkpointer';
+import { internalLogger } from '../utils/logger';
+import { HumanMessage } from '@langchain/core/messages';
 
 @Injectable()
 export class ChatService {
@@ -28,11 +30,13 @@ export class ChatService {
   ): Promise<ReadableStream> {
     const conversationRepository = this.conversationRepository;
 
-    const agent = new KronosAgent(userId, this.checkpointerService).getCompiledAgent();
+    const agent = await new KronosAgent(
+      userId,
+      this.checkpointerService
+    ).getCompiledAgent();
 
     return new ReadableStream({
       async start(controller) {
-        const startTime = Date.now();
         let conversation: Conversation;
         let isNewConversation = false;
 
@@ -75,18 +79,107 @@ export class ChatService {
 
           conversation.messages.push(userMessage);
 
-          for await (const [streamMode, chunk] of await (agent as any).stream(
-            { messages: [request.message] },
-            { streamMode: ["updates", "messages"] }
-          )) {
-            console.log(streamMode, chunk);
-            console.log("\n");
+          let assistantMessage = '';
+
+          const agentInput = {
+            messages: new HumanMessage(request.message),
+          };
+
+          const eventStream = agent.streamEvents(agentInput, {
+            configurable: { thread_id: conversation.id },
+            context: { userId },
+            version: 'v2',
+          });
+
+          for await (const event of eventStream) {
+            // Log the event using the standard info method
+            internalLogger.info('Chat Event', {
+              userId,
+              conversationId: conversation.id,
+              event
+            });
+            
+            try {
+              // Only stream from on_chat_model_stream events to avoid duplication
+              // These events contain the actual streaming chunks from the model
+              if (event.event === 'on_chat_model_stream' && event.data?.chunk?.content) {
+                const content = event.data.chunk.content;
+                if (typeof content === 'string' && content.trim()) {
+                  // Send token event for each content chunk
+                  const tokenEvent = StreamEventFactory.createTokenEvent(content);
+                  controller.enqueue(
+                    new TextEncoder().encode(StreamEventSerializer.serialize(tokenEvent))
+                  );
+                  assistantMessage += content;
+                }
+              }
+              
+              // Collect final content from other events for logging but don't stream to avoid duplication
+              if (event.event === 'on_chat_model_end' && event.data?.output?.content) {
+                const content = event.data.output.content;
+                if (typeof content === 'string' && content.trim()) {
+                  // Only add to assistantMessage if not already included
+                  if (!assistantMessage.includes(content)) {
+                    assistantMessage += content;
+                  }
+                }
+              }
+              
+              // Collect final result from chain stream events but don't stream to avoid duplication
+              if (event.event === 'on_chain_stream' && event.data?.chunk) {
+                const chunk = event.data.chunk;
+                
+                // Check for final_answer result
+                if (chunk.final_answer?.result) {
+                  const result = chunk.final_answer.result;
+                  if (typeof result === 'string' && result.trim() && !assistantMessage.includes(result)) {
+                    assistantMessage += result;
+                  }
+                }
+                
+                // Collect agent messages but don't stream to avoid duplication
+                if (chunk.agent?.messages) {
+                  const messages = chunk.agent.messages;
+                  for (const message of messages) {
+                    if (message.content && typeof message.content === 'string' && message.content.trim()) {
+                      if (!assistantMessage.includes(message.content)) {
+                        assistantMessage += message.content;
+                      }
+                    }
+                  }
+                }
+              }
+            } catch (streamError) {
+              internalLogger.error('Error processing stream event', {
+                error: streamError.message,
+                event: event.event,
+                stack: streamError.stack,
+              });
+              // Continue processing other events even if one fails
+            }
           }
 
+          // Add assistant message to conversation
+          const assistantChatMessage: ChatMessage = {
+            role: ChatMessageRole.AI,
+            content: assistantMessage,
+            timestamp: new Date().toISOString(),
+          };
+          conversation.messages.push(assistantChatMessage);
+          await conversationRepository.save(conversation);
+
+          // Send end event
+          const endEvent = StreamEventFactory.createEndEvent(conversation.id);
+          controller.enqueue(
+            new TextEncoder().encode(StreamEventSerializer.serialize(endEvent))
+          );
 
           controller.close();
         } catch (error) {
-          console.error('Chat service error:', error);
+          internalLogger.error('Chat service error', {
+            error: error.message,
+            stack: error.stack,
+          });
 
           // Send error event
           const errorEvent = StreamEventFactory.createTokenEvent(
@@ -125,8 +218,8 @@ export class ChatService {
    */
   async getConversationsPaginated(
     userId: string,
-    page: number = 1,
-    limit: number = 10
+    page = 1,
+    limit = 10
   ): Promise<PaginatedResponse<Conversation>> {
     const skip = (page - 1) * limit;
 
@@ -186,7 +279,10 @@ export class ChatService {
       await this.conversationRepository.remove(conversation);
       return { success: true, message: 'Conversation deleted successfully' };
     } catch (error) {
-      console.error('Error deleting conversation:', error);
+      internalLogger.error('Error deleting conversation', {
+        error: error.message,
+        stack: error.stack,
+      });
       return { success: false, message: 'Failed to delete conversation' };
     }
   }

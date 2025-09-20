@@ -43,3 +43,25 @@ export const isToday = (date: Date | string): boolean => {
     today.getFullYear() === targetDate.getFullYear()
   );
 };
+
+/**
+ * Format current date for prompts
+ * 
+ * @returns A formatted date string in the format "Weekday, Month Day, Year"
+ * 
+ * @example
+ * // Returns "Monday, January 15, 2024" (example output)
+ * getCurrentDate()
+ * 
+ * @example
+ * // Returns "Friday, December 25, 2023" (example output)
+ * getCurrentDate()
+ */
+export function getCurrentDate(): string {
+  return new Date().toLocaleDateString('en-US', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
+}

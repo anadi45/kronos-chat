@@ -1,4 +1,4 @@
-import { StateGraph, END } from '@langchain/langgraph';
+import { StateGraph, END, CompiledGraph } from '@langchain/langgraph';
 import { ChatGoogleGenerativeAI } from '@langchain/google-genai';
 import {
   SystemMessage,
@@ -8,10 +8,12 @@ import {
 } from '@langchain/core/messages';
 import { RunnableConfig } from '@langchain/core/runnables';
 import { getMathTools } from './math-tools';
+import { signalContextReadinessTool } from '../common/tools';
 import { KronosAgentState, KronosAgentStateSchema } from './state';
 import { MODELS } from '../../constants/models.constants';
 import { formatSystemPrompt } from './prompts';
-import { getContextValue, extractToolCalls, getCurrentDate } from './utils';
+import { getContextValue, extractToolCalls } from './utils';
+import { getCurrentDate } from '@kronos/core';
 import { CheckpointerService } from '../../checkpointer';
 
 /**
@@ -23,45 +25,38 @@ import { CheckpointerService } from '../../checkpointer';
 export class KronosAgentBuilder {
   private model: ChatGoogleGenerativeAI;
   private tools: any[] = [];
-  private checkpointer: CheckpointerService; // PostgreSQL checkpointer service (mandatory)
+  private checkpointerService: CheckpointerService;
   private userId: string;
 
   AGENT_NAME = 'kronos_agent';
 
-  constructor(userId: string, checkpointer: CheckpointerService) {
+  constructor(userId: string, checkpointerService: CheckpointerService) {
     this.userId = userId;
-    this.checkpointer = checkpointer;
+    this.checkpointerService = checkpointerService;
     this.initializeProviders();
   }
 
   /**
    * Build and return the complete Kronos agent graph
    */
-  async build(): Promise<any> {
+  async build(): Promise<ReturnType<StateGraph<any>['compile']>> {
     try {
       await this.loadTools(this.userId);
 
-      // Build the workflow graph
       const workflow = new StateGraph(KronosAgentStateSchema);
 
       await this.addNodes(workflow);
       this.configureEdges(workflow);
 
-      // Compile and return with PostgreSQL checkpointer support
       const compileOptions: any = {
         name: this.AGENT_NAME,
-        checkpointer: this.checkpointer.getPostgresSaver(),
+        checkpointer: this.checkpointerService.getCheckpointer(),
       };
-
-      console.log(
-        '✅ Kronos agent created successfully with PostgreSQL checkpointer'
-      );
 
       const compiledGraph = workflow.compile(compileOptions);
       return compiledGraph;
     } catch (error) {
-      console.error('❌ Failed to create Kronos agent:', error);
-      throw error;
+      throw new Error(`Failed to build Kronos agent: ${error.message}`);
     }
   }
 
@@ -75,32 +70,33 @@ export class KronosAgentBuilder {
         temperature: 0.7,
         maxOutputTokens: 2048,
         apiKey: process.env.GEMINI_API_KEY,
+        streaming: true,
       });
     } catch (error) {
       throw new Error(`Failed to initialize Providers: ${error.message}`);
     }
   }
 
-
   /**
    * Load all available tools for a given user
    */
   private async loadTools(userId: string): Promise<void> {
-    console.log('🔧 Loading Kronos math tools');
-
     try {
       // Load custom math tools
-      this.tools = getMathTools();
+      const mathTools = getMathTools();
 
-      console.log(`✅ Loaded ${this.tools.length} math tools`);
+      // Load common tools
+      const commonTools = [signalContextReadinessTool];
+
+      // Combine all tools
+      this.tools = [...mathTools, ...commonTools];
+
+      console.log(`✅ Loaded ${this.tools.length} tools`);
       this.tools.forEach((tool, index) => {
         console.log(`  ${index + 1}. ${tool.name}`);
       });
     } catch (error) {
-      console.warn(
-        '⚠️ Failed to load math tools, continuing without tools:',
-        error
-      );
+      console.warn('⚠️ Failed to load tools, continuing without tools:', error);
       this.tools = [];
     }
   }
@@ -145,20 +141,15 @@ export class KronosAgentBuilder {
       const aiMessage = lastMessage;
       const toolCalls = aiMessage.tool_calls || [];
 
-      if (toolCalls.length > 0) {
-        const toolNames = toolCalls.map((tc) => tc.name);
-        console.log('Routing: Tool calls requested:', toolNames);
-        return 'continue';
-      } else {
-        console.log(
-          'Routing: LLM provided a direct answer, proceeding to completion.'
-        );
+      const toolNames = toolCalls.map((tc) => tc.name);
+
+      if (toolNames.includes(signalContextReadinessTool.name)) {
         return 'final_answer';
       }
+
+      return 'continue';
     }
 
-    // Default fallback
-    console.log('Routing: Proceeding to final answer processing');
     return 'final_answer';
   }
 
@@ -167,94 +158,73 @@ export class KronosAgentBuilder {
    */
   private createToolNode() {
     return async (state: KronosAgentState, config: RunnableConfig) => {
-      console.log('🔧 Executing tool node');
+      const lastMessage = state.messages[state.messages.length - 1];
 
-      try {
-        const lastMessage = state.messages[state.messages.length - 1];
-
-        if (!lastMessage || !isAIMessage(lastMessage)) {
-          console.log('No AI message found, skipping tool execution');
-          return {};
-        }
-
-        const aiMessage = lastMessage;
-        const toolCalls = extractToolCalls(aiMessage);
-
-        if (toolCalls.length === 0) {
-          console.log(
-            'No tool calls found in last message, skipping tool execution'
-          );
-          return {};
-        }
-
-        // Get context values for tool execution
-        const userId = getContextValue(state, config, 'userId');
-
-        console.log(`Executing ${toolCalls.length} tool calls with context:`, {
-          userId,
-        });
-
-        // Execute tools with enhanced error handling
-        const toolResults: ToolMessage[] = [];
-
-        for (const toolCall of toolCalls) {
-          try {
-            // Find the tool
-            const tool = this.tools.find((t) => t.name === toolCall.name);
-            if (!tool) {
-              console.warn(
-                `Tool ${toolCall.name} not found in available tools`
-              );
-              toolResults.push(
-                new ToolMessage({
-                  content: `Tool ${toolCall.name} not found`,
-                  tool_call_id: toolCall.id,
-                })
-              );
-              continue;
-            }
-
-            // Execute the tool with context
-            console.log(
-              `Executing tool: ${toolCall.name} with args:`,
-              toolCall.args
-            );
-
-            // Add context to tool arguments if the tool supports it
-            const toolArgs = {
-              ...toolCall.args,
-              ...(userId && { userId }),
-            };
-
-            const result = await tool.invoke(toolArgs);
-
-            console.log(`Tool ${toolCall.name} executed successfully`);
-            toolResults.push(
-              new ToolMessage({
-                content: JSON.stringify(result),
-                tool_call_id: toolCall.id,
-              })
-            );
-          } catch (error) {
-            console.error(`Error executing tool ${toolCall.name}:`, error);
-            toolResults.push(
-              new ToolMessage({
-                content: `Error executing ${toolCall.name}: ${error.message}`,
-                tool_call_id: toolCall.id,
-              })
-            );
-          }
-        }
-
-        return {
-          messages: toolResults,
-        };
-      } catch (error) {
-        console.error('❌ Tool node execution failed:', error);
-        return {
-          error: `Tool execution failed: ${error.message}`,
-        };
+      if (!lastMessage || !isAIMessage(lastMessage)) {
+        console.log('No AI message found, skipping tool execution');
+        return {};
       }
+
+      const aiMessage = lastMessage;
+      const toolCalls = extractToolCalls(aiMessage);
+
+      if (toolCalls.length === 0) {
+        console.log(
+          'No tool calls found in last message, skipping tool execution'
+        );
+        return {};
+      }
+
+      // Get context values for tool execution
+      const userId = getContextValue(config, 'userId');
+
+      // Execute tools with enhanced error handling
+      const toolResults: ToolMessage[] = [];
+
+      for (const toolCall of toolCalls) {
+        try {
+          // Find the tool
+          const tool = this.tools.find((t) => t.name === toolCall.name);
+          if (!tool) {
+            console.warn(`Tool ${toolCall.name} not found in available tools`);
+            toolResults.push(
+              new ToolMessage({
+                content: `Tool ${toolCall.name} not found`,
+                tool_call_id: toolCall.id,
+              })
+            );
+            continue;
+          }
+
+          // Add context to tool arguments if the tool supports it
+          const toolArgs = {
+            ...toolCall.args,
+            ...(userId && { userId }),
+          };
+
+          const result = await tool.invoke(toolArgs);
+
+          toolResults.push(
+            new ToolMessage({
+              name: toolCall.name,
+              content: JSON.stringify(result),
+              tool_call_id: toolCall.id,
+            })
+          );
+        } catch (error) {
+          toolResults.push(
+            new ToolMessage({
+              name: toolCall.name,
+              content: `Error executing ${toolCall.name}: ${error.message}`,
+              tool_call_id: toolCall.id,
+            })
+          );
+        }
+      }
+
+      return {
+        messages: toolResults,
+      };
     };
   }
 
@@ -272,17 +242,12 @@ export class KronosAgentBuilder {
           ...state.messages,
         ];
 
-        console.log(
-          `Agent using conversation history: ${messages.length} messages`
-        );
-
         const modelWithTools = this.model.bindTools(this.tools, {
           tool_choice: 'any',
         });
 
         const response = await modelWithTools.invoke(messages, config);
 
-        console.log('Agent response generated successfully');
         return {
           messages: [response],
         };
@@ -309,14 +274,11 @@ export class KronosAgentBuilder {
       const formattedPrompt = formatSystemPrompt(todayDate);
 
       const allMessages = state.messages;
+
       const conversationHistory = [
         new SystemMessage(formattedPrompt),
         ...allMessages,
       ];
-
-      console.log(
-        `Final answer using conversation history: ${conversationHistory.length} messages`
-      );
 
       const finalResponse = await this.model.invoke(
         conversationHistory,
