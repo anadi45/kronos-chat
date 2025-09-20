@@ -12,12 +12,9 @@ class SignalContextReadinessTool extends Tool {
     "Call this tool only after you have gathered all the necessary information to fully answer the user's query";
 
   async _call(): Promise<string> {
-    console.log('signalContextReadiness tool was called');
+    console.log(`${this.name} tool was called`);
     return 'Context readiness signaled - agent has gathered all necessary information';
   }
 }
 
-export const signalContextReadiness = {
-  tool: new SignalContextReadinessTool(),
-  name: SignalContextReadinessTool.name,
-};
+export const signalContextReadinessTool = new SignalContextReadinessTool();
