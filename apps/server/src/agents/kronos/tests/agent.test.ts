@@ -23,12 +23,13 @@ describe('KronosAgent', () => {
       getAvailableTools: jest.fn().mockResolvedValue([]),
     } as any;
     
-    agent = new KronosAgent(
-      'test-user-id',
-      mockCheckpointer,
-      mockToolsExecutorService,
-      mockToolsProviderService
-    );
+    agent = new KronosAgent({  
+      userId: 'test-user-id',
+      checkpointerService: mockCheckpointer, 
+      toolsExecutorService: mockToolsExecutorService,
+      toolsProviderService: mockToolsProviderService,
+      toolkits: []
+    });
   });
 
   it('should be defined', () => {

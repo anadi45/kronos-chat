@@ -1,8 +1,11 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import { Composio } from '@composio/core';
 import { Tool, DynamicStructuredTool } from '@langchain/core/tools';
 import { LangChainToolConverter } from './langchain-tool-converter';
+import { ComposioOAuth } from '../entities/composio-oauth.entity';
 
 /**
  * Signal Context Readiness Tool
@@ -50,7 +53,11 @@ export class ToolsProviderService {
   private readonly composio: Composio;
   private readonly inhouseTools: Map<string, any> = new Map();
 
-  constructor(private readonly configService: ConfigService) {
+  constructor(
+    private readonly configService: ConfigService,
+    @InjectRepository(ComposioOAuth)
+    private readonly composioOAuthRepository: Repository<ComposioOAuth>
+  ) {
     const apiKey = this.configService.get<string>('COMPOSIO_API_KEY');
 
     if (!apiKey) {
@@ -78,6 +85,33 @@ export class ToolsProviderService {
   }
 
   /**
+   * Get user OAuth integrations from database
+   *
+   * @param userId - The user identifier
+   * @returns Promise<string[]> - Array of platform names (toolkits)
+   */
+  private async getUserOAuthIntegrations(userId: string): Promise<string[]> {
+    try {
+      const integrations = await this.composioOAuthRepository.find({
+        where: { userId },
+        select: ['platform'],
+      });
+
+      const platforms = integrations.map(integration => integration.platform);
+      this.logger.log(
+        `Found ${platforms.length} OAuth integrations for user ${userId}: ${platforms.join(', ')}`
+      );
+      return platforms;
+    } catch (error) {
+      this.logger.error(
+        `Failed to get OAuth integrations for user ${userId}:`,
+        error
+      );
+      return [];
+    }
+  }
+
+  /**
    * Retrieves available tools for a user (both MCP tools and in-house tools)
    *
    * @param userId - The user identifier
@@ -86,18 +120,27 @@ export class ToolsProviderService {
    */
   async getAvailableTools(
     userId: string,
-    toolkits: string[] = ['GMAIL']
+    toolkits: string[] = []
   ): Promise<any[]> {
     try {
+      // If no toolkits provided, fetch user's OAuth integrations from database
+      let finalToolkits = toolkits;
+      if (toolkits.length === 0) {
+        finalToolkits = await this.getUserOAuthIntegrations(userId);
+        this.logger.log(
+          `No toolkits provided, using user's OAuth integrations: ${finalToolkits.join(', ')}`
+        );
+      }
+
       this.logger.log(
-        `Retrieving tools for user ${userId} with toolkits: ${toolkits.join(
+        `Retrieving tools for user ${userId} with toolkits: ${finalToolkits.join(
           ', '
         )}`
       );
 
       // Get MCP tools from Composio
       const composioTools = await this.composio.tools.get(userId, {
-        toolkits,
+        toolkits: finalToolkits,
       });
 
       // Convert Composio tools to LangChain compatible tools
