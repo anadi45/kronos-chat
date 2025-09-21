@@ -216,19 +216,9 @@ const Integrations: React.FC = () => {
       setLoading(true);
       setError(null);
 
-      const [availableIntegrations, connectedIntegrationsData] = await Promise.all([
-        apiService.getAvailableIntegrations(),
-        apiService.getConnectedIntegrations(),
-      ]);
-
-      // Mark connected integrations
-      const integrationsWithStatus = availableIntegrations.map(integration => ({
-        ...integration,
-        isConnected: connectedIntegrationsData.some(connected => connected.id === integration.id),
-        connectedAt: connectedIntegrationsData.find(connected => connected.id === integration.id)?.connectedAt,
-      }));
-
-      setIntegrations(integrationsWithStatus);
+      // Single API call that returns all integrations with connection status
+      const integrations = await apiService.getAvailableIntegrations();
+      setIntegrations(integrations);
     } catch (error) {
       console.error('Error loading integrations:', error);
       setError('Failed to load integrations. Please try again.');
