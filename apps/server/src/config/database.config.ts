@@ -2,6 +2,7 @@ import { TypeOrmModuleOptions } from '@nestjs/typeorm';
 import { ConfigService } from '@nestjs/config';
 import { User } from '../entities/user.entity';
 import { Conversation } from '../entities/conversation.entity';
+import { ComposioOAuth } from '../entities/composio-oauth.entity';
 
 export const getDatabaseConfig = (
   configService: ConfigService
@@ -12,7 +13,7 @@ export const getDatabaseConfig = (
   username: configService.get<string>('DATABASE_USERNAME', 'kronos_user'),
   password: configService.get<string>('DATABASE_PASSWORD', 'kronos_password'),
   database: configService.get<string>('DATABASE_NAME', 'kronos_chat'),
-  entities: [User, Conversation],
+  entities: [User, Conversation, ComposioOAuth],
   synchronize: false, // Always use migrations instead of sync
   logging: configService.get<boolean>('DATABASE_LOGGING', false),
   ssl: { rejectUnauthorized: false },

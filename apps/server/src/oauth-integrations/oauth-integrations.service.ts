@@ -14,13 +14,6 @@ import { User } from '../entities/user.entity';
 import { ComposioOAuth } from '../entities/composio-oauth.entity';
 
 
-/**
- * Integration status interface
- */
-export interface IntegrationStatus {
-  configured: boolean;
-  integrations: Integration[];
-}
 
 /**
  * Interface for creating a new integration connection
@@ -472,18 +465,6 @@ export class OAuthIntegrationsService {
   }
 
 
-  /**
-   * Get integration status and configuration
-   */
-  async getIntegrationStatus(userId: string): Promise<IntegrationStatus> {
-    const isConfigured = this.isServiceConfigured();
-    const integrations = await this.getAvailableIntegrations(userId);
-
-    return {
-      configured: isConfigured,
-      integrations,
-    };
-  }
 
   /**
    * Connect to a specific integration

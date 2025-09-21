@@ -37,19 +37,6 @@ export class OAuthIntegrationsController {
     return this.oauthIntegrationsService.getAvailableIntegrations(req.user.id);
   }
 
-  /**
-   * Get integration status and configuration
-   *
-   * @param req - Express request object containing user information
-   * @returns Promise<{ configured: boolean; integrations: any[] }> - Integration status
-   */
-  @Get('status')
-  async getIntegrationStatus(@Request() req: any): Promise<{
-    configured: boolean;
-    integrations: any[];
-  }> {
-    return this.oauthIntegrationsService.getIntegrationStatus(req.user.id);
-  }
 
   /**
    * Connect to a specific integration

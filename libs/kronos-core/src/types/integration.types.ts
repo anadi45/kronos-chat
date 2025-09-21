@@ -1,22 +1,29 @@
 // Integration-related types for Kronos Chat
 
+export enum IntegrationStatusType {
+  AVAILABLE = 'available',
+  COMING_SOON = 'coming_soon',
+  BETA = 'beta',
+}
+
+export enum AuthType {
+  OAUTH = 'oauth',
+  API_KEY = 'api_key',
+  WEBHOOK = 'webhook',
+}
+
 export interface Integration {
   id: string;
   name: string;
   description: string;
-  icon: string;
   category: string;
-  status: 'available' | 'coming_soon' | 'beta';
+  status: IntegrationStatusType;
   capabilities: string[];
-  authType: 'oauth' | 'api_key' | 'webhook';
+  authType: AuthType;
   isConnected?: boolean;
   connectedAt?: string;
 }
 
-export interface IntegrationStatus {
-  configured: boolean;
-  integrations: Integration[];
-}
 
 export interface ConnectIntegrationRequest {
   provider: string;
@@ -27,7 +34,7 @@ export interface ConnectIntegrationResponse {
   message?: string;
   authUrl?: string;
   provider: string;
-  status: 'available' | 'coming_soon' | 'beta';
+  status: IntegrationStatusType;
   connectionId?: string;
 }
 
@@ -44,11 +51,10 @@ export interface IntegrationDetails {
   id: string;
   name: string;
   description: string;
-  icon: string;
   category: string;
-  status: 'available' | 'coming_soon' | 'beta';
+  status: IntegrationStatusType;
   capabilities: string[];
-  authType: 'oauth' | 'api_key' | 'webhook';
+  authType: AuthType;
   documentation?: string;
   setupInstructions?: string[];
 }

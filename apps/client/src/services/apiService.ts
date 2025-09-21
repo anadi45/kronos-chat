@@ -6,7 +6,6 @@ import type {
   UserProfile,
   ChatRequest,
   Integration,
-  IntegrationStatus,
   ConnectIntegrationResponse,
   DisconnectIntegrationResponse,
   IntegrationDetails,
@@ -238,14 +237,6 @@ class ApiService {
   }
 
 
-  /**
-   * Get integration status and configuration
-   * GET /oauth-integrations/status
-   */
-  async getIntegrationStatus(): Promise<IntegrationStatus> {
-    const response = await this.client.get('/oauth-integrations/status');
-    return response.data;
-  }
 
   /**
    * Connect to a specific integration
