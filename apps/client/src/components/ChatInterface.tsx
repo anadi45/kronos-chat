@@ -291,7 +291,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
       // Create stream request - only message, no conversationId or history for new conversations
       const streamRequest: ChatRequest = {
         message: userMessage.content,
-        toolkits: selectedToolkits.length > 0 ? selectedToolkits : undefined
+        toolkits: selectedToolkits.length > 0 ? selectedToolkits : []
       };
 
       // Create abort controller for this request
