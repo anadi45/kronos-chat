@@ -1,116 +1,112 @@
-import { Integration } from '../oauth-integrations/oauth-integrations.service';
+import {
+  Integration,
+  IntegrationStatusType,
+  AuthType,
+  Provider,
+} from '@kronos/core';
 
-/**
- * Available integrations configuration
- * This file contains the static list of all available integrations
- * and their configuration details.
- */
 export const AVAILABLE_INTEGRATIONS: Integration[] = [
   {
-    id: 'slack',
-    name: 'Slack',
-    description: 'Connect Kronos to your Slack workspace for seamless team communication',
-    icon: 'slack',
-    category: 'communication',
-    status: 'coming_soon',
-    capabilities: ['send_messages', 'read_channels', 'manage_workspace'],
-    authType: 'oauth',
-  },
-  {
-    id: 'discord',
-    name: 'Discord',
-    description: 'Bring Kronos AI to your Discord server for community interactions',
-    icon: 'discord',
-    category: 'communication',
-    status: 'coming_soon',
-    capabilities: ['send_messages', 'read_channels', 'manage_server'],
-    authType: 'oauth',
-  },
-  {
-    id: 'github',
-    name: 'GitHub',
-    description: 'Integrate with GitHub for code assistance and repository management',
-    icon: 'github',
-    category: 'development',
-    status: 'coming_soon',
-    capabilities: ['read_repos', 'create_issues', 'manage_pull_requests'],
-    authType: 'oauth',
-  },
-  {
-    id: 'notion',
-    name: 'Notion',
-    description: 'Connect with Notion for document creation and knowledge management',
-    icon: 'notion',
-    category: 'productivity',
-    status: 'coming_soon',
-    capabilities: ['read_pages', 'create_pages', 'manage_database'],
-    authType: 'oauth',
-  },
-  {
-    id: 'gmail',
+    id: Provider.GMAIL,
     name: 'Gmail',
     description: 'Send and manage emails through Gmail integration',
-    icon: 'gmail',
     category: 'communication',
-    status: 'available',
+    status: IntegrationStatusType.AVAILABLE,
     capabilities: ['send_emails', 'read_emails', 'manage_labels'],
-    authType: 'oauth',
+    authType: AuthType.OAUTH,
+  },
+  {
+    id: Provider.GITHUB,
+    name: 'Github',
+    description:
+      'Manage repositories, issues, and pull requests through Github integration',
+    category: 'development',
+    status: IntegrationStatusType.AVAILABLE,
+    capabilities: [
+      'manage_repositories',
+      'manage_issues',
+      'manage_pull_requests',
+    ],
+    authType: AuthType.OAUTH,
+  },
+  {
+    id: Provider.NOTION,
+    name: 'Notion',
+    description:
+      'Create and manage Notion pages and databases through Notion integration',
+    category: 'productivity',
+    status: IntegrationStatusType.AVAILABLE,
+    capabilities: ['manage_pages', 'manage_databases'],
+    authType: AuthType.OAUTH,
+  },
+  {
+    id: Provider.SLACK,
+    name: 'Slack',
+    description:
+      'Send messages and manage Slack channels through Slack integration',
+    category: 'communication',
+    status: IntegrationStatusType.AVAILABLE,
+    capabilities: ['send_messages', 'manage_channels'],
+    authType: AuthType.OAUTH,
+  },
+  {
+    id: Provider.TWITTER,
+    name: 'X (Twitter)',
+    description:
+      'Manage X (Twitter) accounts and tweets through X (Twitter) integration',
+    category: 'communication',
+    status: IntegrationStatusType.AVAILABLE,
+    capabilities: ['manage_tweets', 'manage_accounts'],
+    authType: AuthType.OAUTH,
+  },
+  {
+    id: Provider.LINKEDIN,
+    name: 'LinkedIn',
+    description:
+      'Manage LinkedIn accounts and posts through LinkedIn integration',
+    category: 'communication',
+    status: IntegrationStatusType.AVAILABLE,
+    capabilities: ['manage_posts', 'manage_accounts'],
+    authType: AuthType.OAUTH,
+  },
+  {
+    id: Provider.REDDIT,
+    name: 'Reddit',
+    description: 'Manage Reddit accounts and posts through Reddit integration',
+    category: 'communication',
+    status: IntegrationStatusType.AVAILABLE,
+    capabilities: ['manage_posts', 'manage_accounts'],
+    authType: AuthType.OAUTH,
+  },
+  {
+    id: Provider.GOOGLE_DRIVE,
+    name: 'Google Drive',
+    description:
+      'Manage Google Drive files and folders through Google Drive integration',
+    category: 'storage',
+    status: IntegrationStatusType.AVAILABLE,
+    capabilities: ['manage_files', 'manage_folders'],
+    authType: AuthType.OAUTH,
+  },
+  {
+    id: Provider.GOOGLE_CALENDAR,
+    name: 'Google Calendar',
+    description:
+      'Manage Google Calendar events and scheduling through Google Calendar integration',
+    category: 'calendar',
+    status: IntegrationStatusType.AVAILABLE,
+    capabilities: ['manage_events', 'manage_scheduling'],
+    authType: AuthType.OAUTH,
+  },
+
+  {
+    id: Provider.INSTAGRAM,
+    name: 'Instagram',
+    description:
+      'Manage Instagram accounts and posts through Instagram integration',
+    category: 'communication',
+    status: IntegrationStatusType.AVAILABLE,
+    capabilities: ['manage_posts', 'manage_accounts'],
+    authType: AuthType.OAUTH,
   },
 ];
-
-/**
- * Integration categories for filtering and organization
- */
-export const INTEGRATION_CATEGORIES = {
-  COMMUNICATION: 'communication',
-  DEVELOPMENT: 'development',
-  PRODUCTIVITY: 'productivity',
-  ANALYTICS: 'analytics',
-  MARKETING: 'marketing',
-} as const;
-
-/**
- * Integration status types
- */
-export const INTEGRATION_STATUS = {
-  AVAILABLE: 'available',
-  COMING_SOON: 'coming_soon',
-  BETA: 'beta',
-} as const;
-
-/**
- * Authentication types for integrations
- */
-export const AUTH_TYPES = {
-  OAUTH: 'oauth',
-  API_KEY: 'api_key',
-  WEBHOOK: 'webhook',
-} as const;
-
-/**
- * Common integration capabilities
- */
-export const INTEGRATION_CAPABILITIES = {
-  // Communication
-  SEND_MESSAGES: 'send_messages',
-  READ_MESSAGES: 'read_messages',
-  READ_CHANNELS: 'read_channels',
-  MANAGE_WORKSPACE: 'manage_workspace',
-  MANAGE_SERVER: 'manage_server',
-  
-  // Email
-  SEND_EMAILS: 'send_emails',
-  READ_EMAILS: 'read_emails',
-  MANAGE_LABELS: 'manage_labels',
-  
-  // Development
-  READ_REPOS: 'read_repos',
-  CREATE_ISSUES: 'create_issues',
-  MANAGE_PULL_REQUESTS: 'manage_pull_requests',
-  
-  // Productivity
-  READ_PAGES: 'read_pages',
-  CREATE_PAGES: 'create_pages',
-  UPDATE_PAGES: 'update_pages',
-  MANAGE_DATABASE: 'manage_database',
-} as const;

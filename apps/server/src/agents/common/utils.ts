@@ -1,5 +1,4 @@
 import { RunnableConfig } from '@langchain/core/runnables';
-import { KronosAgentState } from './state';
 
 /**
  * Extract values from context.

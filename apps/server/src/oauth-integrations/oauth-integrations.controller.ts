@@ -14,6 +14,8 @@ import {
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { OAuthIntegrationsService } from './oauth-integrations.service';
+import { Provider, Integration, ConnectIntegrationResponse, DisconnectIntegrationResponse } from '@kronos/core';
+import { ConnectIntegrationDto, DisconnectIntegrationDto, CreateIntegrationRequestDto } from '../dto/integration.dto';
 
 /**
  * Controller for managing OAuth integrations
@@ -30,56 +32,43 @@ export class OAuthIntegrationsController {
    * Get all available integrations with connection status for the user
    *
    * @param req - Express request object containing user information
-   * @returns Promise<any[]> - List of available integrations with connection status
+   * @returns Promise<Integration[]> - List of available integrations with connection status
    */
   @Get()
-  async getAvailableIntegrations(@Request() req: any): Promise<any[]> {
+  async getAvailableIntegrations(@Request() req: any): Promise<Integration[]> {
     return this.oauthIntegrationsService.getAvailableIntegrations(req.user.id);
   }
 
-  /**
-   * Get integration status and configuration
-   *
-   * @param req - Express request object containing user information
-   * @returns Promise<{ configured: boolean; integrations: any[] }> - Integration status
-   */
-  @Get('status')
-  async getIntegrationStatus(@Request() req: any): Promise<{
-    configured: boolean;
-    integrations: any[];
-  }> {
-    return this.oauthIntegrationsService.getIntegrationStatus(req.user.id);
-  }
 
   /**
    * Connect to a specific integration
    *
-   * @param provider - The integration provider identifier
+   * @param params - The integration provider parameters
    * @param req - Express request object containing user information
-   * @returns Promise<any> - Connection result
+   * @returns Promise<ConnectIntegrationResponse> - Connection result
    */
   @Post(':provider/connect')
   async connectIntegration(
-    @Param('provider') provider: string,
+    @Param() params: ConnectIntegrationDto,
     @Request() req: any
-  ): Promise<any> {
-    return this.oauthIntegrationsService.connectIntegration(req.user.id, provider);
+  ): Promise<ConnectIntegrationResponse> {
+    return this.oauthIntegrationsService.connectIntegration(req.user.id, params.provider);
   }
 
   /**
    * Disconnect from a specific integration
    *
-   * @param provider - The integration provider identifier
+   * @param params - The integration provider parameters
    * @param req - Express request object containing user information
-   * @returns Promise<{ success: boolean }> - Disconnection result
+   * @returns Promise<DisconnectIntegrationResponse> - Disconnection result
    */
   @Delete(':provider/disconnect')
   @HttpCode(HttpStatus.NO_CONTENT)
   async disconnectIntegration(
-    @Param('provider') provider: string,
+    @Param() params: DisconnectIntegrationDto,
     @Request() req: any
-  ): Promise<{ success: boolean }> {
-    return this.oauthIntegrationsService.disconnectIntegrationByProvider(req.user.id, provider);
+  ): Promise<DisconnectIntegrationResponse> {
+    return this.oauthIntegrationsService.disconnectIntegrationByProvider(req.user.id, params.provider);
   }
 
   /**
@@ -114,10 +103,9 @@ export class OAuthIntegrationsController {
    */
   @Post('connections')
   async createIntegrationConnection(
-    @Body(ValidationPipe) request: any,
+    @Body(ValidationPipe) request: CreateIntegrationRequestDto,
     @Request() req: any
   ): Promise<any> {
-
     return this.oauthIntegrationsService.createIntegrationConnection({
       ...request,
       userId: req.user.id,
@@ -133,6 +121,17 @@ export class OAuthIntegrationsController {
   @Get('connections')
   async getConnectedAccounts(@Request() req: any): Promise<any[]> {
     return this.oauthIntegrationsService.getConnectedAccounts(req.user.id);
+  }
+
+  /**
+   * Retrieves all OAuth integrations for the authenticated user
+   *
+   * @param req - Express request object containing user information
+   * @returns Promise<any[]> - List of OAuth integrations
+   */
+  @Get('integrations')
+  async getUserOAuthIntegrations(@Request() req: any): Promise<any[]> {
+    return this.oauthIntegrationsService.getUserOAuthIntegrations(req.user.id);
   }
 
   /**

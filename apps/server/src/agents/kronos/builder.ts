@@ -11,7 +11,7 @@ import { Logger } from '@nestjs/common';
 import { KronosAgentState, KronosAgentStateSchema } from './state';
 import { MODELS } from '../../constants/models.constants';
 import { formatSystemPrompt, formatFinalAnswerSystemPrompt } from './prompts';
-import { getContextValue, extractToolCalls } from './utils';
+import { getContextValue, extractToolCalls } from '../common/utils';
 import { getCurrentDate } from '@kronos/core';
 import { CheckpointerService } from '../../checkpointer';
 import { ToolsExecutorService } from '../../tools/tools-executor.service';

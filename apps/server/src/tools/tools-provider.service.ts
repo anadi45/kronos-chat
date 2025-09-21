@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Composio } from '@composio/core';
 import { Tool, DynamicStructuredTool } from '@langchain/core/tools';
-import { LangChainToolConverter } from '../agents/utils/langchain-tool-converter';
+import { LangChainToolConverter } from './langchain-tool-converter';
 
 /**
  * Signal Context Readiness Tool

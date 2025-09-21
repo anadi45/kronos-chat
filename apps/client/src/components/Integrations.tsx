@@ -13,26 +13,7 @@ const IntegrationIcon: React.FC<IntegrationIconProps> = ({
 }) => {
   // https://icon-icons.com/
   const getImageSrc = (id: string) => {
-    switch (id.toLowerCase()) {
-      case 'slack':
-        return '/images/integrations/slack.png';
-      case 'discord':
-        return '/images/integrations/discord.png';
-      case 'github':
-        return '/images/integrations/github.png';
-      case 'notion':
-        return '/images/integrations/notion.png';
-      case 'gmail':
-        return '/images/integrations/gmail.png';
-      case 'google_calendar':
-        return '/images/integrations/google-calendar.png';
-      case 'google_drive':
-        return '/images/integrations/google-drive.png';
-      case 'trello':
-        return '/images/integrations/trello.png';
-      default:
-        return '/images/integrations/default.png';
-    }
+    return `/images/integrations/${id.toLowerCase()}.png`;
   };
 
   return (
@@ -44,7 +25,7 @@ const IntegrationIcon: React.FC<IntegrationIconProps> = ({
         style={{ objectFit: 'contain' }}
         onError={(e) => {
           // Fallback to a default icon if image fails to load
-          e.currentTarget.src = '/images/integrations/default.png';
+          e.currentTarget.src = '/images/integrations/default.svg';
         }}
       />
     </div>
@@ -203,8 +184,8 @@ const IntegrationCard: React.FC<IntegrationCardProps> = ({
       {integration.isConnected && integration.connectedAt && (
         <div className="integration-connected-info">
           <p>
-            Connected {new Date(integration.connectedAt).toLocaleDateString()}{' '}
-            at{' '}
+            Connected on{' '}
+            {new Date(integration.connectedAt).toLocaleDateString()} at{' '}
             {new Date(integration.connectedAt).toLocaleTimeString([], {
               hour: '2-digit',
               minute: '2-digit',
@@ -327,9 +308,11 @@ const Integrations: React.FC = () => {
       } else {
         setError(result.message || 'Failed to connect integration');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error connecting integration:', error);
-      setError('Failed to connect integration. Please try again.');
+      setError(
+        error.message || 'Failed to connect integration. Please try again.'
+      );
     } finally {
       setConnectingProvider(null);
     }
@@ -369,10 +352,11 @@ const Integrations: React.FC = () => {
             `Unable to disconnect from ${providerToDisconnect}. Please try again or contact support if the issue persists.`
         );
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error disconnecting integration:', error);
       setError(
-        `Unable to disconnect from ${providerToDisconnect}. This might be due to a network issue or server problem. Please try again in a moment.`
+        error.message ||
+          `Unable to disconnect from ${providerToDisconnect}. This might be due to a network issue or server problem. Please try again in a moment.`
       );
     } finally {
       setDisconnectingProvider(null);

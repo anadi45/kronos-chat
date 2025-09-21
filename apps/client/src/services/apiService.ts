@@ -6,7 +6,6 @@ import type {
   UserProfile,
   ChatRequest,
   Integration,
-  IntegrationStatus,
   ConnectIntegrationResponse,
   DisconnectIntegrationResponse,
   IntegrationDetails,
@@ -238,22 +237,27 @@ class ApiService {
   }
 
 
-  /**
-   * Get integration status and configuration
-   * GET /oauth-integrations/status
-   */
-  async getIntegrationStatus(): Promise<IntegrationStatus> {
-    const response = await this.client.get('/oauth-integrations/status');
-    return response.data;
-  }
 
   /**
    * Connect to a specific integration
    * POST /oauth-integrations/:provider/connect
    */
   async connectIntegration(provider: string): Promise<ConnectIntegrationResponse> {
-    const response = await this.client.post(`/oauth-integrations/${provider}/connect`);
-    return response.data;
+    try {
+      const response = await this.client.post(`/oauth-integrations/${provider}/connect`);
+      return response.data;
+    } catch (error: any) {
+      // Handle specific HTTP status codes
+      if (error.response?.status === 501) {
+        throw new Error(`${provider} integration is not yet implemented`);
+      } else if (error.response?.status === 400) {
+        throw new Error(error.response.data.message || `Invalid request for ${provider} integration`);
+      } else if (error.response?.status === 500) {
+        throw new Error(`Server error while connecting to ${provider}. Please try again.`);
+      } else {
+        throw new Error(`Failed to connect to ${provider} integration. Please try again.`);
+      }
+    }
   }
 
   /**
@@ -261,8 +265,21 @@ class ApiService {
    * DELETE /oauth-integrations/:provider/disconnect
    */
   async disconnectIntegration(provider: string): Promise<DisconnectIntegrationResponse> {
-    const response = await this.client.delete(`/oauth-integrations/${provider}/disconnect`);
-    return response.data;
+    try {
+      const response = await this.client.delete(`/oauth-integrations/${provider}/disconnect`);
+      return response.data;
+    } catch (error: any) {
+      // Handle specific HTTP status codes
+      if (error.response?.status === 404) {
+        throw new Error(`No connected account found for ${provider} integration`);
+      } else if (error.response?.status === 400) {
+        throw new Error(error.response.data.message || `Invalid request for ${provider} integration`);
+      } else if (error.response?.status === 500) {
+        throw new Error(`Server error while disconnecting from ${provider}. Please try again.`);
+      } else {
+        throw new Error(`Failed to disconnect from ${provider} integration. Please try again.`);
+      }
+    }
   }
 
   /**
