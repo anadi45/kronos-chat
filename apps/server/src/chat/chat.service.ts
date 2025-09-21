@@ -7,7 +7,6 @@ import { Conversation, ChatMessage } from '../entities/conversation.entity';
 import { ChatMessageRole } from '../enum/roles.enum';
 import { KronosAgent } from '../agents/kronos/agent';
 import { CheckpointerService } from '../checkpointer';
-import { OAuthIntegrationsService } from '../oauth-integrations/oauth-integrations.service';
 import { ToolsExecutorService } from '../tools/tools-executor.service';
 import { ToolsProviderService } from '../tools/tools-provider.service';
 import { HumanMessage } from '@langchain/core/messages';
@@ -18,7 +17,6 @@ export class ChatService {
     @InjectRepository(Conversation)
     private conversationRepository: Repository<Conversation>,
     private readonly checkpointerService: CheckpointerService,
-    private readonly oauthIntegrationsService: OAuthIntegrationsService,
     private readonly toolsExecutorService: ToolsExecutorService,
     private readonly toolsProviderService: ToolsProviderService
   ) {}
@@ -38,7 +36,6 @@ export class ChatService {
     const agent = await new KronosAgent(
       userId,
       this.checkpointerService,
-      this.oauthIntegrationsService,
       this.toolsExecutorService,
       this.toolsProviderService
     ).getCompiledAgent();

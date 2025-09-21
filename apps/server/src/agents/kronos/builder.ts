@@ -14,7 +14,6 @@ import { formatSystemPrompt, formatFinalAnswerSystemPrompt } from './prompts';
 import { getContextValue, extractToolCalls } from './utils';
 import { getCurrentDate } from '@kronos/core';
 import { CheckpointerService } from '../../checkpointer';
-import { OAuthIntegrationsService } from '../../oauth-integrations/oauth-integrations.service';
 import { ToolsExecutorService } from '../../tools/tools-executor.service';
 import { ToolsProviderService } from '../../tools/tools-provider.service';
 
@@ -29,7 +28,6 @@ export class KronosAgentBuilder {
   private answerModel: Runnable;
   private tools: any[] = [];
   private checkpointerService: CheckpointerService;
-  private oauthIntegrationsService: OAuthIntegrationsService;
   private toolsExecutorService: ToolsExecutorService;
   private toolsProviderService: ToolsProviderService;
   private userId: string;
@@ -40,13 +38,11 @@ export class KronosAgentBuilder {
   constructor(
     userId: string,
     checkpointerService: CheckpointerService,
-    oauthIntegrationsService: OAuthIntegrationsService,
     toolsExecutorService: ToolsExecutorService,
     toolsProviderService: ToolsProviderService
   ) {
     this.userId = userId;
     this.checkpointerService = checkpointerService;
-    this.oauthIntegrationsService = oauthIntegrationsService;
     this.toolsExecutorService = toolsExecutorService;
     this.toolsProviderService = toolsProviderService;
     this.initializeProviders();

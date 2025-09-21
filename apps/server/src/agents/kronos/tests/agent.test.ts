@@ -3,7 +3,6 @@ import { KronosAgent } from '../agent';
 describe('KronosAgent', () => {
   let agent: KronosAgent;
   let mockCheckpointer: any;
-  let mockOAuthIntegrationsService: any;
   let mockToolsExecutorService: any;
   let mockToolsProviderService: any;
 
@@ -12,11 +11,6 @@ describe('KronosAgent', () => {
     mockCheckpointer = {
       isReady: jest.fn().mockReturnValue(true),
       getPostgresSaver: jest.fn().mockReturnValue({}),
-    } as any;
-
-    // Mock OAuth integrations service
-    mockOAuthIntegrationsService = {
-      // Add any methods that might be called
     } as any;
 
     // Mock tools executor service
@@ -32,7 +26,6 @@ describe('KronosAgent', () => {
     agent = new KronosAgent(
       'test-user-id',
       mockCheckpointer,
-      mockOAuthIntegrationsService,
       mockToolsExecutorService,
       mockToolsProviderService
     );
