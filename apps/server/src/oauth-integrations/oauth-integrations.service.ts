@@ -3,6 +3,8 @@ import {
   Logger,
   BadRequestException,
   NotFoundException,
+  NotImplementedException,
+  InternalServerErrorException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -489,24 +491,27 @@ export class OAuthIntegrationsService {
         };
       }
 
-      // For other integrations, return a placeholder response
-      return {
-        success: false,
-        message: `${provider} integration is coming soon`,
-        status: 'coming_soon' as const,
-        provider,
-      };
+      // For unsupported integrations, throw NotImplementedException
+      throw new NotImplementedException(
+        `${provider} integration is not yet implemented`
+      );
     } catch (error) {
       this.logger.error(
         `Failed to connect integration ${provider} for user ${userId}:`,
         error
       );
-      return {
-        success: false,
-        message: `Failed to connect ${provider} integration. Please try again.`,
-        provider,
-        status: 'available' as const,
-      };
+      
+      // Re-throw HTTP exceptions
+      if (error instanceof BadRequestException || 
+          error instanceof NotFoundException || 
+          error instanceof NotImplementedException) {
+        throw error;
+      }
+      
+      // For unexpected errors, throw InternalServerErrorException
+      throw new InternalServerErrorException(
+        `Failed to connect ${provider} integration. Please try again.`
+      );
     }
   }
 
@@ -531,7 +536,9 @@ export class OAuthIntegrationsService {
 
       if (!account) {
         this.logger.warn(`No connected account found for provider ${provider}`);
-        return { success: false };
+        throw new NotFoundException(
+          `No connected account found for ${provider} integration`
+        );
       }
 
       // Get the auth config ID from the composio_oauth table for this specific platform
@@ -556,7 +563,18 @@ export class OAuthIntegrationsService {
         `Failed to disconnect integration ${provider} for user ${userId}:`,
         error
       );
-      return { success: false };
+      
+      // Re-throw HTTP exceptions
+      if (error instanceof BadRequestException || 
+          error instanceof NotFoundException || 
+          error instanceof NotImplementedException) {
+        throw error;
+      }
+      
+      // For unexpected errors, throw InternalServerErrorException
+      throw new InternalServerErrorException(
+        `Failed to disconnect ${provider} integration. Please try again.`
+      );
     }
   }
 

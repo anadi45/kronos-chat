@@ -327,9 +327,9 @@ const Integrations: React.FC = () => {
       } else {
         setError(result.message || 'Failed to connect integration');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error connecting integration:', error);
-      setError('Failed to connect integration. Please try again.');
+      setError(error.message || 'Failed to connect integration. Please try again.');
     } finally {
       setConnectingProvider(null);
     }
@@ -369,11 +369,9 @@ const Integrations: React.FC = () => {
             `Unable to disconnect from ${providerToDisconnect}. Please try again or contact support if the issue persists.`
         );
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error disconnecting integration:', error);
-      setError(
-        `Unable to disconnect from ${providerToDisconnect}. This might be due to a network issue or server problem. Please try again in a moment.`
-      );
+      setError(error.message || `Unable to disconnect from ${providerToDisconnect}. This might be due to a network issue or server problem. Please try again in a moment.`);
     } finally {
       setDisconnectingProvider(null);
       setProviderToDisconnect(null);
