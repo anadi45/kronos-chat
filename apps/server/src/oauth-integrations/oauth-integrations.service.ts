@@ -10,7 +10,7 @@ import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Composio } from '@composio/core';
-import { Integration, Provider } from '@kronos/core';
+import { Integration, Provider, ConnectIntegrationResponse, DisconnectIntegrationResponse } from '@kronos/core';
 import { AVAILABLE_INTEGRATIONS } from '../constants/integrations.constants';
 import { User } from '../entities/user.entity';
 import { ComposioOAuth } from '../entities/composio-oauth.entity';
@@ -422,37 +422,27 @@ export class OAuthIntegrationsService {
    */
   async getAvailableIntegrations(userId: string): Promise<Integration[]> {
     try {
-      // Get OAuth integrations from our database
+      // Get user's OAuth integrations from our database (source of truth)
       const userOAuthIntegrations = await this.getUserOAuthIntegrations(userId);
-      
-      // Get connected accounts from Composio
-      const connectedAccounts = await this.getConnectedAccounts(userId);
       
       // Get all available integrations
       const allIntegrations = AVAILABLE_INTEGRATIONS;
 
-      // Create a map of connected integrations for quick lookup
-      const connectedMap = new Map();
-      connectedAccounts.forEach(account => {
-        connectedMap.set(account.provider.toLowerCase(), account);
-      });
-
-      // Create a map of OAuth integrations for quick lookup
-      const oauthMap = new Map();
+      // Create a map of user's connected integrations for quick lookup
+      const userIntegrationsMap = new Map();
       userOAuthIntegrations.forEach(integration => {
-        oauthMap.set(integration.platform.toLowerCase(), integration);
+        userIntegrationsMap.set(integration.platform.toLowerCase(), integration);
       });
 
-      // Mark connection status for each integration
+      // Mark connection status for each integration based on our database
       const integrationsWithStatus = allIntegrations.map(integration => {
-        const connectedAccount = connectedMap.get(integration.id);
-        const oauthIntegration = oauthMap.get(integration.id);
+        const userIntegration = userIntegrationsMap.get(integration.id.toLowerCase());
         
         return {
           ...integration,
-          isConnected: !!connectedAccount || !!oauthIntegration,
-          connectedAt: connectedAccount?.connectedAt || oauthIntegration?.createdAt,
-          authConfigId: oauthIntegration?.authConfigId,
+          isConnected: !!userIntegration,
+          connectedAt: userIntegration?.createdAt,
+          authConfigId: userIntegration?.authConfigId,
         };
       });
 
@@ -472,7 +462,7 @@ export class OAuthIntegrationsService {
   /**
    * Connect to a specific integration
    */
-  async connectIntegration(userId: string, provider: string): Promise<any> {
+  async connectIntegration(userId: string, provider: string): Promise<ConnectIntegrationResponse> {
     try {
       // For now, delegate to OAuth integrations service for OAuth connections
       if (provider === Provider.GMAIL) {
@@ -522,7 +512,7 @@ export class OAuthIntegrationsService {
   async disconnectIntegrationByProvider(
     userId: string,
     provider: string
-  ): Promise<{ success: boolean }> {
+  ): Promise<DisconnectIntegrationResponse> {
     try {
       this.logger.log(
         `Disconnecting integration ${provider} for user ${userId}`
@@ -544,17 +534,25 @@ export class OAuthIntegrationsService {
       // Get the auth config ID from the composio_oauth table for this specific platform
       const authConfigId = await this.getAuthConfigIdForUser(userId, provider);
       
+      // Prepare concurrent deletion operations
+      const deletionPromises: Promise<any>[] = [
+        this.composio.connectedAccounts.delete(account.id)
+      ];
+
       if (authConfigId) {
-        // Use Composio auth-configs delete API as per documentation
-        await this.composio.authConfigs.delete(authConfigId);
-        this.logger.log(`Auth config ${authConfigId} deleted successfully`);
-        
-        // Remove the auth config record from composio_oauth table
-        await this.composioOAuthRepository.delete({ userId, platform: provider });
+        // Add auth config deletion operations
+        deletionPromises.push(
+          this.composio.authConfigs.delete(authConfigId),
+          this.composioOAuthRepository.delete({ userId, platform: provider })
+        );
       }
 
-      // Also delete the connected account
-      await this.composio.connectedAccounts.delete(account.id);
+      // Execute all deletions concurrently
+      await Promise.all(deletionPromises);
+      
+      if (authConfigId) {
+        this.logger.log(`Auth config ${authConfigId} deleted successfully`);
+      }
 
       this.logger.log(`Integration ${provider} disconnected successfully`);
       return { success: true };
