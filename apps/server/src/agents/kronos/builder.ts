@@ -10,7 +10,7 @@ import { RunnableConfig } from '@langchain/core/runnables';
 import { Logger } from '@nestjs/common';
 import { KronosAgentState, KronosAgentStateSchema } from './state';
 import { MODELS } from '../../constants/models.constants';
-import { formatSystemPrompt } from './prompts';
+import { formatSystemPrompt, formatFinalAnswerSystemPrompt } from './prompts';
 import { getContextValue, extractToolCalls } from './utils';
 import { getCurrentDate } from '@kronos/core';
 import { CheckpointerService } from '../../checkpointer';
@@ -253,7 +253,7 @@ export class KronosAgentBuilder {
   private createFinalAnswerNode() {
     return async (state: KronosAgentState, config: RunnableConfig) => {
       const todayDate = getCurrentDate();
-      const formattedPrompt = formatSystemPrompt(todayDate);
+      const formattedPrompt = formatFinalAnswerSystemPrompt(todayDate);
 
       const allMessages = state.messages;
 

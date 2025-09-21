@@ -1,7 +1,7 @@
-import { Injectable, Logger, BadRequestException } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Composio } from '@composio/core';
-import { Tool } from '@langchain/core/tools';
+import { Tool, DynamicStructuredTool } from '@langchain/core/tools';
 import { LangChainToolConverter } from '../agents/utils/langchain-tool-converter';
 
 /**
@@ -10,16 +10,33 @@ import { LangChainToolConverter } from '../agents/utils/langchain-tool-converter
  * This tool should be called only after the agent has gathered all necessary information
  * to fully answer the user's query.
  */
-class SignalContextReadinessTool extends Tool {
-  name = 'signalContextReadiness';
-  description =
-    "Call this tool only after you have gathered all the necessary information to fully answer the user's query";
-
-  async _call(): Promise<string> {
-    console.log(`${this.name} tool was called`);
-    return 'Context readiness signaled - agent has gathered all necessary information';
-  }
+export function createSignalContextReadinessTool() {
+  return new DynamicStructuredTool({
+    name: "signalContextReadiness",
+    description: "Call this tool only after you have gathered all the necessary information to fully answer the user's query",
+    schema: {
+      type: "object",
+      properties: {
+        called: {
+          type: "boolean",
+          description: "Indicates whether the context readiness has been called"
+        }
+      },
+      required: ["called"]
+    },
+    func: async ({ called }: { called: boolean }): Promise<string> => {
+      console.log(`signalContextReadiness tool was called with:`, { called });
+      
+      if (called) {
+        return 'Context readiness signaled - agent has gathered all necessary information';
+      } else {
+        return 'Context readiness not yet signaled';
+      }
+    }
+  });
 }
+
+export const SignalContextReadinessTool = createSignalContextReadinessTool();
 
 /**
  * Tools Provider Service
@@ -31,7 +48,7 @@ class SignalContextReadinessTool extends Tool {
 export class ToolsProviderService {
   private readonly logger = new Logger(ToolsProviderService.name);
   private readonly composio: Composio;
-  private readonly inhouseTools: Map<string, Tool> = new Map();
+  private readonly inhouseTools: Map<string, any> = new Map();
 
   constructor(private readonly configService: ConfigService) {
     const apiKey = this.configService.get<string>('COMPOSIO_API_KEY');
@@ -52,10 +69,9 @@ export class ToolsProviderService {
    */
   private initializeInhouseTools(): void {
     // Register in-house tools
-    const signalContextReadinessTool = new SignalContextReadinessTool();
     this.inhouseTools.set(
-      signalContextReadinessTool.name,
-      signalContextReadinessTool
+      SignalContextReadinessTool.name,
+      SignalContextReadinessTool
     );
 
     this.logger.log(`Initialized ${this.inhouseTools.size} in-house tools`);
