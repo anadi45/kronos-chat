@@ -37,14 +37,7 @@ const HomePage: React.FC<HomePageProps> = () => {
       {/* Header */}
       <header className="homepage-header">
         <div className="homepage-header-content">
-          <div className="homepage-logo-section">
-            <div className="homepage-logo">
-              <svg className="homepage-logo-icon" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M18 10c0 3.866-3.582 7-8 7a8.841 8.841 0 01-4.083-.98L2 17l1.338-3.123C2.493 12.767 2 11.434 2 10c0-3.866 3.582-7 8-7s8 3.134 8 7zM7 9H5v2h2V9zm8 0h-2v2h2V9zM9 9h2v2H9V9z" clipRule="evenodd" />
-              </svg>
-            </div>
-            <h1 className="homepage-title">Kronos AI</h1>
-          </div>
+          {/* Logo removed as requested */}
         </div>
       </header>
 
@@ -54,12 +47,7 @@ const HomePage: React.FC<HomePageProps> = () => {
           {/* Welcome Section */}
           <div className="homepage-welcome">
             <div className="homepage-welcome-content">
-              <div className="homepage-welcome-icon">
-                <svg className="homepage-welcome-icon-svg" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M18 10c0 3.866-3.582 7-8 7a8.841 8.841 0 01-4.083-.98L2 17l1.338-3.123C2.493 12.767 2 11.434 2 10c0-3.866 3.582-7 8-7s8 3.134 8 7zM7 9H5v2h2V9zm8 0h-2v2h2V9zM9 9h2v2H9V9z" clipRule="evenodd" />
-                </svg>
-              </div>
-              <h1 className="homepage-welcome-title">
+              <h1 className="homepage-welcome-title" style={{ paddingTop: '2rem' }}>
                 Welcome to Kronos AI
               </h1>
               <p className="homepage-welcome-description">
@@ -95,7 +83,7 @@ const HomePage: React.FC<HomePageProps> = () => {
           </div>
 
           {/* Quick Actions */}
-          <div className="homepage-quick-actions">
+          <div className="homepage-quick-actions" style={{ paddingBottom: '2rem' }}>
             <div className="homepage-quick-actions-card">
               <h2 className="homepage-quick-actions-title">Quick Start</h2>
               <p className="homepage-quick-actions-description">
