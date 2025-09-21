@@ -8,7 +8,7 @@ import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Composio } from '@composio/core';
-import { Integration } from '@kronos/core';
+import { Integration, Provider } from '@kronos/core';
 import { AVAILABLE_INTEGRATIONS } from '../constants/integrations.constants';
 import { User } from '../entities/user.entity';
 import { ComposioOAuth } from '../entities/composio-oauth.entity';
@@ -113,6 +113,7 @@ export class OAuthIntegrationsService {
     this.composio = new Composio({ apiKey });
     this.logger.log('OAuth integrations service initialized successfully');
   }
+
 
   /**
    * Creates an authentication configuration for a specific provider
@@ -472,10 +473,10 @@ export class OAuthIntegrationsService {
   async connectIntegration(userId: string, provider: string): Promise<any> {
     try {
       // For now, delegate to OAuth integrations service for OAuth connections
-      if (provider === 'gmail') {
+      if (provider === Provider.GMAIL) {
         const connectionResult = await this.createIntegrationConnection({
           userId,
-          provider: 'GMAIL',
+          provider: Provider.GMAIL,
         });
 
         // Transform the response to match frontend expectations

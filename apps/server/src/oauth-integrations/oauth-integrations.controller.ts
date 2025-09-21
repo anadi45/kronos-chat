@@ -14,6 +14,8 @@ import {
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { OAuthIntegrationsService } from './oauth-integrations.service';
+import { Provider } from '@kronos/core';
+import { ConnectIntegrationDto, DisconnectIntegrationDto, CreateIntegrationRequestDto } from '../dto/integration.dto';
 
 /**
  * Controller for managing OAuth integrations
@@ -47,10 +49,10 @@ export class OAuthIntegrationsController {
    */
   @Post(':provider/connect')
   async connectIntegration(
-    @Param('provider') provider: string,
+    @Param() params: ConnectIntegrationDto,
     @Request() req: any
   ): Promise<any> {
-    return this.oauthIntegrationsService.connectIntegration(req.user.id, provider);
+    return this.oauthIntegrationsService.connectIntegration(req.user.id, params.provider);
   }
 
   /**
@@ -63,10 +65,10 @@ export class OAuthIntegrationsController {
   @Delete(':provider/disconnect')
   @HttpCode(HttpStatus.NO_CONTENT)
   async disconnectIntegration(
-    @Param('provider') provider: string,
+    @Param() params: DisconnectIntegrationDto,
     @Request() req: any
   ): Promise<{ success: boolean }> {
-    return this.oauthIntegrationsService.disconnectIntegrationByProvider(req.user.id, provider);
+    return this.oauthIntegrationsService.disconnectIntegrationByProvider(req.user.id, params.provider);
   }
 
   /**
@@ -101,10 +103,9 @@ export class OAuthIntegrationsController {
    */
   @Post('connections')
   async createIntegrationConnection(
-    @Body(ValidationPipe) request: any,
+    @Body(ValidationPipe) request: CreateIntegrationRequestDto,
     @Request() req: any
   ): Promise<any> {
-
     return this.oauthIntegrationsService.createIntegrationConnection({
       ...request,
       userId: req.user.id,

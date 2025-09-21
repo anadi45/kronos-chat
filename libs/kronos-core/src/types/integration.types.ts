@@ -12,6 +12,10 @@ export enum AuthType {
   WEBHOOK = 'webhook',
 }
 
+export enum Provider {
+  GMAIL = 'GMAIL',
+}
+
 export interface Integration {
   id: string;
   name: string;

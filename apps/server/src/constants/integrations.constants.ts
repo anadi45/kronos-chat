@@ -1,8 +1,8 @@
-import { Integration, IntegrationStatusType, AuthType } from '@kronos/core';
+import { Integration, IntegrationStatusType, AuthType, Provider } from '@kronos/core';
 
 export const AVAILABLE_INTEGRATIONS: Integration[] = [
   {
-    id: 'gmail',
+    id: Provider.GMAIL,
     name: 'Gmail',
     description: 'Send and manage emails through Gmail integration',
     category: 'communication',
