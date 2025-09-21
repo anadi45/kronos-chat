@@ -96,7 +96,7 @@ export class ChatService {
           // Send initial progress update
           const initialProgressEvent =
             StreamEventFactory.createProgressUpdateEvent(
-              '🤖 Agent is analyzing your request...'
+              '🤖 Kronos is analyzing your request...'
             );
           controller.enqueue(
             new TextEncoder().encode(
@@ -117,7 +117,7 @@ export class ChatService {
             if (!progressUpdateSent && event.event === 'on_chain_start') {
               const processingProgressEvent =
                 StreamEventFactory.createProgressUpdateEvent(
-                  '🧠 Agent is thinking and planning the response...'
+                  '🧠 Kronos is thinking and planning the response...'
                 );
               controller.enqueue(
                 new TextEncoder().encode(
@@ -138,7 +138,7 @@ export class ChatService {
                   if (message.tool_calls && message.tool_calls.length > 0) {
                     const toolNames = message.tool_calls.map(tc => tc.name).join(', ');
                     const toolCallProgressEvent = StreamEventFactory.createProgressUpdateEvent(
-                      `🔧 Executing tools: ${toolNames}`
+                      `🔧 Kronos is executing tools: ${toolNames}`
                     );
                     controller.enqueue(
                       new TextEncoder().encode(
@@ -155,7 +155,7 @@ export class ChatService {
                 for (const message of toolMessages) {
                   if (message.name && message.content) {
                     const toolResultProgressEvent = StreamEventFactory.createProgressUpdateEvent(
-                      `✅ Tool ${message.name} completed successfully`
+                      `✅ Kronos completed tool: ${message.name}`
                     );
                     controller.enqueue(
                       new TextEncoder().encode(
@@ -180,7 +180,7 @@ export class ChatService {
                   if (assistantMessage === '') {
                     const generatingProgressEvent =
                       StreamEventFactory.createProgressUpdateEvent(
-                        '✍️ Generating response...'
+                        '✍️ Kronos is generating response...'
                       );
                     controller.enqueue(
                       new TextEncoder().encode(
