@@ -255,6 +255,17 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
     setHasMoreConversations(true);
   };
 
+  const handleStopStreaming = () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+    }
+    setIsStreaming(false);
+    setStreamingMessage('');
+    setStreamingMarkdown('');
+    setIsMarkdownMode(false);
+  };
+
   const handleSendMessage = async () => {
     if (!input.trim() || isStreaming) return;
 
@@ -390,23 +401,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
     }
   };
 
-  const handleStopStreaming = () => {
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-      setIsStreaming(false);
-      setStreamingMessage('');
-    }
-  };
 
-  const clearConversation = () => {
-    setMessages([]);
-    setCurrentConversationId('');
-    setStreamingMessage('');
-    setStreamingMarkdown('');
-    setIsMarkdownMode(false);
-    setError(null);
-    setShowConversations(false);
-  };
 
   const formatTimestamp = (timestamp: string) => {
     return new Date(timestamp).toLocaleTimeString([], { 
@@ -452,13 +447,6 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
               </svg>
-            </button>
-            <button
-              onClick={clearConversation}
-              disabled={isStreaming}
-              className="chat-control-btn clear"
-            >
-              Clear
             </button>
           </div>
         </div>
@@ -800,25 +788,24 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
             rows={1}
           />
           <button
-            onClick={handleSendMessage}
-            disabled={!input.trim() || isStreaming}
+            onClick={isStreaming ? handleStopStreaming : handleSendMessage}
+            disabled={!input.trim() && !isStreaming}
             className={`chat-send-btn ${isStreaming ? 'streaming' : ''}`}
           >
             {isStreaming ? (
-              <>
-                <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                <span>Sending...</span>
-              </>
+              <img 
+                src="/images/integrations/stop.png" 
+                alt="Stop" 
+                className="h-5 w-5"
+                style={{ objectFit: 'contain' }}
+              />
             ) : (
-              <>
-                <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
-                </svg>
-                <span>Send</span>
-              </>
+              <img 
+                src="/images/integrations/send.png" 
+                alt="Send" 
+                className="h-4 w-4"
+                style={{ objectFit: 'contain' }}
+              />
             )}
           </button>
         </div>
