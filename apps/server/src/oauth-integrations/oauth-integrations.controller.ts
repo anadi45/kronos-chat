@@ -136,6 +136,17 @@ export class OAuthIntegrationsController {
   }
 
   /**
+   * Retrieves all OAuth integrations for the authenticated user
+   *
+   * @param req - Express request object containing user information
+   * @returns Promise<any[]> - List of OAuth integrations
+   */
+  @Get('integrations')
+  async getUserOAuthIntegrations(@Request() req: any): Promise<any[]> {
+    return this.oauthIntegrationsService.getUserOAuthIntegrations(req.user.id);
+  }
+
+  /**
    * Disconnects a specific integration account
    *
    * @param connectionId - The connection identifier
