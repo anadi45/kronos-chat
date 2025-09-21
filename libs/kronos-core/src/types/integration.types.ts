@@ -14,10 +14,11 @@ export enum AuthType {
 
 export enum Provider {
   GMAIL = 'GMAIL',
+  GITHUB = 'GITHUB'
 }
 
 export interface Integration {
-  id: string;
+  id: Provider;
   name: string;
   description: string;
   category: string;
@@ -30,20 +31,20 @@ export interface Integration {
 
 
 export interface ConnectIntegrationRequest {
-  provider: string;
+  provider: Provider;
 }
 
 export interface ConnectIntegrationResponse {
   success: boolean;
   message?: string;
   authUrl?: string;
-  provider: string;
+  provider: Provider;
   status: IntegrationStatusType;
   connectionId?: string;
 }
 
 export interface DisconnectIntegrationRequest {
-  provider: string;
+  provider: Provider;
 }
 
 export interface DisconnectIntegrationResponse {
@@ -52,7 +53,7 @@ export interface DisconnectIntegrationResponse {
 }
 
 export interface IntegrationDetails {
-  id: string;
+  id: Provider;
   name: string;
   description: string;
   category: string;
