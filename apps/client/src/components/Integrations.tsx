@@ -310,7 +310,7 @@ const Integrations: React.FC = () => {
       const result = await apiService.connectIntegration(provider);
 
       if (result.success) {
-        // If there's an auth URL, redirect to it for OAuth flow
+        // If there's an auth URL, open it in a new tab for OAuth flow
         if (result.authUrl) {
           // Store the connection ID for later verification
           if (result.connectionId) {
@@ -319,7 +319,7 @@ const Integrations: React.FC = () => {
               result.connectionId
             );
           }
-          window.location.href = result.authUrl;
+          window.open(result.authUrl, '_blank');
         } else {
           // Refresh integrations if no redirect needed
           await loadIntegrations();
