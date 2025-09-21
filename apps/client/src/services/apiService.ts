@@ -313,6 +313,15 @@ class ApiService {
   }
 
   /**
+   * Delete authentication configuration for a specific provider (following Composio API pattern)
+   * DELETE /oauth-integrations/auth-configs/:provider
+   */
+  async deleteAuthConfigForProvider(provider: string): Promise<{ success: boolean }> {
+    const response = await this.client.delete(`/oauth-integrations/auth-configs/${provider}`);
+    return response.data;
+  }
+
+  /**
    * Get available tools via OAuth integrations
    * GET /oauth-integrations/tools
    */
