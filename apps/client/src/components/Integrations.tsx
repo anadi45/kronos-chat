@@ -150,8 +150,8 @@ const IntegrationCard: React.FC<IntegrationCardProps> = ({
       </div>
       {integration.isConnected && integration.connectedAt && (
         <div className="integration-connected-info">
-          <p className="text-xs text-gray-400 mt-2">
-            Connected on {new Date(integration.connectedAt).toLocaleDateString()}
+          <p>
+            Connected {new Date(integration.connectedAt).toLocaleDateString()} at {new Date(integration.connectedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
           </p>
         </div>
       )}

@@ -1675,6 +1675,7 @@ input:focus, textarea:focus, select:focus {
   display: flex;
   flex-direction: column;
   gap: 1rem;
+  min-height: 280px; /* Ensure consistent height */
 }
 
 .integration-card.connected {
@@ -1710,13 +1711,17 @@ input:focus, textarea:focus, select:focus {
   background: rgba(16, 185, 129, 0.1);
   border: 1px solid rgba(16, 185, 129, 0.2);
   border-radius: 0.5rem;
-  padding: 0.75rem;
-  margin-top: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  margin-top: auto; /* Push to bottom of card */
+  flex-shrink: 0; /* Prevent shrinking */
 }
 
 .integration-connected-info p {
   color: rgba(16, 185, 129, 0.8) !important;
   font-weight: 500;
+  font-size: 0.75rem;
+  line-height: 1.2;
+  margin: 0;
 }
 
 .integration-card::before {
