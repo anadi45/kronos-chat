@@ -32,6 +32,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
   const [conversationToDelete, setConversationToDelete] = useState<Conversation | null>(null);
   const [isDeletingConversation, setIsDeletingConversation] = useState(false);
+  const [progressUpdate, setProgressUpdate] = useState<string | null>(null);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -281,6 +282,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
     setError(null);
     setIsStreaming(true);
     setStreamingMessage('');
+    setProgressUpdate(null);
 
     try {
       // Create stream request - only message, no conversationId or history for new conversations
@@ -341,6 +343,9 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
                     setIsMarkdownMode(true);
                     break;
                     
+                  case StreamEventType.PROGRESS_UPDATE:
+                    setProgressUpdate((parsed.data as any).message || '');
+                    break;
                     
                   case StreamEventType.END: {
                     // Finalize the assistant message
@@ -351,6 +356,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
                     };
                     setMessages(prev => [...prev, finalMessage]);
                     setStreamingMessage('');
+                    setProgressUpdate(null);
                     setIsStreaming(false);
                     console.log('Stream ended:', { 
                       conversationId, 
@@ -693,6 +699,20 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
           </div>
         ))}
 
+        {/* Progress Update */}
+        {isStreaming && progressUpdate && (
+          <div className="chat-message assistant">
+            <div className="chat-loading">
+              <div className="chat-loading-dots">
+                <div className="chat-loading-dot"></div>
+                <div className="chat-loading-dot"></div>
+                <div className="chat-loading-dot"></div>
+              </div>
+              <span className="text-sm text-gray-300">{progressUpdate}</span>
+            </div>
+          </div>
+        )}
+
         {/* Streaming Message */}
         {isStreaming && (streamingMessage || streamingMarkdown) && (
           <div className="chat-message assistant">
@@ -750,7 +770,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
         )}
 
         {/* Loading indicator */}
-        {isStreaming && !streamingMessage && (
+        {isStreaming && !streamingMessage && !progressUpdate && (
           <div className="chat-message assistant">
             <div className="chat-loading">
               <div className="chat-loading-dots">

@@ -3,6 +3,7 @@ export enum StreamEventType {
   END = 'end',
   TOKEN = 'token',
   MARKDOWN_TOKEN = 'markdown_token',
+  PROGRESS_UPDATE = 'progress_update',
 }
 
 export abstract class StreamEvent {
@@ -84,6 +85,20 @@ export class MarkdownTokenEvent extends StreamEvent {
   }
 }
 
+export class ProgressUpdateEvent extends StreamEvent {
+  constructor(public readonly message: string) {
+    super(StreamEventType.PROGRESS_UPDATE, { message });
+  }
+
+  serialize(): string {
+    return `data: ${JSON.stringify({
+      type: this.type,
+      data: this.data,
+      timestamp: this.timestamp,
+    })}\n\n`;
+  }
+}
+
 export class StreamEventFactory {
   static createStartEvent(conversationId: string, isNewConversation: boolean): StartEvent {
     return new StartEvent(conversationId, isNewConversation);
@@ -102,6 +117,10 @@ export class StreamEventFactory {
     markdownType?: 'text' | 'code' | 'bold' | 'italic' | 'link' | 'list' | 'quote'
   ): MarkdownTokenEvent {
     return new MarkdownTokenEvent(token, markdownType);
+  }
+
+  static createProgressUpdateEvent(message: string): ProgressUpdateEvent {
+    return new ProgressUpdateEvent(message);
   }
 }
 
