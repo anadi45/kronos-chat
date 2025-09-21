@@ -228,12 +228,24 @@ const Integrations: React.FC = () => {
     string | null
   >(null);
   const [showDisconnectModal, setShowDisconnectModal] = useState(false);
-  const [providerToDisconnect, setProviderToDisconnect] = useState<string | null>(null);
+  const [providerToDisconnect, setProviderToDisconnect] = useState<
+    string | null
+  >(null);
 
   useEffect(() => {
     loadIntegrations();
     handleOAuthCallback();
   }, []);
+
+  // Focus modal when it opens
+  useEffect(() => {
+    if (showDisconnectModal) {
+      const modal = document.querySelector('.modal-content');
+      if (modal) {
+        (modal as HTMLElement).focus();
+      }
+    }
+  }, [showDisconnectModal]);
 
   const handleOAuthCallback = () => {
     // Check if we're returning from an OAuth flow
@@ -338,21 +350,30 @@ const Integrations: React.FC = () => {
       setShowDisconnectModal(false);
 
       // Use the updated disconnect method that follows Composio auth-configs delete API pattern
-      const result = await apiService.disconnectIntegration(providerToDisconnect);
+      const result = await apiService.disconnectIntegration(
+        providerToDisconnect
+      );
 
       if (result.success) {
-        setSuccess(`Successfully disconnected from ${providerToDisconnect}`);
+        setSuccess(
+          `${providerToDisconnect} has been successfully disconnected. Your AI assistant will no longer have access to this integration.`
+        );
         // Refresh integrations to reflect the disconnection
         await loadIntegrations();
-        
-        // Clear success message after 3 seconds
-        setTimeout(() => setSuccess(null), 3000);
+
+        // Clear success message after 5 seconds
+        setTimeout(() => setSuccess(null), 5000);
       } else {
-        setError(result.message || 'Failed to disconnect integration');
+        setError(
+          result.message ||
+            `Unable to disconnect from ${providerToDisconnect}. Please try again or contact support if the issue persists.`
+        );
       }
     } catch (error) {
       console.error('Error disconnecting integration:', error);
-      setError('Failed to disconnect integration. Please try again.');
+      setError(
+        `Unable to disconnect from ${providerToDisconnect}. This might be due to a network issue or server problem. Please try again in a moment.`
+      );
     } finally {
       setDisconnectingProvider(null);
       setProviderToDisconnect(null);
@@ -362,6 +383,20 @@ const Integrations: React.FC = () => {
   const handleCancelDisconnect = () => {
     setShowDisconnectModal(false);
     setProviderToDisconnect(null);
+  };
+
+  // Handle keyboard navigation for modal
+  const handleModalKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Escape' && !disconnectingProvider) {
+      handleCancelDisconnect();
+    }
+  };
+
+  // Handle Enter key on disconnect button
+  const handleDisconnectKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !disconnectingProvider) {
+      handleConfirmDisconnect();
+    }
   };
 
   if (loading) {
@@ -508,53 +543,61 @@ const Integrations: React.FC = () => {
 
       {/* Disconnect Confirmation Modal */}
       {showDisconnectModal && (
-        <div className="modal-overlay">
-          <div className="modal-content">
+        <div
+          className="modal-overlay"
+          onClick={(e) => {
+            if (e.target === e.currentTarget && !disconnectingProvider) {
+              handleCancelDisconnect();
+            }
+          }}
+        >
+          <div
+            className="modal-content"
+            onKeyDown={handleModalKeyDown}
+            role="dialog"
+            aria-labelledby="disconnect-modal-title"
+            aria-describedby="disconnect-modal-description"
+            tabIndex={-1}
+          >
             <div className="modal-header">
-              <h3 className="modal-title">Confirm Disconnection</h3>
+              <h3 id="disconnect-modal-title" className="modal-title">
+                Confirm Disconnection
+              </h3>
               <button
                 className="modal-close"
                 onClick={handleCancelDisconnect}
                 disabled={disconnectingProvider !== null}
+                aria-label="Close disconnect confirmation"
               >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                <svg
+                  className="w-6 h-6"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
                 </svg>
               </button>
             </div>
-            <div className="modal-body">
-              <div className="flex items-center mb-4">
-                <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mr-4">
-                  <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                  </svg>
-                </div>
+            <div id="disconnect-modal-description" className="modal-body">
+              {/* Integration Icon and Header */}
+              <div className="flex items-center mb-6">
+                <div className="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center mr-4 border border-red-500/20"></div>
                 <div>
-                  <h4 className="text-lg font-semibold text-gray-900">
+                  <h4 className="text-xl font-semibold text-white mb-1">
                     Disconnect {providerToDisconnect}?
                   </h4>
-                  <p className="text-gray-600">
-                    This will remove your {providerToDisconnect} integration and revoke access.
+                  <p className="text-gray-300 text-sm">
+                    This will remove your {providerToDisconnect} integration and
+                    revoke access. This action cannot be undone. You will need
+                    to reconnect your {providerToDisconnect} account to use it
+                    again.
                   </p>
-                </div>
-              </div>
-              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                <div className="flex">
-                  <div className="flex-shrink-0">
-                    <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                    </svg>
-                  </div>
-                  <div className="ml-3">
-                    <h3 className="text-sm font-medium text-yellow-800">
-                      Warning
-                    </h3>
-                    <div className="mt-2 text-sm text-yellow-700">
-                      <p>
-                        This action cannot be undone. You will need to reconnect your {providerToDisconnect} account to use this integration again.
-                      </p>
-                    </div>
-                  </div>
                 </div>
               </div>
             </div>
@@ -563,13 +606,21 @@ const Integrations: React.FC = () => {
                 className="btn btn-secondary"
                 onClick={handleCancelDisconnect}
                 disabled={disconnectingProvider !== null}
+                aria-label="Cancel disconnection"
               >
                 Cancel
               </button>
               <button
                 className="btn btn-danger"
                 onClick={handleConfirmDisconnect}
+                onKeyDown={handleDisconnectKeyDown}
                 disabled={disconnectingProvider !== null}
+                aria-label={
+                  disconnectingProvider
+                    ? `Disconnecting from ${providerToDisconnect}...`
+                    : `Disconnect from ${providerToDisconnect}`
+                }
+                autoFocus
               >
                 {disconnectingProvider ? (
                   <>
@@ -577,6 +628,7 @@ const Integrations: React.FC = () => {
                       className="animate-spin w-4 h-4 mr-2"
                       fill="none"
                       viewBox="0 0 24 24"
+                      aria-hidden="true"
                     >
                       <circle
                         className="opacity-25"

@@ -265,9 +265,6 @@ export class OAuthIntegrationsService {
         await this.userRepository.update(userId, { composioAuthConfigId: null });
       }
 
-      // Also delete the connected account
-      await this.composio.connectedAccounts.delete(connectionId);
-
       this.logger.log(`Integration ${connectionId} disconnected successfully`);
       return { success: true };
     } catch (error) {
