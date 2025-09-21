@@ -417,104 +417,143 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
 
   return (
     <div className="chat-container">
-      {/* Chat Controls */}
-      <div className="chat-header">
-        <div className="chat-header-left">
-          <button
-            onClick={() => setShowConversations(!showConversations)}
-            className="chat-control-btn"
-            title="Conversations"
-          >
-            📋
-          </button>
-          <p className="text-sm text-gray-300">
-            {currentConversationId ? `Conversation: ${currentConversationId.slice(-8)}` : 'New conversation'}
-          </p>
-        </div>
-        <div className="chat-controls">
-          {isStreaming && (
+      {/* Chat Header Section */}
+      <div className="chat-header-section">
+        <div className="chat-header">
+          <div className="chat-header-left">
             <button
-              onClick={handleStopStreaming}
-              className="chat-control-btn stop"
+              onClick={() => setShowConversations(!showConversations)}
+              className="chat-control-btn"
+              title="Conversations"
             >
-              Stop
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
             </button>
-          )}
-          <button
-            onClick={startNewConversation}
-            disabled={isStreaming}
-            className="chat-control-btn"
-            title="New conversation"
-          >
-            ➕
-          </button>
-          <button
-            onClick={clearConversation}
-            disabled={isStreaming}
-            className="chat-control-btn clear"
-          >
-            Clear
-          </button>
+            <p className="text-sm text-gray-300">
+              {currentConversationId ? `Conversation: ${currentConversationId.slice(-8)}` : 'New conversation'}
+            </p>
+          </div>
+          <div className="chat-controls">
+            {isStreaming && (
+              <button
+                onClick={handleStopStreaming}
+                className="chat-control-btn stop"
+              >
+                Stop
+              </button>
+            )}
+            <button
+              onClick={startNewConversation}
+              disabled={isStreaming}
+              className="chat-control-btn"
+              title="New conversation"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+            </button>
+            <button
+              onClick={clearConversation}
+              disabled={isStreaming}
+              className="chat-control-btn clear"
+            >
+              Clear
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* Conversations Modal */}
+      {/* Past Conversations Section */}
       {showConversations && (
-        <div 
-          className="conversations-modal-overlay"
-          onClick={(e) => {
-            if (e.target === e.currentTarget) {
-              setShowConversations(false);
-            }
-          }}
-        >
+        <div className="conversations-section">
+          <div 
+            className="conversations-modal-overlay"
+            onClick={(e) => {
+              if (e.target === e.currentTarget) {
+                setShowConversations(false);
+              }
+            }}
+          >
           <div className="conversations-modal">
             <div className="conversations-modal-header">
-              <h3>Past Conversations</h3>
+              <div className="conversations-header-content">
+                <h3>Past Conversations</h3>
+                <p className="conversations-subtitle">
+                  {conversations.length} conversation{conversations.length !== 1 ? 's' : ''} found
+                </p>
+              </div>
               <button
                 onClick={() => setShowConversations(false)}
                 className="conversations-modal-close"
+                aria-label="Close conversations"
               >
-                ✕
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
               </button>
             </div>
             <div className="conversations-modal-content">
               <div className="conversations-list" ref={conversationsListRef}>
-                <button
-                  onClick={startNewConversation}
-                  className={`conversation-item ${!currentConversationId ? 'active' : ''}`}
-                >
-                  <div className="conversation-title">New Conversation</div>
-                  <div className="conversation-time">Start fresh</div>
-                </button>
-                {conversations.map((conversation) => (
-                  <div
-                    key={conversation.id}
-                    className={`conversation-item ${currentConversationId === conversation.id ? 'active' : ''}`}
-                  >
-                    <button
-                      onClick={() => {
-                        loadConversationMessages(conversation.id);
-                        setShowConversations(false);
-                      }}
-                      className="conversation-content"
-                    >
-                      <div className="conversation-title">
-                        {conversation.title || `Conversation ${conversation.id.slice(-8)}`}
-                      </div>
-                      <div className="conversation-time">
-                        {new Date(conversation.updatedAt).toLocaleDateString()}
-                      </div>
-                    </button>
-                    <button
-                      onClick={(e) => showDeleteConfirmationModal(conversation, e)}
-                      className="conversation-delete-btn"
-                      title="Delete conversation"
-                    >
-                      🗑️
-                    </button>
+                {/* Conversations List */}
+                {conversations.length === 0 && !isLoadingConversations ? (
+                  <div className="conversations-empty">
+                    <div className="conversations-empty-icon">
+                      <svg className="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                      </svg>
+                    </div>
+                    <h4 className="conversations-empty-title">No conversations yet</h4>
+                    <p className="conversations-empty-description">
+                      Start chatting to see your conversation history here
+                    </p>
                   </div>
-                ))}
+                ) : (
+                  conversations.map((conversation) => (
+                    <div
+                      key={conversation.id}
+                      className={`conversation-item ${currentConversationId === conversation.id ? 'active' : ''}`}
+                    >
+                      <button
+                        onClick={() => {
+                          loadConversationMessages(conversation.id);
+                          setShowConversations(false);
+                        }}
+                        className="conversation-content"
+                      >
+                        <div className="conversation-icon">
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                          </svg>
+                        </div>
+                        <div className="conversation-details">
+                          <div className="conversation-title">
+                            {conversation.title || `Conversation ${conversation.id.slice(-8)}`}
+                          </div>
+                          <div className="conversation-time">
+                            {new Date(conversation.updatedAt).toLocaleDateString('en-US', {
+                              month: 'short',
+                              day: 'numeric',
+                              year: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })}
+                          </div>
+                        </div>
+                      </button>
+                      <button
+                        onClick={(e) => showDeleteConfirmationModal(conversation, e)}
+                        className="conversation-delete-btn"
+                        title="Delete conversation"
+                        aria-label="Delete conversation"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                      </button>
+                    </div>
+                  ))
+                )}
                 
                 {/* Loading indicator */}
                 {isLoadingConversations && (
@@ -527,12 +566,15 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
                 {/* End of list indicator */}
                 {!hasMoreConversations && conversations.length > 0 && (
                   <div className="conversations-end">
-                    <span>No more conversations</span>
+                    <div className="conversations-end-line"></div>
+                    <span>You've reached the end</span>
+                    <div className="conversations-end-line"></div>
                   </div>
                 )}
               </div>
             </div>
           </div>
+        </div>
         </div>
       )}
 
@@ -594,7 +636,6 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
       <div className="chat-messages">
         {messages.length === 0 && !streamingMessage && (
           <div className="chat-welcome">
-            <div className="chat-welcome-icon">💬</div>
             <h3>Welcome to Kronos AI</h3>
             <p>
               Start a conversation with our AI assistant. Ask questions, get help, or just chat!
@@ -761,7 +802,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
           <button
             onClick={handleSendMessage}
             disabled={!input.trim() || isStreaming}
-            className="chat-send-btn"
+            className={`chat-send-btn ${isStreaming ? 'streaming' : ''}`}
           >
             {isStreaming ? (
               <>
@@ -773,8 +814,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
               </>
             ) : (
               <>
-                <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" />
+                <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
                 </svg>
                 <span>Send</span>
               </>

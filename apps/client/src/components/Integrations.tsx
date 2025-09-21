@@ -2,6 +2,52 @@ import React, { useState, useEffect } from 'react';
 import { apiService } from '../services/apiService';
 import type { Integration } from '@kronos/core';
 
+interface IntegrationIconProps {
+  integrationId: string;
+  className?: string;
+}
+
+const IntegrationIcon: React.FC<IntegrationIconProps> = ({ integrationId, className = "w-8 h-8" }) => {
+  // https://icon-icons.com/
+  const getImageSrc = (id: string) => {
+    switch (id.toLowerCase()) {
+      case 'slack':
+        return '/images/integrations/slack.png';
+      case 'discord':
+        return '/images/integrations/discord.png';
+      case 'github':
+        return '/images/integrations/github.png';
+      case 'notion':
+        return '/images/integrations/notion.png';
+      case 'gmail':
+        return '/images/integrations/gmail.png';
+      case 'google_calendar':
+        return '/images/integrations/google-calendar.png';
+      case 'google_drive':
+        return '/images/integrations/google-drive.png';
+      case 'trello':
+        return '/images/integrations/trello.png';
+      default:
+        return '/images/integrations/default.png';
+    }
+  };
+
+  return (
+    <div className="integration-icon-wrapper">
+      <img 
+        src={getImageSrc(integrationId)} 
+        alt={`${integrationId} icon`}
+        className={className}
+        style={{ objectFit: 'contain' }}
+        onError={(e) => {
+          // Fallback to a default icon if image fails to load
+          e.currentTarget.src = '/images/integrations/default.png';
+        }}
+      />
+    </div>
+  );
+};
+
 interface IntegrationCardProps {
   integration: Integration;
   onConnect: (provider: string) => Promise<void>;
@@ -38,9 +84,8 @@ const IntegrationCard: React.FC<IntegrationCardProps> = ({
     if (integration.status === 'coming_soon' || integration.status === 'beta') {
       return (
         <button 
-          className="btn btn-primary" 
+          className="btn btn-integration" 
           disabled
-          style={{ opacity: 0.5, cursor: 'not-allowed' }}
         >
           Coming Soon
         </button>
@@ -71,7 +116,7 @@ const IntegrationCard: React.FC<IntegrationCardProps> = ({
 
     return (
       <button 
-        className="btn btn-primary"
+        className="btn btn-integration"
         onClick={() => onConnect(integration.id)}
         disabled={isConnecting}
       >
@@ -91,13 +136,11 @@ const IntegrationCard: React.FC<IntegrationCardProps> = ({
   };
 
   return (
-    <div className="integration-card">
-      <div className="integration-icon">
-        <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
-          <path d={integration.icon} />
-        </svg>
+    <div className={`integration-card ${integration.isConnected ? 'connected' : ''}`}>
+      <div className="integration-header">
+        <IntegrationIcon integrationId={integration.id} className="w-8 h-8" />
+        <h3 className="integration-title">{integration.name}</h3>
       </div>
-      <h3 className="integration-title">{integration.name}</h3>
       <p className="integration-description">
         {integration.description}
       </p>
@@ -107,8 +150,8 @@ const IntegrationCard: React.FC<IntegrationCardProps> = ({
       </div>
       {integration.isConnected && integration.connectedAt && (
         <div className="integration-connected-info">
-          <p className="text-xs text-gray-400 mt-2">
-            Connected on {new Date(integration.connectedAt).toLocaleDateString()}
+          <p>
+            Connected {new Date(integration.connectedAt).toLocaleDateString()} at {new Date(integration.connectedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
           </p>
         </div>
       )}
@@ -172,19 +215,9 @@ const Integrations: React.FC = () => {
       setLoading(true);
       setError(null);
 
-      const [availableIntegrations, connectedIntegrationsData] = await Promise.all([
-        apiService.getAvailableIntegrations(),
-        apiService.getConnectedIntegrations(),
-      ]);
-
-      // Mark connected integrations
-      const integrationsWithStatus = availableIntegrations.map(integration => ({
-        ...integration,
-        isConnected: connectedIntegrationsData.some(connected => connected.id === integration.id),
-        connectedAt: connectedIntegrationsData.find(connected => connected.id === integration.id)?.connectedAt,
-      }));
-
-      setIntegrations(integrationsWithStatus);
+      // Single API call that returns all integrations with connection status
+      const integrations = await apiService.getAvailableIntegrations();
+      setIntegrations(integrations);
     } catch (error) {
       console.error('Error loading integrations:', error);
       setError('Failed to load integrations. Please try again.');
@@ -251,12 +284,28 @@ const Integrations: React.FC = () => {
     return (
       <div className="integrations-page">
         <div className="page-header">
-          <h1 className="text-2xl font-bold text-white mb-2">Integrations</h1>
           <p className="text-gray-300">Connect Kronos with your favorite tools and services</p>
         </div>
         <div className="page-content">
-          <div className="flex justify-center items-center h-64">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+          <div className="integrations-loader">
+            <div className="integrations-loader-spinner"></div>
+            <div className="integrations-loader-text">Loading integrations...</div>
+            <div className="integrations-loader-subtext">Fetching available services and connection status</div>
+          </div>
+          
+          <div className="skeleton-grid">
+            {[...Array(6)].map((_, index) => (
+              <div key={index} className="skeleton-card">
+                <div className="skeleton-icon"></div>
+                <div className="skeleton-title"></div>
+                <div className="skeleton-description"></div>
+                <div className="skeleton-description"></div>
+                <div className="skeleton-status">
+                  <div className="skeleton-badge"></div>
+                  <div className="skeleton-button"></div>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </div>
@@ -266,7 +315,6 @@ const Integrations: React.FC = () => {
   return (
     <div className="integrations-page">
       <div className="page-header">
-        <h1 className="text-2xl font-bold text-white mb-2">Integrations</h1>
         <p className="text-gray-300">Connect Kronos with your favorite tools and services</p>
       </div>
 
@@ -326,7 +374,7 @@ const Integrations: React.FC = () => {
                 <svg className="w-5 h-5 text-green-400 mr-2" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                 </svg>
-                <span>Real-time synchronization</span>
+                <span>Real-time data</span>
               </div>
               <div className="feature-item">
                 <svg className="w-5 h-5 text-green-400 mr-2" fill="currentColor" viewBox="0 0 20 20">

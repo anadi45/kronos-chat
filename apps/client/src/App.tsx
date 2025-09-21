@@ -8,6 +8,7 @@ import Layout from './components/Layout'
 import AuthWrapper from './components/AuthWrapper'
 import LoginForm from './components/LoginForm'
 import SignupForm from './components/SignupForm'
+import { ThemeProvider } from './contexts/ThemeContext'
 import { type UserProfile } from '@kronos/core'
 
 interface AppProps {
@@ -96,7 +97,7 @@ function App({ user, onLogout, isAuthenticated }: AppProps) {
           element={
             isAuthenticated ? (
               <Layout user={user} onLogout={onLogout}>
-                <Settings />
+                <Settings user={user} />
               </Layout>
             ) : (
               <Navigate to="/login" replace />
@@ -116,11 +117,13 @@ function App({ user, onLogout, isAuthenticated }: AppProps) {
   )
 }
 
-// Wrapped App component with authentication
+// Wrapped App component with authentication and theme
 const WrappedApp = () => (
-  <AuthWrapper>
-    <App />
-  </AuthWrapper>
+  <ThemeProvider>
+    <AuthWrapper>
+      <App />
+    </AuthWrapper>
+  </ThemeProvider>
 );
 
 export default WrappedApp

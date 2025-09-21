@@ -27,37 +27,28 @@ export class OAuthIntegrationsController {
   ) {}
 
   /**
-   * Get all available integrations
-   *
-   * @returns Promise<any[]> - List of available integrations
-   */
-  @Get()
-  async getAvailableIntegrations(): Promise<any[]> {
-    return this.oauthIntegrationsService.getAvailableIntegrations();
-  }
-
-  /**
-   * Get user's connected integrations
+   * Get all available integrations with connection status for the user
    *
    * @param req - Express request object containing user information
-   * @returns Promise<any[]> - List of user's connected integrations
+   * @returns Promise<any[]> - List of available integrations with connection status
    */
-  @Get('connected')
-  async getConnectedIntegrations(@Request() req: any): Promise<any[]> {
-    return this.oauthIntegrationsService.getConnectedIntegrations(req.user.id);
+  @Get()
+  async getAvailableIntegrations(@Request() req: any): Promise<any[]> {
+    return this.oauthIntegrationsService.getAvailableIntegrations(req.user.id);
   }
 
   /**
    * Get integration status and configuration
    *
+   * @param req - Express request object containing user information
    * @returns Promise<{ configured: boolean; integrations: any[] }> - Integration status
    */
   @Get('status')
-  async getIntegrationStatus(): Promise<{
+  async getIntegrationStatus(@Request() req: any): Promise<{
     configured: boolean;
     integrations: any[];
   }> {
-    return this.oauthIntegrationsService.getIntegrationStatus();
+    return this.oauthIntegrationsService.getIntegrationStatus(req.user.id);
   }
 
   /**

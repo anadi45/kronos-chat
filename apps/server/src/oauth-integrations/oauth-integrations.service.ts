@@ -6,23 +6,9 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Composio } from '@composio/core';
+import { Integration } from '@kronos/core';
 import { AVAILABLE_INTEGRATIONS } from '../constants/integrations.constants';
 
-/**
- * Integration interface
- */
-export interface Integration {
-  id: string;
-  name: string;
-  description: string;
-  icon: string;
-  category: string;
-  status: 'available' | 'coming_soon' | 'beta';
-  capabilities: string[];
-  authType: 'oauth' | 'api_key' | 'webhook';
-  isConnected?: boolean;
-  connectedAt?: string;
-}
 
 /**
  * Integration status interface
@@ -351,61 +337,51 @@ export class OAuthIntegrationsService {
   }
 
   /**
-   * Get all available integrations
+   * Get all available integrations with connection status for a user
    */
-  getAvailableIntegrations(): Integration[] {
-    return AVAILABLE_INTEGRATIONS;
-  }
-
-  /**
-   * Get user's connected integrations
-   */
-  async getConnectedIntegrations(userId: string): Promise<Integration[]> {
+  async getAvailableIntegrations(userId: string): Promise<Integration[]> {
     try {
       // Get connected accounts from OAuth integrations service
       const connectedAccounts = await this.getConnectedAccounts(userId);
-      console.dir(connectedAccounts, { depth: null });
-      if (connectedAccounts.length === 0) {
-        return [];
-      }
-
+      
       // Get all available integrations
-      const allIntegrations = this.getAvailableIntegrations();
+      const allIntegrations = AVAILABLE_INTEGRATIONS;
 
-      // Map connected accounts to integrations
-      const connectedIntegrations = allIntegrations.map((integration) => {
-        const connectedAccount = connectedAccounts.find(
-          (account) => account.provider.toLowerCase() === integration.id
-        );
-
-        if (connectedAccount) {
-          return {
-            ...integration,
-            isConnected: true,
-            connectedAt: connectedAccount.connectedAt,
-            status: 'available' as const,
-          };
-        }
-
-        return integration;
+      // Create a map of connected integrations for quick lookup
+      const connectedMap = new Map();
+      connectedAccounts.forEach(account => {
+        connectedMap.set(account.provider.toLowerCase(), account);
       });
 
-      return connectedIntegrations;
+      // Mark connection status for each integration
+      const integrationsWithStatus = allIntegrations.map(integration => {
+        const connectedAccount = connectedMap.get(integration.id);
+        
+        return {
+          ...integration,
+          isConnected: !!connectedAccount,
+          connectedAt: connectedAccount?.connectedAt,
+        };
+      });
+
+      return integrationsWithStatus;
     } catch (error) {
       this.logger.error(
-        `Failed to get connected integrations for user ${userId}:`,
+        `Failed to get integrations for user ${userId}:`,
         error
       );
-      return [];
+      // Return integrations without connection status if there's an error
+      return AVAILABLE_INTEGRATIONS;
     }
   }
+
 
   /**
    * Get integration status and configuration
    */
-  async getIntegrationStatus(): Promise<IntegrationStatus> {
+  async getIntegrationStatus(userId: string): Promise<IntegrationStatus> {
     const isConfigured = this.isServiceConfigured();
-    const integrations = this.getAvailableIntegrations();
+    const integrations = await this.getAvailableIntegrations(userId);
 
     return {
       configured: isConfigured,
@@ -489,7 +465,7 @@ export class OAuthIntegrationsService {
    * Get integration details and capabilities
    */
   async getIntegrationDetails(provider: string): Promise<Integration | null> {
-    const integrations = this.getAvailableIntegrations();
+    const integrations = AVAILABLE_INTEGRATIONS;
     return (
       integrations.find((integration) => integration.id === provider) || null
     );

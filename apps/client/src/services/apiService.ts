@@ -237,14 +237,6 @@ class ApiService {
     return response.data;
   }
 
-  /**
-   * Get user's connected integrations
-   * GET /oauth-integrations/connected
-   */
-  async getConnectedIntegrations(): Promise<Integration[]> {
-    const response = await this.client.get('/oauth-integrations/connected');
-    return response.data;
-  }
 
   /**
    * Get integration status and configuration
