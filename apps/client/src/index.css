@@ -3040,8 +3040,9 @@ input:checked + .toggle-slider:before {
   display: flex;
   align-items: center;
   justify-content: center;
-  position: relative;
+  z-index: 10;
   overflow: hidden;
+  margin-top: 0.125rem;
 }
 
 .conversation-delete-btn::before {
