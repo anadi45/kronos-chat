@@ -279,8 +279,6 @@ export class KronosAgentBuilder {
         config
       );
 
-      console.log('Final response:', finalResponse);
-
       const result = finalResponse.content as string;
 
       this.logger.log('Final answer generated successfully');
