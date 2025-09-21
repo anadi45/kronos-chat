@@ -14,7 +14,15 @@ export enum AuthType {
 
 export enum Provider {
   GMAIL = 'GMAIL',
-  GITHUB = 'GITHUB'
+  GITHUB = 'GITHUB',
+  NOTION = 'NOTION',
+  SLACK = 'SLACK',
+  TWITTER = 'TWITTER',
+  LINKEDIN = 'LINKEDIN',
+  REDDIT = 'REDDIT',
+  GOOGLE_DRIVE = 'GOOGLEDRIVE',
+  GOOGLE_CALENDAR = 'GOOGLECALENDAR',
+  INSTAGRAM = 'INSTAGRAM',
 }
 
 export interface Integration {
@@ -28,7 +36,6 @@ export interface Integration {
   isConnected?: boolean;
   connectedAt?: string;
 }
-
 
 export interface ConnectIntegrationRequest {
   provider: Provider;
