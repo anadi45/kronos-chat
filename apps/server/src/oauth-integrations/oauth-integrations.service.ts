@@ -5,9 +5,12 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import { Composio } from '@composio/core';
 import { Integration } from '@kronos/core';
 import { AVAILABLE_INTEGRATIONS } from '../constants/integrations.constants';
+import { User } from '../entities/user.entity';
 
 
 /**
@@ -98,7 +101,11 @@ export interface ConnectedAccount {
 export class OAuthIntegrationsService {
   private readonly logger = new Logger(OAuthIntegrationsService.name);
   private readonly composio: Composio;
-  constructor(private readonly configService: ConfigService) {
+  constructor(
+    private readonly configService: ConfigService,
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>
+  ) {
     const apiKey = this.configService.get<string>('COMPOSIO_API_KEY');
 
     if (!apiKey) {
@@ -160,6 +167,11 @@ export class OAuthIntegrationsService {
         request.provider
       );
       console.dir(authConfigId, { depth: null });
+
+      // Store the auth config ID in the user's record
+      await this.userRepository.update(request.userId, { 
+        composioAuthConfigId: authConfigId 
+      });
 
       const connection = await this.composio.connectedAccounts.initiate(
         request.userId,
@@ -241,13 +253,16 @@ export class OAuthIntegrationsService {
         throw new NotFoundException('Integration connection not found');
       }
 
-      // Get the auth config ID for this provider
-      const authConfigId = await this.getAuthConfigIdForProvider(account.provider);
+      // Get the auth config ID from the user's record
+      const authConfigId = await this.getAuthConfigIdForUser(userId);
       
       if (authConfigId) {
         // Use Composio auth-configs delete API as per documentation
         await this.composio.authConfigs.delete(authConfigId);
         this.logger.log(`Auth config ${authConfigId} deleted successfully`);
+        
+        // Clear the auth config ID from the user's record
+        await this.userRepository.update(userId, { composioAuthConfigId: null });
       }
 
       // Also delete the connected account
@@ -355,27 +370,27 @@ export class OAuthIntegrationsService {
   }
 
   /**
-   * Gets the authentication configuration ID for a provider
-   * In production, this should be retrieved from a database
+   * Gets the authentication configuration ID for a user
+   * This retrieves the Composio auth config ID from the user's record
    *
-   * @param provider - The provider name
+   * @param userId - The user ID
    * @returns Promise<string | null> - The authentication configuration ID or null if not found
    */
-  private async getAuthConfigIdForProvider(provider: string): Promise<string | null> {
+  private async getAuthConfigIdForUser(userId: string): Promise<string | null> {
     try {
-      // In a production environment, you should:
-      // 1. Query the database for existing auth config IDs
-      // 2. Store and retrieve auth config IDs from a database
-      // For now, we'll try to get existing auth configs from Composio
+      const user = await this.userRepository.findOne({
+        where: { id: userId },
+        select: ['composioAuthConfigId']
+      });
       
-      const authConfigs = await this.composio.authConfigs.list();
-      const authConfig = authConfigs.items.find(config => 
-        config.toolkit.slug.toLowerCase() === provider.toLowerCase()
-      );
+      if (!user) {
+        this.logger.warn(`User ${userId} not found`);
+        return null;
+      }
       
-      return authConfig?.id || null;
+      return user.composioAuthConfigId || null;
     } catch (error) {
-      this.logger.error(`Failed to get auth config for provider ${provider}:`, error);
+      this.logger.error(`Failed to get auth config for user ${userId}:`, error);
       return null;
     }
   }
@@ -500,11 +515,16 @@ export class OAuthIntegrationsService {
         return { success: false };
       }
 
-      // Use the auth-configs delete API for the provider
-      const authConfigResult = await this.deleteAuthConfigForProvider(userId, provider);
+      // Get the auth config ID from the user's record
+      const authConfigId = await this.getAuthConfigIdForUser(userId);
       
-      if (!authConfigResult.success) {
-        this.logger.warn(`Failed to delete auth config for provider ${provider}, but continuing with connection deletion`);
+      if (authConfigId) {
+        // Use Composio auth-configs delete API as per documentation
+        await this.composio.authConfigs.delete(authConfigId);
+        this.logger.log(`Auth config ${authConfigId} deleted successfully`);
+        
+        // Clear the auth config ID from the user's record
+        await this.userRepository.update(userId, { composioAuthConfigId: null });
       }
 
       // Also delete the connected account
@@ -532,12 +552,12 @@ export class OAuthIntegrationsService {
   }
 
   /**
-   * Deletes an authentication configuration for a specific provider
-   * This method finds the auth config for the user's provider and deletes it
+   * Deletes an authentication configuration for a user
+   * This method uses the user's stored Composio auth config ID
    * Following Composio auth-configs delete API pattern from the documentation
    *
    * @param userId - The user identifier
-   * @param provider - The integration provider identifier
+   * @param provider - The integration provider identifier (for logging purposes)
    * @returns Promise<{ success: boolean }> - Success status
    */
   async deleteAuthConfigForProvider(
@@ -549,21 +569,24 @@ export class OAuthIntegrationsService {
         `Deleting auth config for provider ${provider} for user ${userId}`
       );
 
-      // Get the auth config ID for this provider
-      const authConfigId = await this.getAuthConfigIdForProvider(provider);
+      // Get the auth config ID from the user's record
+      const authConfigId = await this.getAuthConfigIdForUser(userId);
       
       if (!authConfigId) {
-        this.logger.warn(`No auth config found for provider ${provider}`);
+        this.logger.warn(`No auth config found for user ${userId}`);
         return { success: false };
       }
 
       // Use Composio auth-configs delete API as per documentation
       await this.composio.authConfigs.delete(authConfigId);
 
-      this.logger.log(`Auth config ${authConfigId} deleted successfully for provider ${provider}`);
+      // Clear the auth config ID from the user's record
+      await this.userRepository.update(userId, { composioAuthConfigId: null });
+
+      this.logger.log(`Auth config ${authConfigId} deleted successfully for user ${userId}`);
       return { success: true };
     } catch (error) {
-      this.logger.error(`Failed to delete auth config for provider ${provider}:`, error);
+      this.logger.error(`Failed to delete auth config for user ${userId}:`, error);
       throw new BadRequestException(
         'Unable to delete authentication configuration. Please try again.'
       );
