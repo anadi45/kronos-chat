@@ -16,6 +16,15 @@ import { getCurrentDate } from '@kronos/core';
 import { CheckpointerService } from '../../checkpointer';
 import { ToolsExecutorService } from '../../tools/tools-executor.service';
 import { ToolsProviderService } from '../../tools/tools-provider.service';
+import { Provider } from '@kronos/core';
+
+export type KronosAgentConfig = {
+  userId: string;
+  checkpointerService: CheckpointerService;
+  toolsExecutorService: ToolsExecutorService;
+  toolsProviderService: ToolsProviderService;
+  toolkits: Provider[];
+};
 
 /**
  * Kronos Agent Builder
@@ -27,6 +36,7 @@ export class KronosAgentBuilder {
   private model: ChatGoogleGenerativeAI;
   private answerModel: Runnable;
   private tools: any[] = [];
+  private toolkits: Provider[] = [];
   private checkpointerService: CheckpointerService;
   private toolsExecutorService: ToolsExecutorService;
   private toolsProviderService: ToolsProviderService;
@@ -35,16 +45,18 @@ export class KronosAgentBuilder {
 
   AGENT_NAME = 'kronos_agent';
 
-  constructor(
-    userId: string,
-    checkpointerService: CheckpointerService,
-    toolsExecutorService: ToolsExecutorService,
-    toolsProviderService: ToolsProviderService
-  ) {
+  constructor({
+    userId,
+    checkpointerService,
+    toolsExecutorService,
+    toolsProviderService,
+    toolkits,
+  }: KronosAgentConfig) {
     this.userId = userId;
     this.checkpointerService = checkpointerService;
     this.toolsExecutorService = toolsExecutorService;
     this.toolsProviderService = toolsProviderService;
+    this.toolkits = toolkits;
     this.initializeProviders();
   }
 
@@ -53,7 +65,7 @@ export class KronosAgentBuilder {
    */
   async build(): Promise<ReturnType<StateGraph<any>['compile']>> {
     try {
-      await this.loadTools(this.userId);
+      await this.loadTools(this.userId, this.toolkits);
 
       const workflow = new StateGraph(KronosAgentStateSchema);
 
@@ -98,10 +110,13 @@ export class KronosAgentBuilder {
   /**
    * Load all available tools for a given user
    */
-  private async loadTools(userId: string): Promise<void> {
+  private async loadTools(userId: string, toolkits: Provider[]): Promise<void> {
     try {
       // Use the tools provider service to get all available tools
-      this.tools = await this.toolsProviderService.getAvailableTools(userId);
+      this.tools = await this.toolsProviderService.getAvailableTools(
+        userId,
+        toolkits
+      );
 
       this.logger.log(
         `Loaded ${this.tools.length} tools using ToolsProviderService`

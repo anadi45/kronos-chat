@@ -33,12 +33,13 @@ export class ChatService {
   ): Promise<ReadableStream> {
     const conversationRepository = this.conversationRepository;
 
-    const agent = await new KronosAgent(
-      userId,
-      this.checkpointerService,
-      this.toolsExecutorService,
-      this.toolsProviderService
-    ).getCompiledAgent();
+    const agent = await new KronosAgent({
+      userId: userId,
+      checkpointerService: this.checkpointerService,
+      toolsExecutorService: this.toolsExecutorService,
+      toolsProviderService: this.toolsProviderService,
+      toolkits: request.toolkits,
+    }).getCompiledAgent();
 
     return new ReadableStream({
       async start(controller) {
@@ -127,16 +128,19 @@ export class ChatService {
             // Handle tool call events
             if (event.event === 'on_chain_stream' && event.data?.chunk) {
               const chunk = event.data.chunk;
-              
+
               // Check if AI message contains tool calls
               if (chunk.agent?.messages) {
                 const messages = chunk.agent.messages;
                 for (const message of messages) {
                   if (message.tool_calls && message.tool_calls.length > 0) {
-                    const toolNames = message.tool_calls.map(tc => tc.name).join(', ');
-                    const toolCallProgressEvent = StreamEventFactory.createProgressUpdateEvent(
-                      `🔧 Kronos is executing tools: ${toolNames}`
-                    );
+                    const toolNames = message.tool_calls
+                      .map((tc) => tc.name)
+                      .join(', ');
+                    const toolCallProgressEvent =
+                      StreamEventFactory.createProgressUpdateEvent(
+                        `🔧 Kronos is executing tools: ${toolNames}`
+                      );
                     controller.enqueue(
                       new TextEncoder().encode(
                         StreamEventSerializer.serialize(toolCallProgressEvent)
@@ -151,9 +155,10 @@ export class ChatService {
                 const toolMessages = chunk.tools.messages;
                 for (const message of toolMessages) {
                   if (message.name && message.content) {
-                    const toolResultProgressEvent = StreamEventFactory.createProgressUpdateEvent(
-                      `✅ Kronos completed tool: ${message.name}`
-                    );
+                    const toolResultProgressEvent =
+                      StreamEventFactory.createProgressUpdateEvent(
+                        `✅ Kronos completed tool: ${message.name}`
+                      );
                     controller.enqueue(
                       new TextEncoder().encode(
                         StreamEventSerializer.serialize(toolResultProgressEvent)

@@ -5,9 +5,11 @@ import { apiService } from '../services/apiService';
 import type { 
   ChatMessage, 
   ChatRequest, 
-  Conversation
+  Conversation,
+  Provider
 } from '@kronos/core';
 import { StreamEvent, StreamEventType } from '@kronos/core';
+import IntegrationSelector from './IntegrationSelector';
 
 interface ChatInterfaceProps {
   userId?: string;
@@ -33,6 +35,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
   const [conversationToDelete, setConversationToDelete] = useState<Conversation | null>(null);
   const [isDeletingConversation, setIsDeletingConversation] = useState(false);
   const [progressUpdate, setProgressUpdate] = useState<string | null>(null);
+  const [selectedToolkits, setSelectedToolkits] = useState<Provider[]>([]);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -287,7 +290,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
     try {
       // Create stream request - only message, no conversationId or history for new conversations
       const streamRequest: ChatRequest = {
-        message: userMessage.content
+        message: userMessage.content,
+        toolkits: selectedToolkits.length > 0 ? selectedToolkits : []
       };
 
       // Create abort controller for this request
@@ -797,37 +801,46 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
       {/* Input Area */}
       <div className="chat-input-container">
         <div className="chat-input-wrapper">
-          <textarea
-            ref={textareaRef}
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyPress={handleKeyPress}
-            placeholder="Type your message here... (Press Enter to send, Shift+Enter for new line)"
-            className="chat-input"
-            disabled={isStreaming}
-            rows={1}
-          />
-          <button
-            onClick={isStreaming ? handleStopStreaming : handleSendMessage}
-            disabled={!input.trim() && !isStreaming}
-            className={`chat-send-btn ${isStreaming ? 'streaming' : ''}`}
-          >
-            {isStreaming ? (
-              <img 
-                src="/images/integrations/stop.png" 
-                alt="Stop" 
-                className="h-5 w-5"
-                style={{ objectFit: 'contain' }}
-              />
-            ) : (
-              <img 
-                src="/images/integrations/send.png" 
-                alt="Send" 
-                className="h-4 w-4"
-                style={{ objectFit: 'contain' }}
-              />
-            )}
-          </button>
+          <div className="chat-integration-selector">
+            <IntegrationSelector
+              selectedToolkits={selectedToolkits}
+              onToolkitsChange={setSelectedToolkits}
+            />
+          </div>
+          
+          <div className="chat-input-main">
+            <textarea
+              ref={textareaRef}
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyPress={handleKeyPress}
+              placeholder="Type your message here... (Press Enter to send, Shift+Enter for new line)"
+              className="chat-input"
+              disabled={isStreaming}
+              rows={1}
+            />
+            <button
+              onClick={isStreaming ? handleStopStreaming : handleSendMessage}
+              disabled={!input.trim() && !isStreaming}
+              className={`chat-send-btn ${isStreaming ? 'streaming' : ''}`}
+            >
+              {isStreaming ? (
+                <img 
+                  src="/images/integrations/stop.png" 
+                  alt="Stop" 
+                  className="h-5 w-5"
+                  style={{ objectFit: 'contain' }}
+                />
+              ) : (
+                <img 
+                  src="/images/integrations/send.png" 
+                  alt="Send" 
+                  className="h-4 w-4"
+                  style={{ objectFit: 'contain' }}
+                />
+              )}
+            </button>
+          </div>
         </div>
         
         <div className="chat-disclaimer">

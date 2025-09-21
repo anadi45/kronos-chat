@@ -1,3 +1,5 @@
+import { Provider } from "..";
+
 export interface ChatMessage {
   role: 'user' | 'assistant' | 'system';
   content: string;
@@ -6,8 +8,7 @@ export interface ChatMessage {
 
 export interface ChatRequest {
   message: string;
-  conversationId?: string;
-  conversationHistory?: ChatMessage[];
+  toolkits?: Provider[];
 }
 
 export interface ChatResponse {
