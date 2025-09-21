@@ -1,12 +1,7 @@
-import {
-  Injectable,
-  Logger,
-  BadRequestException,
-} from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Composio } from '@composio/core';
-import { Tool } from '@langchain/core/tools';
-import { internalLogger } from '../utils/logger';
+import { Tool, DynamicStructuredTool } from '@langchain/core/tools';
 import { LangChainToolConverter } from '../agents/utils/langchain-tool-converter';
 
 /**
@@ -15,20 +10,37 @@ import { LangChainToolConverter } from '../agents/utils/langchain-tool-converter
  * This tool should be called only after the agent has gathered all necessary information
  * to fully answer the user's query.
  */
-class SignalContextReadinessTool extends Tool {
-  name = 'signalContextReadiness';
-  description =
-    "Call this tool only after you have gathered all the necessary information to fully answer the user's query";
-
-  async _call(): Promise<string> {
-    console.log(`${this.name} tool was called`);
-    return 'Context readiness signaled - agent has gathered all necessary information';
-  }
+export function createSignalContextReadinessTool() {
+  return new DynamicStructuredTool({
+    name: "signalContextReadiness",
+    description: "Call this tool only after you have gathered all the necessary information to fully answer the user's query",
+    schema: {
+      type: "object",
+      properties: {
+        called: {
+          type: "boolean",
+          description: "Indicates whether the context readiness has been called"
+        }
+      },
+      required: ["called"]
+    },
+    func: async ({ called }: { called: boolean }): Promise<string> => {
+      console.log(`signalContextReadiness tool was called with:`, { called });
+      
+      if (called) {
+        return 'Context readiness signaled - agent has gathered all necessary information';
+      } else {
+        return 'Context readiness not yet signaled';
+      }
+    }
+  });
 }
+
+export const SignalContextReadinessTool = createSignalContextReadinessTool();
 
 /**
  * Tools Provider Service
- * 
+ *
  * This service handles tool retrieval and conversion from Composio and manages in-house tools.
  * It serves as the provider for all tools in the tools module.
  */
@@ -36,7 +48,7 @@ class SignalContextReadinessTool extends Tool {
 export class ToolsProviderService {
   private readonly logger = new Logger(ToolsProviderService.name);
   private readonly composio: Composio;
-  private readonly inhouseTools: Map<string, Tool> = new Map();
+  private readonly inhouseTools: Map<string, any> = new Map();
 
   constructor(private readonly configService: ConfigService) {
     const apiKey = this.configService.get<string>('COMPOSIO_API_KEY');
@@ -57,9 +69,11 @@ export class ToolsProviderService {
    */
   private initializeInhouseTools(): void {
     // Register in-house tools
-    const signalContextReadinessTool = new SignalContextReadinessTool();
-    this.inhouseTools.set(signalContextReadinessTool.name, signalContextReadinessTool);
-    
+    this.inhouseTools.set(
+      SignalContextReadinessTool.name,
+      SignalContextReadinessTool
+    );
+
     this.logger.log(`Initialized ${this.inhouseTools.size} in-house tools`);
   }
 
@@ -86,22 +100,22 @@ export class ToolsProviderService {
         toolkits,
       });
 
-      internalLogger.info(`MCP tools retrieved successfully`, { tools: composioTools });
-
       // Convert Composio tools to LangChain compatible tools
-      const mcpLangchainTools = composioTools.map((tool: any) => {
-        try {
-          // Use type assertion to completely bypass strict typing
-          const convertedTool = (LangChainToolConverter as any).convert(tool);
-          return convertedTool;
-        } catch (conversionError) {
-          this.logger.warn(
-            `Failed to convert tool ${tool?.function?.name || 'unknown'}:`,
-            conversionError.message
-          );
-          return null;
-        }
-      }).filter(Boolean); // Remove null values
+      const mcpLangchainTools = composioTools
+        .map((tool: any) => {
+          try {
+            // Use type assertion to completely bypass strict typing
+            const convertedTool = (LangChainToolConverter as any).convert(tool);
+            return convertedTool;
+          } catch (conversionError) {
+            this.logger.warn(
+              `Failed to convert tool ${tool?.function?.name || 'unknown'}:`,
+              conversionError.message
+            );
+            return null;
+          }
+        })
+        .filter(Boolean); // Remove null values
 
       // Get in-house tools
       const inhouseTools = Array.from(this.inhouseTools.values());
@@ -109,13 +123,17 @@ export class ToolsProviderService {
       // Combine all tools
       const allTools = [...mcpLangchainTools, ...inhouseTools];
 
-      this.logger.log(`Successfully retrieved ${allTools.length} tools (${mcpLangchainTools.length} MCP, ${inhouseTools.length} in-house)`);
+      this.logger.log(
+        `Successfully retrieved ${allTools.length} tools (${mcpLangchainTools.length} MCP, ${inhouseTools.length} in-house)`
+      );
       return allTools;
     } catch (error) {
       this.logger.error(`Failed to retrieve tools:`, error);
       // Return only in-house tools if MCP fails
       const inhouseTools = Array.from(this.inhouseTools.values());
-      this.logger.warn(`Falling back to in-house tools only: ${inhouseTools.length} tools`);
+      this.logger.warn(
+        `Falling back to in-house tools only: ${inhouseTools.length} tools`
+      );
       return inhouseTools;
     }
   }
@@ -173,7 +191,7 @@ export class ToolsProviderService {
     if (!tool) {
       return null;
     }
-    
+
     return {
       name: tool.name,
       description: tool.description,

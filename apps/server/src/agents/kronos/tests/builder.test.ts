@@ -3,7 +3,6 @@ import { KronosAgentBuilder } from '../builder';
 describe('KronosAgentBuilder', () => {
   let builder: KronosAgentBuilder;
   let mockCheckpointer: any;
-  let mockOAuthIntegrationsService: any;
   let mockToolsExecutorService: any;
   let mockToolsProviderService: any;
 
@@ -16,11 +15,6 @@ describe('KronosAgentBuilder', () => {
     mockCheckpointer = {
       isReady: jest.fn().mockReturnValue(true),
       getPostgresSaver: jest.fn().mockReturnValue({}),
-    } as any;
-
-    // Mock OAuth integrations service
-    mockOAuthIntegrationsService = {
-      // Add any methods that might be called
     } as any;
 
     // Mock tools executor service
@@ -36,7 +30,6 @@ describe('KronosAgentBuilder', () => {
     builder = new KronosAgentBuilder(
       'test-user-id',
       mockCheckpointer,
-      mockOAuthIntegrationsService,
       mockToolsExecutorService,
       mockToolsProviderService
     );
@@ -58,8 +51,7 @@ describe('KronosAgentBuilder', () => {
     expect(() => {
       new KronosAgentBuilder(
         'test-user-id',
-        mockCheckpointer,
-        mockOAuthIntegrationsService,
+        mockCheckpointer, 
         mockToolsExecutorService,
         mockToolsProviderService
       );
@@ -73,7 +65,6 @@ describe('KronosAgentBuilder', () => {
       new KronosAgentBuilder(
         'test-user-id',
         mockCheckpointer,
-        mockOAuthIntegrationsService,
         mockToolsExecutorService,
         mockToolsProviderService
       );

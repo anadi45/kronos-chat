@@ -7,10 +7,8 @@ import { Conversation, ChatMessage } from '../entities/conversation.entity';
 import { ChatMessageRole } from '../enum/roles.enum';
 import { KronosAgent } from '../agents/kronos/agent';
 import { CheckpointerService } from '../checkpointer';
-import { OAuthIntegrationsService } from '../oauth-integrations/oauth-integrations.service';
 import { ToolsExecutorService } from '../tools/tools-executor.service';
 import { ToolsProviderService } from '../tools/tools-provider.service';
-import { internalLogger } from '../utils/logger';
 import { HumanMessage } from '@langchain/core/messages';
 
 @Injectable()
@@ -19,7 +17,6 @@ export class ChatService {
     @InjectRepository(Conversation)
     private conversationRepository: Repository<Conversation>,
     private readonly checkpointerService: CheckpointerService,
-    private readonly oauthIntegrationsService: OAuthIntegrationsService,
     private readonly toolsExecutorService: ToolsExecutorService,
     private readonly toolsProviderService: ToolsProviderService
   ) {}
@@ -39,7 +36,6 @@ export class ChatService {
     const agent = await new KronosAgent(
       userId,
       this.checkpointerService,
-      this.oauthIntegrationsService,
       this.toolsExecutorService,
       this.toolsProviderService
     ).getCompiledAgent();
@@ -94,19 +90,79 @@ export class ChatService {
             messages: new HumanMessage(request.message),
           };
 
+          // Send initial progress update
+          const initialProgressEvent =
+            StreamEventFactory.createProgressUpdateEvent(
+              '🤖 Kronos is analyzing your request...'
+            );
+          controller.enqueue(
+            new TextEncoder().encode(
+              StreamEventSerializer.serialize(initialProgressEvent)
+            )
+          );
+
           const eventStream = agent.streamEvents(agentInput, {
             configurable: { thread_id: conversation.id },
             context: { userId },
             version: 'v2',
           });
 
+          let progressUpdateSent = false;
+
           for await (const event of eventStream) {
-            // Log the event using the standard info method
-            internalLogger.info('Chat Event', {
-              userId,
-              conversationId: conversation.id,
-              event,
-            });
+            // Send progress update when agent starts processing
+            if (!progressUpdateSent && event.event === 'on_chain_start') {
+              const processingProgressEvent =
+                StreamEventFactory.createProgressUpdateEvent(
+                  '🧠 Kronos is thinking and planning the response...'
+                );
+              controller.enqueue(
+                new TextEncoder().encode(
+                  StreamEventSerializer.serialize(processingProgressEvent)
+                )
+              );
+              progressUpdateSent = true;
+            }
+
+            // Handle tool call events
+            if (event.event === 'on_chain_stream' && event.data?.chunk) {
+              const chunk = event.data.chunk;
+              
+              // Check if AI message contains tool calls
+              if (chunk.agent?.messages) {
+                const messages = chunk.agent.messages;
+                for (const message of messages) {
+                  if (message.tool_calls && message.tool_calls.length > 0) {
+                    const toolNames = message.tool_calls.map(tc => tc.name).join(', ');
+                    const toolCallProgressEvent = StreamEventFactory.createProgressUpdateEvent(
+                      `🔧 Kronos is executing tools: ${toolNames}`
+                    );
+                    controller.enqueue(
+                      new TextEncoder().encode(
+                        StreamEventSerializer.serialize(toolCallProgressEvent)
+                      )
+                    );
+                  }
+                }
+              }
+
+              // Check for tool execution results
+              if (chunk.tools?.messages) {
+                const toolMessages = chunk.tools.messages;
+                for (const message of toolMessages) {
+                  if (message.name && message.content) {
+                    const toolResultProgressEvent = StreamEventFactory.createProgressUpdateEvent(
+                      `✅ Kronos completed tool: ${message.name}`
+                    );
+                    controller.enqueue(
+                      new TextEncoder().encode(
+                        StreamEventSerializer.serialize(toolResultProgressEvent)
+                      )
+                    );
+                  }
+                }
+              }
+            }
 
             try {
               // Only stream from on_chat_model_stream events to avoid duplication
@@ -117,6 +173,19 @@ export class ChatService {
               ) {
                 const content = event.data.chunk.content;
                 if (typeof content === 'string' && content.trim()) {
+                  // Send progress update when model starts generating
+                  if (assistantMessage === '') {
+                    const generatingProgressEvent =
+                      StreamEventFactory.createProgressUpdateEvent(
+                        '✍️ Kronos is generating response...'
+                      );
+                    controller.enqueue(
+                      new TextEncoder().encode(
+                        StreamEventSerializer.serialize(generatingProgressEvent)
+                      )
+                    );
+                  }
+
                   // Send token event for each content chunk
                   const tokenEvent =
                     StreamEventFactory.createTokenEvent(content);
@@ -176,11 +245,6 @@ export class ChatService {
                 }
               }
             } catch (streamError) {
-              internalLogger.error('Error processing stream event', {
-                error: streamError.message,
-                event: event.event,
-                stack: streamError.stack,
-              });
               // Continue processing other events even if one fails
             }
           }
@@ -202,11 +266,6 @@ export class ChatService {
 
           controller.close();
         } catch (error) {
-          internalLogger.error('Chat service error', {
-            error: error.message,
-            stack: error.stack,
-          });
-
           // Send error event
           const errorEvent = StreamEventFactory.createTokenEvent(
             `Error: ${error.message}`
@@ -305,10 +364,6 @@ export class ChatService {
       await this.conversationRepository.remove(conversation);
       return { success: true, message: 'Conversation deleted successfully' };
     } catch (error) {
-      internalLogger.error('Error deleting conversation', {
-        error: error.message,
-        stack: error.stack,
-      });
       return { success: false, message: 'Failed to delete conversation' };
     }
   }

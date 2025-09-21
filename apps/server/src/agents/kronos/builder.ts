@@ -6,15 +6,14 @@ import {
   ToolMessage,
   isAIMessage,
 } from '@langchain/core/messages';
-import { RunnableConfig } from '@langchain/core/runnables';
+import { Runnable, RunnableConfig } from '@langchain/core/runnables';
 import { Logger } from '@nestjs/common';
 import { KronosAgentState, KronosAgentStateSchema } from './state';
 import { MODELS } from '../../constants/models.constants';
-import { formatSystemPrompt } from './prompts';
+import { formatSystemPrompt, formatFinalAnswerSystemPrompt } from './prompts';
 import { getContextValue, extractToolCalls } from './utils';
 import { getCurrentDate } from '@kronos/core';
 import { CheckpointerService } from '../../checkpointer';
-import { OAuthIntegrationsService } from '../../oauth-integrations/oauth-integrations.service';
 import { ToolsExecutorService } from '../../tools/tools-executor.service';
 import { ToolsProviderService } from '../../tools/tools-provider.service';
 
@@ -26,9 +25,9 @@ import { ToolsProviderService } from '../../tools/tools-provider.service';
  */
 export class KronosAgentBuilder {
   private model: ChatGoogleGenerativeAI;
+  private answerModel: Runnable;
   private tools: any[] = [];
   private checkpointerService: CheckpointerService;
-  private oauthIntegrationsService: OAuthIntegrationsService;
   private toolsExecutorService: ToolsExecutorService;
   private toolsProviderService: ToolsProviderService;
   private userId: string;
@@ -39,13 +38,11 @@ export class KronosAgentBuilder {
   constructor(
     userId: string,
     checkpointerService: CheckpointerService,
-    oauthIntegrationsService: OAuthIntegrationsService,
     toolsExecutorService: ToolsExecutorService,
     toolsProviderService: ToolsProviderService
   ) {
     this.userId = userId;
     this.checkpointerService = checkpointerService;
-    this.oauthIntegrationsService = oauthIntegrationsService;
     this.toolsExecutorService = toolsExecutorService;
     this.toolsProviderService = toolsProviderService;
     this.initializeProviders();
@@ -81,8 +78,15 @@ export class KronosAgentBuilder {
   private initializeProviders(): void {
     try {
       this.model = new ChatGoogleGenerativeAI({
-        model: MODELS.GEMINI_2_5_FLASH_LITE,
+        model: MODELS.GEMINI_2_0_FLASH,
         maxOutputTokens: 2048,
+        temperature: 0,
+        apiKey: process.env.GEMINI_API_KEY,
+        streaming: true,
+      });
+      this.answerModel = new ChatGoogleGenerativeAI({
+        model: MODELS.GEMINI_2_0_FLASH,
+        temperature: 0,
         apiKey: process.env.GEMINI_API_KEY,
         streaming: true,
       });
@@ -99,7 +103,9 @@ export class KronosAgentBuilder {
       // Use the tools provider service to get all available tools
       this.tools = await this.toolsProviderService.getAvailableTools(userId);
 
-      this.logger.log(`Loaded ${this.tools.length} tools using ToolsProviderService`);
+      this.logger.log(
+        `Loaded ${this.tools.length} tools using ToolsProviderService`
+      );
     } catch (error) {
       this.logger.warn(
         'Failed to load tools, continuing without tools',
@@ -187,35 +193,41 @@ export class KronosAgentBuilder {
       const userId = getContextValue(config, 'userId');
 
       // Convert tool calls to the format expected by ToolExecutorService
-      const toolCallInfos = toolCalls.map(toolCall => ({
+      const toolCallInfos = toolCalls.map((toolCall) => ({
         name: toolCall.name,
         args: toolCall.args,
         id: toolCall.id,
-        type: (this.toolsProviderService.isInhouseTool(toolCall.name) ? 'inhouse' : 'mcp') as 'inhouse' | 'mcp'
+        type: (this.toolsProviderService.isInhouseTool(toolCall.name)
+          ? 'inhouse'
+          : 'mcp') as 'inhouse' | 'mcp',
       }));
 
       try {
         // Use the tools executor service to execute all tools
-        const toolResults = await this.toolsExecutorService.executeToolsAndReturnMessages(
-          toolCallInfos,
-          userId
-        );
+        const toolResults =
+          await this.toolsExecutorService.executeToolsAndReturnMessages(
+            toolCallInfos,
+            userId
+          );
 
-        this.logger.debug(`Executed ${toolResults.length} tools using ToolExecutorService`);
+        this.logger.debug(
+          `Executed ${toolResults.length} tools using ToolExecutorService`
+        );
 
         return {
           messages: toolResults,
         };
       } catch (error) {
         this.logger.error('Tool execution failed:', error);
-        
+
         // Return error messages for all tool calls
-        const errorResults = toolCalls.map(toolCall => 
-          new ToolMessage({
-            name: toolCall.name,
-            content: `Error executing ${toolCall.name}: ${error.message}`,
-            tool_call_id: toolCall.id,
-          })
+        const errorResults = toolCalls.map(
+          (toolCall) =>
+            new ToolMessage({
+              name: toolCall.name,
+              content: `Error executing ${toolCall.name}: ${error.message}`,
+              tool_call_id: toolCall.id,
+            })
         );
 
         return {
@@ -253,7 +265,7 @@ export class KronosAgentBuilder {
   private createFinalAnswerNode() {
     return async (state: KronosAgentState, config: RunnableConfig) => {
       const todayDate = getCurrentDate();
-      const formattedPrompt = formatSystemPrompt(todayDate);
+      const formattedPrompt = formatFinalAnswerSystemPrompt(todayDate);
 
       const allMessages = state.messages;
 
@@ -262,7 +274,7 @@ export class KronosAgentBuilder {
         ...allMessages,
       ];
 
-      const finalResponse = await this.model.invoke(
+      const finalResponse = await this.answerModel.invoke(
         conversationHistory,
         config
       );
