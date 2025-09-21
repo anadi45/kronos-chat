@@ -25,7 +25,7 @@ import { ComposioOAuth } from '../entities/composio-oauth.entity';
  */
 export interface CreateIntegrationRequest {
   userId: string;
-  provider: string; // e.g., 'GMAIL', 'SLACK', 'NOTION', etc.
+  provider: Provider;
 }
 
 /**
@@ -34,7 +34,7 @@ export interface CreateIntegrationRequest {
 export interface CreateIntegrationResponse {
   connectionId: string;
   redirectUrl: string;
-  provider: string;
+  provider: Provider;
   status: 'INITIATED';
 }
 
@@ -483,12 +483,12 @@ export class OAuthIntegrationsService {
    */
   async connectIntegration(
     userId: string,
-    provider: string
+    provider: Provider
   ): Promise<ConnectIntegrationResponse> {
     try {
       const connectionResult = await this.createIntegrationConnection({
         userId,
-        provider: Provider.GMAIL,
+        provider,
       });
 
       // Transform the response to match frontend expectations
@@ -527,7 +527,7 @@ export class OAuthIntegrationsService {
    */
   async disconnectIntegrationByProvider(
     userId: string,
-    provider: string
+    provider: Provider
   ): Promise<DisconnectIntegrationResponse> {
     try {
       this.logger.log(
@@ -597,7 +597,7 @@ export class OAuthIntegrationsService {
   /**
    * Get integration details and capabilities
    */
-  async getIntegrationDetails(provider: string): Promise<Integration | null> {
+  async getIntegrationDetails(provider: Provider): Promise<Integration | null> {
     const integrations = AVAILABLE_INTEGRATIONS;
     return (
       integrations.find((integration) => integration.id === provider) || null
