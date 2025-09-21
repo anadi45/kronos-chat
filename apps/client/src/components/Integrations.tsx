@@ -137,7 +137,7 @@ const IntegrationCard: React.FC<IntegrationCardProps> = ({
   };
 
   return (
-    <div className="integration-card">
+    <div className={`integration-card ${integration.isConnected ? 'connected' : ''}`}>
       <div className="integration-header">
         <IntegrationIcon integrationId={integration.id} className="w-8 h-8" />
         <h3 className="integration-title">{integration.name}</h3>
