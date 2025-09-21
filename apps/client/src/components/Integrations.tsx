@@ -84,9 +84,8 @@ const IntegrationCard: React.FC<IntegrationCardProps> = ({
     if (integration.status === 'coming_soon' || integration.status === 'beta') {
       return (
         <button 
-          className="btn btn-primary" 
+          className="btn btn-integration" 
           disabled
-          style={{ opacity: 0.5, cursor: 'not-allowed' }}
         >
           Coming Soon
         </button>
@@ -117,7 +116,7 @@ const IntegrationCard: React.FC<IntegrationCardProps> = ({
 
     return (
       <button 
-        className="btn btn-primary"
+        className="btn btn-integration"
         onClick={() => onConnect(integration.id)}
         disabled={isConnecting}
       >
