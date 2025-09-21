@@ -812,7 +812,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
               <img 
                 src="/images/integrations/stop.png" 
                 alt="Stop" 
-                className="h-4 w-4"
+                className="h-5 w-5"
                 style={{ objectFit: 'contain' }}
               />
             ) : (
