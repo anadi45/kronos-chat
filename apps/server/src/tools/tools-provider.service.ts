@@ -125,7 +125,7 @@ export class ToolsProviderService {
    * @param userId - The user identifier
    * @returns Promise<string[]> - Array of platform names (toolkits)
    */
-  private async getUserOAuthIntegrations(userId: string): Promise<string[]> {
+  async getUserOAuthIntegrations(userId: string): Promise<string[]> {
     try {
       const integrations = await this.composioOAuthRepository.find({
         where: { userId },

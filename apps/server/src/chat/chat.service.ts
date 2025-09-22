@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import type { ChatRequest, PaginatedResponse } from '@kronos/core';
+import { Provider } from '@kronos/core';
 import { StreamEventFactory, StreamEventSerializer } from '@kronos/core';
 import { Conversation, ChatMessage } from '../entities/conversation.entity';
 import { ChatMessageRole } from '../enum/roles.enum';
@@ -22,6 +23,30 @@ export class ChatService {
   ) {}
 
   /**
+   * Get user's OAuth integrations from the database
+   */
+  private async getUserIntegrations(userId: string): Promise<Provider[]> {
+    try {
+      // Use the tools provider service to get user's OAuth integrations
+      const userIntegrations = await this.toolsProviderService.getUserOAuthIntegrations(userId);
+      
+      // Convert string platform names to Provider enum values
+      const providerEnums = userIntegrations
+        .map(integration => {
+          const upperProvider = integration.toUpperCase();
+          return Object.values(Provider).find(p => p === upperProvider);
+        })
+        .filter(Boolean) as Provider[];
+
+      console.log(`Found ${providerEnums.length} user integrations: ${providerEnums.join(', ')}`);
+      return providerEnums;
+    } catch (error) {
+      console.warn('Failed to get user integrations, using empty array:', error.message);
+      return [];
+    }
+  }
+
+  /**
    * Send a chat message with streaming response using LangGraph streaming
    * @param request The chat request
    * @param userId The user ID
@@ -33,12 +58,18 @@ export class ChatService {
   ): Promise<ReadableStream> {
     const conversationRepository = this.conversationRepository;
 
+    // Get user's integrations if no toolkits provided
+    let finalToolkits = request.toolkits;
+    if (!finalToolkits || finalToolkits.length === 0) {
+      finalToolkits = await this.getUserIntegrations(userId);
+    }
+
     const agent = await new KronosAgent({
       userId: userId,
       checkpointerService: this.checkpointerService,
       toolsExecutorService: this.toolsExecutorService,
       toolsProviderService: this.toolsProviderService,
-      toolkits: request.toolkits,
+      toolkits: finalToolkits,
     }).getCompiledAgent();
 
     return new ReadableStream({
