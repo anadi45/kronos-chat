@@ -118,10 +118,11 @@ export class KronosAgentBuilder {
         this.toolsExecutorService
       );
 
-      // Use the tools provider service to get all available tools
+      // Use the tools provider service to get Kronos agent tools (delegation tools only)
       this.tools = await this.toolsProviderService.getAvailableTools(
         userId,
-        toolkits
+        toolkits,
+        'kronos_agent'
       );
 
       this.logger.log(

@@ -85,7 +85,8 @@ export abstract class BaseSubagent {
     try {
       this.tools = await this.toolsProviderService.getAvailableTools(
         this.userId,
-        [this.provider]
+        [this.provider],
+        `${this.provider.toLowerCase()}_subagent`
       );
       this.logger.log(
         `Loaded ${this.tools.length} tools for ${this.provider} subagent`

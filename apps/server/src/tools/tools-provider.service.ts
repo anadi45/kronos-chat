@@ -151,11 +151,13 @@ export class ToolsProviderService {
    *
    * @param userId - The user identifier
    * @param toolkits - Array of toolkit names to retrieve tools for
+   * @param agentName - The name of the agent requesting tools (e.g., 'kronos_agent', 'gmail_subagent', 'github_subagent')
    * @returns Promise<any[]> - Array of LangChain compatible tools
    */
   async getAvailableTools(
     userId: string,
-    toolkits: string[] = []
+    toolkits: string[] = [],
+    agentName: string = 'subagent'
   ): Promise<any[]> {
     try {
       // If no toolkits provided, fetch user's OAuth integrations from database
@@ -170,48 +172,57 @@ export class ToolsProviderService {
       this.logger.log(
         `Retrieving tools for user ${userId} with toolkits: ${finalToolkits.join(
           ', '
-        )}`
+        )} (agent: ${agentName})`
       );
-
-      // Get specific tool names from our mappings instead of passing toolkits
-      const allowedToolNames = getToolsForToolkits(finalToolkits);
-      this.logger.log(`Extracted tool names from mappings: ${allowedToolNames.join(', ')}`);
-
-      // Get MCP tools from Composio using specific tool names
-      const composioTools = await this.composio.tools.get(userId, {
-        tools: allowedToolNames, // Pass specific tool names instead of toolkits
-      });
-
-      // Convert Composio tools to LangChain compatible tools
-      const mcpLangchainTools = composioTools
-        .map((tool: any) => {
-          try {
-            // Use type assertion to completely bypass strict typing
-            const convertedTool = (LangChainToolConverter as any).convert(tool);
-            return convertedTool;
-          } catch (conversionError) {
-            this.logger.warn(
-              `Failed to convert tool ${tool?.function?.name || 'unknown'}:`,
-              conversionError.message
-            );
-            return null;
-          }
-        })
-        .filter(Boolean); // Remove null values
 
       // Get in-house tools
       const inhouseTools = Array.from(this.inhouseTools.values());
 
-      // Get delegation tools for available providers
-      const delegationTools = this.getDelegationToolsForProviders(finalToolkits);
+      if (agentName === 'kronos_agent') {
+        // For Kronos agent: only delegation tools + in-house tools (NO integration tools)
+        const delegationTools = this.getDelegationToolsForProviders(finalToolkits);
+        // Get updated in-house tools (which now includes registered delegation tools)
+        const updatedInhouseTools = Array.from(this.inhouseTools.values());
 
-      // Combine all tools
-      const allTools = [...mcpLangchainTools, ...inhouseTools, ...delegationTools];
+        this.logger.log(
+          `Successfully retrieved ${updatedInhouseTools.length} Kronos agent tools (including ${delegationTools.length} delegation tools)`
+        );
+        return updatedInhouseTools;
+      } else {
+        // For subagents: integration tools + in-house tools (NO delegation tools)
+        const allowedToolNames = getToolsForToolkits(finalToolkits);
+        this.logger.log(`Extracted tool names from mappings: ${allowedToolNames.join(', ')}`);
 
-      this.logger.log(
-        `Successfully retrieved ${allTools.length} tools (${mcpLangchainTools.length} MCP, ${inhouseTools.length} in-house, ${delegationTools.length} delegation)`
-      );
-      return allTools;
+        // Get MCP tools from Composio using specific tool names
+        const composioTools = await this.composio.tools.get(userId, {
+          tools: allowedToolNames, // Pass specific tool names instead of toolkits
+        });
+
+        // Convert Composio tools to LangChain compatible tools
+        const mcpLangchainTools = composioTools
+          .map((tool: any) => {
+            try {
+              // Use type assertion to completely bypass strict typing
+              const convertedTool = (LangChainToolConverter as any).convert(tool);
+              return convertedTool;
+            } catch (conversionError) {
+              this.logger.warn(
+                `Failed to convert tool ${tool?.function?.name || 'unknown'}:`,
+                conversionError.message
+              );
+              return null;
+            }
+          })
+          .filter(Boolean); // Remove null values
+
+        // Combine integration tools + in-house tools
+        const allTools = [...mcpLangchainTools, ...inhouseTools];
+
+        this.logger.log(
+          `Successfully retrieved ${allTools.length} subagent tools (${mcpLangchainTools.length} MCP, ${inhouseTools.length} in-house)`
+        );
+        return allTools;
+      }
     } catch (error) {
       this.logger.error(`Failed to retrieve tools:`, error);
       // Return only in-house tools if MCP fails
@@ -247,7 +258,13 @@ export class ToolsProviderService {
       // Create delegation tools for each provider
       const delegationTools = this.delegationToolsFactory.createAllDelegationTools(providerEnums);
       
-      this.logger.log(`Created ${delegationTools.length} delegation tools for providers: ${providers.join(', ')}`);
+      // Register delegation tools as in-house tools
+      delegationTools.forEach(tool => {
+        this.inhouseTools.set(tool.name, tool);
+        this.logger.debug(`Registered delegation tool: ${tool.name}`);
+      });
+      
+      this.logger.log(`Created and registered ${delegationTools.length} delegation tools for providers: ${providers.join(', ')}`);
       return delegationTools;
     } catch (error) {
       this.logger.error('Failed to create delegation tools:', error);
