@@ -96,11 +96,14 @@ export class KronosAgentBuilder {
         apiKey: process.env.GEMINI_API_KEY,
         streaming: true,
       });
+      // Add tag to identify the final answer model for streaming
       this.answerModel = new ChatGoogleGenerativeAI({
         model: MODELS.GEMINI_2_0_FLASH,
         temperature: 0,
         apiKey: process.env.GEMINI_API_KEY,
         streaming: true,
+      }).withConfig({
+        tags: ["final_answer_node"],
       });
     } catch (error) {
       throw new Error(`Failed to initialize Providers: ${error.message}`);

@@ -201,11 +201,12 @@ export class ChatService {
             }
 
             try {
-              // Only stream from on_chat_model_stream events to avoid duplication
-              // These events contain the actual streaming chunks from the model
+              // Only stream from on_chat_model_stream events with final_answer_node tag
+              // This ensures we only stream tokens from the final answer node, not subagents
               if (
                 event.event === 'on_chat_model_stream' &&
-                event.data?.chunk?.content
+                event.data?.chunk?.content &&
+                event.tags?.includes('final_answer_node')
               ) {
                 const content = event.data.chunk.content;
                 if (typeof content === 'string' && content.trim()) {
