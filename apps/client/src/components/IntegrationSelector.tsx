@@ -46,6 +46,18 @@ const IntegrationSelector: React.FC<IntegrationSelectorProps> = ({
 
   useEffect(() => {
     loadIntegrations();
+    
+    // Listen for integration changes from other components
+    const handleIntegrationChange = () => {
+      console.log('Integration change detected, refreshing IntegrationSelector');
+      loadIntegrations();
+    };
+    
+    window.addEventListener('integrationChanged', handleIntegrationChange);
+    
+    return () => {
+      window.removeEventListener('integrationChanged', handleIntegrationChange);
+    };
   }, []);
 
   // Close dropdown when clicking outside

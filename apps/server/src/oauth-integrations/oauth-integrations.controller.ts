@@ -63,7 +63,6 @@ export class OAuthIntegrationsController {
    * @returns Promise<DisconnectIntegrationResponse> - Disconnection result
    */
   @Delete(':provider/disconnect')
-  @HttpCode(HttpStatus.NO_CONTENT)
   async disconnectIntegration(
     @Param() params: DisconnectIntegrationDto,
     @Request() req: any
@@ -142,7 +141,6 @@ export class OAuthIntegrationsController {
    * @returns Promise<{ success: boolean }> - Success status
    */
   @Delete('connections/:connectionId')
-  @HttpCode(HttpStatus.NO_CONTENT)
   async disconnectIntegrationConnection(
     @Param('connectionId') connectionId: string,
     @Request() req: any
