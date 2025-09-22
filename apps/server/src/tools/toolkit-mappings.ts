@@ -28,6 +28,7 @@ export const TOOLKIT_TOOLS_MAPPING: ToolkitToolMapping = {
     'GMAIL_FETCH_MESSAGE_BY_THREAD_ID',
     'GMAIL_FETCH_MESSAGE_BY_MESSAGE_ID',
     'GMAIL_DELETE_DRAFT',
+    'GMAIL_FETCH_EMAILS',
   ],
 
   // GitHub Integration Tools
