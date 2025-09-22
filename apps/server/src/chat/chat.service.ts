@@ -11,6 +11,7 @@ import { CheckpointerService } from '../checkpointer';
 import { ToolsExecutorService } from '../tools/tools-executor.service';
 import { ToolsProviderService } from '../tools/tools-provider.service';
 import { HumanMessage } from '@langchain/core/messages';
+import { ProgressMessages } from '../utils/progress-messages';
 
 @Injectable()
 export class ChatService {
@@ -127,7 +128,7 @@ export class ChatService {
           // Send initial progress update
           const initialProgressEvent =
             StreamEventFactory.createProgressUpdateEvent(
-              '🤖 Getting started...'
+              ProgressMessages.getRandomInitialMessage()
             );
           controller.enqueue(
             new TextEncoder().encode(
@@ -148,7 +149,7 @@ export class ChatService {
             if (!progressUpdateSent && event.event === 'on_chain_start') {
               const processingProgressEvent =
                 StreamEventFactory.createProgressUpdateEvent(
-                  '🧠 Working on your request...'
+                  ProgressMessages.getRandomProcessingMessage()
                 );
               controller.enqueue(
                 new TextEncoder().encode(
@@ -173,12 +174,11 @@ export class ChatService {
                     
                     // Check if this is a delegation call
                     const delegationMatch = toolNames.match(/delegateTo(\w+)Agent/);
-                    let progressMessage = '🔧 Gathering information...';
+                    let progressMessage = ProgressMessages.getRandomToolCallMessage();
                     
                     if (delegationMatch) {
                       const agentName = delegationMatch[1].toLowerCase();
-                      const capitalizedAgent = agentName.charAt(0).toUpperCase() + agentName.slice(1);
-                      progressMessage = `🔧 ${capitalizedAgent} agent is processing your request...`;
+                      progressMessage = ProgressMessages.getRandomAgentMessage(agentName);
                     }
                     
                     const toolCallProgressEvent =
@@ -199,12 +199,11 @@ export class ChatService {
                   if (message.name && message.content) {
                     // Check if this is a delegation tool result
                     const delegationMatch = message.name.match(/delegateTo(\w+)Agent/);
-                    let resultMessage = '✅ Found what I need!';
+                    let resultMessage = ProgressMessages.getRandomToolResultMessage();
                     
                     if (delegationMatch) {
                       const agentName = delegationMatch[1].toLowerCase();
-                      const capitalizedAgent = agentName.charAt(0).toUpperCase() + agentName.slice(1);
-                      resultMessage = `✅ ${capitalizedAgent} agent completed the task!`;
+                      resultMessage = ProgressMessages.getRandomAgentResultMessage(agentName);
                     }
                     
                     const toolResultProgressEvent =
@@ -233,7 +232,7 @@ export class ChatService {
                   if (assistantMessage === '') {
                     const generatingProgressEvent =
                       StreamEventFactory.createProgressUpdateEvent(
-                        '✍️ Writing your response...'
+                        ProgressMessages.getRandomGeneratingMessage()
                       );
                     controller.enqueue(
                       new TextEncoder().encode(
