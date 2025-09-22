@@ -8,7 +8,6 @@ import type {
   Integration,
   ConnectIntegrationResponse,
   DisconnectIntegrationResponse,
-  IntegrationDetails,
   PaginatedResponse,
   Conversation,
 } from '@kronos/core';
@@ -282,98 +281,7 @@ class ApiService {
     }
   }
 
-  /**
-   * Get integration details and capabilities
-   * GET /oauth-integrations/:provider
-   */
-  async getIntegrationDetails(provider: string): Promise<IntegrationDetails> {
-    const response = await this.client.get(`/oauth-integrations/${provider}`);
-    return response.data;
-  }
 
-  // OAuth integrations endpoints
-
-  /**
-   * Get available integration providers from OAuth integrations
-   * GET /oauth-integrations/providers
-   */
-  async getAvailableProviders(): Promise<any[]> {
-    const response = await this.client.get('/oauth-integrations/providers');
-    return response.data;
-  }
-
-  /**
-   * Create integration connection via OAuth integrations
-   * POST /oauth-integrations/connections
-   */
-  async createIntegrationConnection(request: any): Promise<any> {
-    const response = await this.client.post('/oauth-integrations/connections', request);
-    return response.data;
-  }
-
-  /**
-   * Get connected accounts via OAuth integrations
-   * GET /oauth-integrations/connections
-   */
-  async getConnectedAccounts(): Promise<any[]> {
-    const response = await this.client.get('/oauth-integrations/connections');
-    return response.data;
-  }
-
-  /**
-   * Disconnect integration connection via OAuth integrations
-   * DELETE /oauth-integrations/connections/:connectionId
-   */
-  async disconnectIntegrationConnection(connectionId: string): Promise<{ success: boolean }> {
-    const response = await this.client.delete(`/oauth-integrations/connections/${connectionId}`);
-    return response.data;
-  }
-
-  /**
-   * Delete authentication configuration for a specific provider (following Composio API pattern)
-   * DELETE /oauth-integrations/auth-configs/:provider
-   */
-  async deleteAuthConfigForProvider(provider: string): Promise<{ success: boolean }> {
-    const response = await this.client.delete(`/oauth-integrations/auth-configs/${provider}`);
-    return response.data;
-  }
-
-  /**
-   * Get available tools via OAuth integrations
-   * GET /oauth-integrations/tools
-   */
-  async getAvailableTools(toolkits?: string): Promise<any[]> {
-    const params = toolkits ? { toolkits } : {};
-    const response = await this.client.get('/oauth-integrations/tools', { params });
-    return response.data;
-  }
-
-  /**
-   * Send email via Gmail integration
-   * POST /oauth-integrations/email/send
-   */
-  async sendEmail(request: any): Promise<any> {
-    const response = await this.client.post('/oauth-integrations/email/send', request);
-    return response.data;
-  }
-
-  /**
-   * Create auth configuration for a provider
-   * POST /oauth-integrations/auth-configs/:provider
-   */
-  async createAuthConfiguration(provider: string): Promise<any> {
-    const response = await this.client.post(`/oauth-integrations/auth-configs/${provider}`);
-    return response.data;
-  }
-
-  /**
-   * Get service configuration status
-   * GET /oauth-integrations/service/status
-   */
-  async getServiceStatus(): Promise<{ configured: boolean; message: string }> {
-    const response = await this.client.get('/oauth-integrations/service/status');
-    return response.data;
-  }
 }
 
 // Create and export singleton instance

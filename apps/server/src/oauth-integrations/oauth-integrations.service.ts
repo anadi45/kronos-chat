@@ -709,14 +709,4 @@ export class OAuthIntegrationsService {
     }
   }
 
-  /**
-   * Checks if the service is properly configured
-   * Since we throw an error during initialization if not configured,
-   * this will always return true if the service instance exists
-   *
-   * @returns boolean - Configuration status
-   */
-  isServiceConfigured(): boolean {
-    return true;
-  }
 }
