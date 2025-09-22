@@ -568,40 +568,61 @@ export class OAuthIntegrationsService {
         `Disconnecting integration ${provider} for user ${userId}`
       );
 
-      // Get connected accounts to find the connection ID
-      const connectedAccounts = await this.getConnectedAccounts(userId);
-      const account = connectedAccounts.find(
-        (acc) => acc.provider.toLowerCase() === provider.toLowerCase()
-      );
-
-      if (!account) {
-        this.logger.warn(`No connected account found for provider ${provider}`);
-        throw new NotFoundException(
-          `No connected account found for ${provider} integration`
-        );
-      }
-
       // Get the auth config ID from the composio_oauth table for this specific platform
       const authConfigId = await this.getAuthConfigIdForUser(userId, provider);
 
-      // Prepare concurrent deletion operations
-      const deletionPromises: Promise<any>[] = [
-        this.composio.connectedAccounts.delete(account.id),
-      ];
+      // Prepare deletion operations
+      const deletionPromises: Promise<any>[] = [];
 
+      // Try to get connected accounts and delete if they exist
+      try {
+        const connectedAccounts = await this.getConnectedAccounts(userId);
+        const account = connectedAccounts.find(
+          (acc) => acc.provider.toLowerCase() === provider.toLowerCase()
+        );
+
+        if (account) {
+          deletionPromises.push(
+            this.composio.connectedAccounts.delete(account.id)
+          );
+        }
+      } catch (error) {
+        this.logger.warn(
+          `Could not fetch connected accounts for user ${userId}: ${error.message}`
+        );
+        // Continue with cleanup even if we can't fetch connected accounts
+      }
+
+      // Add auth config deletion if it exists
       if (authConfigId) {
-        // Add auth config deletion operations
         deletionPromises.push(
-          this.composio.authConfigs.delete(authConfigId),
-          this.composioOAuthRepository.delete({ userId, platform: provider })
+          this.composio.authConfigs.delete(authConfigId)
         );
       }
 
-      // Execute all deletions concurrently
-      await Promise.all(deletionPromises);
+      // Always clean up local database records
+      deletionPromises.push(
+        this.composioOAuthRepository.delete({ userId, platform: provider })
+      );
 
-      if (authConfigId) {
-        this.logger.log(`Auth config ${authConfigId} deleted successfully`);
+      // Execute all deletions with error handling for each operation
+      const results = await Promise.allSettled(deletionPromises);
+      
+      // Log results and handle any failures
+      results.forEach((result, index) => {
+        if (result.status === 'rejected') {
+          this.logger.warn(
+            `Deletion operation ${index} failed: ${result.reason?.message || 'Unknown error'}`
+          );
+        }
+      });
+
+      // Check if at least the local cleanup succeeded
+      const localCleanupResult = results[results.length - 1];
+      if (localCleanupResult.status === 'rejected') {
+        throw new InternalServerErrorException(
+          `Failed to clean up local records for ${provider} integration`
+        );
       }
 
       this.logger.log(`Integration ${provider} disconnected successfully`);
@@ -616,7 +637,8 @@ export class OAuthIntegrationsService {
       if (
         error instanceof BadRequestException ||
         error instanceof NotFoundException ||
-        error instanceof NotImplementedException
+        error instanceof NotImplementedException ||
+        error instanceof InternalServerErrorException
       ) {
         throw error;
       }
