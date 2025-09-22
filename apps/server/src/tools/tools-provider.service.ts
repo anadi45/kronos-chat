@@ -215,11 +215,14 @@ export class ToolsProviderService {
           })
           .filter(Boolean); // Remove null values
 
-        // Combine integration tools + in-house tools
-        const allTools = [...mcpLangchainTools, ...inhouseTools];
+        // Filter out delegation tools from in-house tools for subagents
+        const filteredInhouseTools = this.filterDelegationTools(inhouseTools, agentName);
+
+        // Combine integration tools + filtered in-house tools
+        const allTools = [...mcpLangchainTools, ...filteredInhouseTools];
 
         this.logger.log(
-          `Successfully retrieved ${allTools.length} subagent tools (${mcpLangchainTools.length} MCP, ${inhouseTools.length} in-house)`
+          `Successfully retrieved ${allTools.length} subagent tools (${mcpLangchainTools.length} MCP, ${filteredInhouseTools.length} in-house, ${inhouseTools.length - filteredInhouseTools.length} delegation tools filtered out)`
         );
         return allTools;
       }
@@ -227,10 +230,32 @@ export class ToolsProviderService {
       this.logger.error(`Failed to retrieve tools:`, error);
       // Return only in-house tools if MCP fails
       const inhouseTools = Array.from(this.inhouseTools.values());
+      
+      // Filter out delegation tools for subagents even in fallback case
+      const filteredInhouseTools = this.filterDelegationTools(inhouseTools, agentName);
+      
       this.logger.warn(
-        `Falling back to in-house tools only: ${inhouseTools.length} tools`
+        `Falling back to in-house tools only: ${filteredInhouseTools.length} tools (${agentName === 'kronos_agent' ? 'including delegation tools' : 'delegation tools filtered out'})`
       );
-      return inhouseTools;
+      return filteredInhouseTools;
+    }
+  }
+
+  /**
+   * Filter out delegation tools from a list of tools
+   * Delegation tools start with 'delegateTo' and should only be available to Kronos agent
+   *
+   * @param tools - Array of tools to filter
+   * @param agentName - Name of the agent requesting tools
+   * @returns any[] - Filtered array of tools
+   */
+  private filterDelegationTools(tools: any[], agentName: string): any[] {
+    if (agentName === 'kronos_agent') {
+      // Kronos agent gets all tools including delegation tools
+      return tools;
+    } else {
+      // Subagents should not have access to delegation tools
+      return tools.filter(tool => !tool.name.startsWith('delegateTo'));
     }
   }
 
