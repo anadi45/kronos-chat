@@ -1,4 +1,7 @@
-export const SYSTEM_PROMPT = `
+import { Provider } from '@kronos/core';
+
+// Base system prompt template
+export const SYSTEM_PROMPT_TEMPLATE = `
 <system_prompt>
 <role>
 You are Kronos, the master AI assistant and orchestrator of a comprehensive integration ecosystem. You are the central coordinator that manages multiple specialized subagents, each handling specific integration types. Your role is to understand user requests, determine the appropriate integration subagent(s) to handle the task, and coordinate the execution across multiple services.
@@ -20,75 +23,7 @@ You are Kronos, the master AI assistant and orchestrator of a comprehensive inte
 </primary_objectives>
 
 <available_integrations>
-<integration>
-<name>Gmail</name>
-<subagent>GmailSubagent</subagent>
-<scope>Email management, drafts, sending, replying, and profile operations</scope>
-<capabilities>Create drafts, send emails, reply to threads, manage drafts, fetch messages</capabilities>
-</integration>
-
-<integration>
-<name>GitHub</name>
-<subagent>GitHubSubagent</subagent>
-<scope>Repository management, pull requests, issues, commits, and collaboration</scope>
-<capabilities>Manage repos, handle PRs, work with issues, manage commits, access user info</capabilities>
-</integration>
-
-<integration>
-<name>Notion</name>
-<subagent>NotionSubagent</subagent>
-<scope>Page search, data fetching, and knowledge management</scope>
-<capabilities>Search pages, fetch data, organize knowledge, handle structured data</capabilities>
-</integration>
-
-<integration>
-<name>Slack</name>
-<subagent>SlackSubagent</subagent>
-<scope>Team communication, messaging, channels, and workspace management</scope>
-<capabilities>Send messages, manage channels, handle users, search conversations</capabilities>
-</integration>
-
-<integration>
-<name>Twitter/X</name>
-<subagent>TwitterSubagent</subagent>
-<scope>Social media monitoring, content discovery, and trend analysis</scope>
-<capabilities>Search tweets, monitor trends, analyze social media content</capabilities>
-</integration>
-
-<integration>
-<name>LinkedIn</name>
-<subagent>LinkedInSubagent</subagent>
-<scope>Professional networking, company information, and business intelligence</scope>
-<capabilities>Access company info, manage profiles, handle business intelligence</capabilities>
-</integration>
-
-<integration>
-<name>Reddit</name>
-<subagent>RedditSubagent</subagent>
-<scope>Community monitoring, content discovery, and social media research</scope>
-<capabilities>Monitor communities, search content, analyze posts and comments</capabilities>
-</integration>
-
-<integration>
-<name>Google Drive</name>
-<subagent>GoogleDriveSubagent</subagent>
-<scope>File management, document creation, and cloud storage operations</scope>
-<capabilities>Create files, manage folders, handle cloud storage, organize documents</capabilities>
-</integration>
-
-<integration>
-<name>Google Calendar</name>
-<subagent>GoogleCalendarSubagent</subagent>
-<scope>Event management, schedule coordination, and time management</scope>
-<capabilities>Manage events, coordinate schedules, handle time management</capabilities>
-</integration>
-
-<integration>
-<name>Instagram</name>
-<subagent>InstagramSubagent</subagent>
-<scope>Social media monitoring, content analysis, and user insights</scope>
-<capabilities>Monitor content, analyze user insights, handle media management</capabilities>
-</integration>
+{integrations}
 </available_integrations>
 
 <orchestration_guidelines>
@@ -139,6 +74,70 @@ You are Kronos, the master AI assistant and orchestrator of a comprehensive inte
 You are the master orchestrator of a sophisticated multi-agent system. Your role is to understand user needs, route tasks to the most appropriate specialized subagents, and provide comprehensive responses that leverage the full power of your integrated ecosystem. Always focus on delivering the most helpful and complete solution possible while maintaining seamless coordination across all available integrations.
 </final_instructions>
 </system_prompt>`;
+
+// Integration definitions for dynamic prompt generation
+export const INTEGRATION_DEFINITIONS = {
+  [Provider.GMAIL]: {
+    name: 'Gmail',
+    subagent: 'GmailSubagent',
+    scope: 'Email management, drafts, sending, replying, and profile operations',
+    capabilities: 'Create drafts, send emails, reply to threads, manage drafts, fetch messages'
+  },
+  [Provider.GITHUB]: {
+    name: 'GitHub',
+    subagent: 'GitHubSubagent',
+    scope: 'Repository management, pull requests, issues, commits, and collaboration',
+    capabilities: 'Manage repos, handle PRs, work with issues, manage commits, access user info'
+  },
+  [Provider.NOTION]: {
+    name: 'Notion',
+    subagent: 'NotionSubagent',
+    scope: 'Page search, data fetching, and knowledge management',
+    capabilities: 'Search pages, fetch data, organize knowledge, handle structured data'
+  },
+  [Provider.SLACK]: {
+    name: 'Slack',
+    subagent: 'SlackSubagent',
+    scope: 'Team communication, messaging, channels, and workspace management',
+    capabilities: 'Send messages, manage channels, handle users, search conversations'
+  },
+  [Provider.TWITTER]: {
+    name: 'Twitter/X',
+    subagent: 'TwitterSubagent',
+    scope: 'Social media monitoring, content discovery, and trend analysis',
+    capabilities: 'Search tweets, monitor trends, analyze social media content'
+  },
+  [Provider.LINKEDIN]: {
+    name: 'LinkedIn',
+    subagent: 'LinkedInSubagent',
+    scope: 'Professional networking, company information, and business intelligence',
+    capabilities: 'Access company info, manage profiles, handle business intelligence'
+  },
+  [Provider.REDDIT]: {
+    name: 'Reddit',
+    subagent: 'RedditSubagent',
+    scope: 'Community monitoring, content discovery, and social media research',
+    capabilities: 'Monitor communities, search content, analyze posts and comments'
+  },
+  [Provider.GOOGLE_DRIVE]: {
+    name: 'Google Drive',
+    subagent: 'GoogleDriveSubagent',
+    scope: 'File management, document creation, and cloud storage operations',
+    capabilities: 'Create files, manage folders, handle cloud storage, organize documents'
+  },
+  [Provider.GOOGLE_CALENDAR]: {
+    name: 'Google Calendar',
+    subagent: 'GoogleCalendarSubagent',
+    scope: 'Event management, schedule coordination, and time management',
+    capabilities: 'Manage events, coordinate schedules, handle time management'
+  },
+  [Provider.INSTAGRAM]: {
+    name: 'Instagram',
+    subagent: 'InstagramSubagent',
+    scope: 'Social media monitoring, content analysis, and user insights',
+    capabilities: 'Monitor content, analyze user insights, handle media management'
+  }
+};
 
 export const FINAL_ANSWER_SYSTEM_PROMPT = `
 <system_prompt>
@@ -216,19 +215,6 @@ This is your definitive response to the user's query. Draw upon all available in
 </final_instructions>
 </system_prompt>`;
 
-/**
- * Format the system prompt with dynamic values
- */
-export function formatSystemPrompt(todayDate?: string): string {
-  const date = todayDate || new Date().toLocaleDateString('en-US', {
-    weekday: 'long',
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric'
-  });
-  
-  return SYSTEM_PROMPT.replace('{today_date}', date);
-}
 
 /**
  * Format the final answer system prompt with dynamic values
@@ -242,4 +228,42 @@ export function formatFinalAnswerSystemPrompt(todayDate?: string): string {
   });
   
   return FINAL_ANSWER_SYSTEM_PROMPT.replace('{today_date}', date);
+}
+
+/**
+ * Generate integrations XML for the system prompt based on available toolkits
+ */
+function generateIntegrationsXML(toolkits: Provider[]): string {
+  return toolkits
+    .map(toolkit => {
+      const integration = INTEGRATION_DEFINITIONS[toolkit];
+      if (!integration) return '';
+      
+      return `<integration>
+<name>${integration.name}</name>
+<subagent>${integration.subagent}</subagent>
+<scope>${integration.scope}</scope>
+<capabilities>${integration.capabilities}</capabilities>
+</integration>`;
+    })
+    .filter(xml => xml !== '')
+    .join('\n\n');
+}
+
+/**
+ * Generate dynamic system prompt based on available toolkits
+ */
+export function generateSystemPrompt(toolkits: Provider[], todayDate?: string): string {
+  const date = todayDate || new Date().toLocaleDateString('en-US', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  });
+  
+  const integrationsXML = generateIntegrationsXML(toolkits);
+  
+  return SYSTEM_PROMPT_TEMPLATE
+    .replace('{today_date}', date)
+    .replace('{integrations}', integrationsXML);
 }
