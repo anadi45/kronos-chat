@@ -477,7 +477,31 @@ export class OAuthIntegrationsService {
         };
       });
 
-      return integrationsWithStatus;
+      // Sort integrations: connected first, then unconnected
+      const sortedIntegrations = integrationsWithStatus.sort((a, b) => {
+        // Connected integrations first
+        if (a.isConnected && !b.isConnected) return -1;
+        if (!a.isConnected && b.isConnected) return 1;
+        
+        // If both are connected, sort by auth type and connection date
+        if (a.isConnected && b.isConnected) {
+          // No auth integrations first (authType === 'not_needed')
+          if (a.authType === 'not_needed' && b.authType !== 'not_needed') return -1;
+          if (a.authType !== 'not_needed' && b.authType === 'not_needed') return 1;
+          
+          // If both have auth or both don't need auth, sort by connected date (oldest first)
+          if (a.connectedAt && b.connectedAt) {
+            return new Date(a.connectedAt).getTime() - new Date(b.connectedAt).getTime();
+          }
+          if (a.connectedAt && !b.connectedAt) return -1;
+          if (!a.connectedAt && b.connectedAt) return 1;
+        }
+        
+        // For unconnected integrations, sort alphabetically by name
+        return a.name.localeCompare(b.name);
+      });
+
+      return sortedIntegrations;
     } catch (error) {
       this.logger.error(
         `Failed to get integrations for user ${userId}:`,
