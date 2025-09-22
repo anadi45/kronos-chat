@@ -451,14 +451,6 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
             </p>
           </div>
           <div className="chat-controls">
-            {isStreaming && (
-              <button
-                onClick={handleStopStreaming}
-                className="chat-control-btn stop"
-              >
-                Stop
-              </button>
-            )}
             <button
               onClick={startNewConversation}
               disabled={isStreaming}
