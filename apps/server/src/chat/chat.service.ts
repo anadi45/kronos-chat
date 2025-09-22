@@ -63,11 +63,8 @@ export class ChatService {
   ): Promise<ReadableStream> {
     const conversationRepository = this.conversationRepository;
 
-    // Get user's integrations if no toolkits provided
-    let finalToolkits = request.toolkits;
-    if (!finalToolkits || finalToolkits.length === 0) {
-      finalToolkits = await this.getUserIntegrations(userId);
-    }
+    // Use provided toolkits, or empty array if none provided (let model answer directly)
+    let finalToolkits = request.toolkits || [];
 
     const agent = await new KronosAgent({
       userId: userId,

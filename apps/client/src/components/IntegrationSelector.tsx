@@ -60,6 +60,8 @@ const IntegrationSelector: React.FC<IntegrationSelectorProps> = ({
       document.addEventListener('mousedown', handleClickOutside);
       return () => document.removeEventListener('mousedown', handleClickOutside);
     }
+    
+    return undefined;
   }, [isOpen]);
 
   const loadIntegrations = async () => {
@@ -70,15 +72,21 @@ const IntegrationSelector: React.FC<IntegrationSelectorProps> = ({
       const connectedIntegrations = integrations.filter(integration => integration.isConnected);
       
       // Add Web Research if it's not already in the list
-      const hasWebResearch = connectedIntegrations.some(integration => integration.id === 'WEB_RESEARCH');
+      const hasWebResearch = connectedIntegrations.some(integration => integration.id === 'WEBRESEARCH');
       if (!hasWebResearch) {
-        const webResearchIntegration = integrations.find(integration => integration.id === 'WEB_RESEARCH');
+        const webResearchIntegration = integrations.find(integration => integration.id === 'WEBRESEARCH');
         if (webResearchIntegration) {
           connectedIntegrations.push(webResearchIntegration);
         }
       }
       
       setIntegrations(connectedIntegrations);
+      
+      // Auto-select all available integrations by default
+      if (connectedIntegrations.length > 0) {
+        const allProviderIds = connectedIntegrations.map(integration => integration.id as Provider);
+        onToolkitsChange(allProviderIds);
+      }
     } catch (error) {
       console.error('Error loading integrations:', error);
       setIntegrations([]);
