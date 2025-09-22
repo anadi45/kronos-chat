@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { useParams, useNavigate } from 'react-router-dom';
 import { apiService } from '../services/apiService';
 import type { 
   ChatMessage, 
@@ -18,10 +19,14 @@ interface ChatInterfaceProps {
 // Remove the old StreamChunk interface as we'll use the new StreamEvent types
 
 const ChatInterface: React.FC<ChatInterfaceProps> = () => {
+  const { conversationId: urlConversationId } = useParams<{ conversationId?: string }>();
+  const navigate = useNavigate();
+  
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [isStreaming, setIsStreaming] = useState(false);
   const [currentConversationId, setCurrentConversationId] = useState<string>('');
+  const [conversationTitle, setConversationTitle] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
   const [streamingMessage, setStreamingMessage] = useState('');
   const [streamingMarkdown, setStreamingMarkdown] = useState('');
@@ -31,6 +36,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
   const [isLoadingConversations, setIsLoadingConversations] = useState(false);
   const [hasMoreConversations, setHasMoreConversations] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
+  const [totalConversations, setTotalConversations] = useState(0);
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
   const [conversationToDelete, setConversationToDelete] = useState<Conversation | null>(null);
   const [isDeletingConversation, setIsDeletingConversation] = useState(false);
@@ -41,6 +47,13 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
   const conversationsListRef = useRef<HTMLDivElement>(null);
+
+  // Generate a title from the first message
+  const generateTitleFromMessage = (message: string): string => {
+    // Take first 50 characters and clean up
+    const title = message.trim().substring(0, 50);
+    return title.length < message.trim().length ? `${title}...` : title;
+  };
 
   // Auto-scroll to bottom when new messages arrive
   const scrollToBottom = useCallback(() => {
@@ -63,15 +76,25 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
     adjustTextareaHeight();
   }, [input, adjustTextareaHeight]);
 
-  // Load conversations on component mount
+  // Handle URL-based conversation loading
   useEffect(() => {
-    loadConversations();
-    // Load persisted conversation ID from localStorage
-    const persistedConversationId = localStorage.getItem('kronos-current-conversation-id');
-    if (persistedConversationId) {
-      setCurrentConversationId(persistedConversationId);
+    if (urlConversationId && urlConversationId !== currentConversationId) {
+      // Load conversation from URL parameter
+      loadConversationMessages(urlConversationId);
     }
-  }, []);
+    // Remove the automatic redirect to conversation ID - let /chat stay as /chat for new conversations
+  }, [urlConversationId, currentConversationId, navigate]);
+
+  // Load persisted conversation ID from localStorage on component mount (fallback)
+  // Only load from localStorage if we're not on the base /chat route
+  useEffect(() => {
+    if (!urlConversationId) {
+      // Don't automatically load conversation from localStorage on /chat
+      // Let users start fresh conversations on /chat
+      setCurrentConversationId('');
+      setConversationTitle('');
+    }
+  }, [urlConversationId]);
 
   // Handle escape key to close modals
   useEffect(() => {
@@ -137,6 +160,9 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
       } else {
         setConversations(response.items || []);
       }
+      
+      // Use the actual total from API response, not calculated
+      setTotalConversations(response.total);
       setHasMoreConversations(page < response.totalPages);
       setCurrentPage(page);
       setError(null); // Clear any previous errors
@@ -228,6 +254,17 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
       setStreamingMarkdown('');
       setIsMarkdownMode(false);
       setError(null);
+      
+      // Update URL if not already there
+      if (urlConversationId !== conversationId) {
+        navigate(`/chat/${conversationId}`, { replace: true });
+      }
+      
+      // Set conversation title from the conversation data
+      const conversation = conversations.find(c => c.id === conversationId);
+      if (conversation) {
+        setConversationTitle(conversation.title || 'Untitled Conversation');
+      }
     } catch (error: any) {
       console.error('Failed to load conversation messages:', error);
       
@@ -251,12 +288,15 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
   const startNewConversation = () => {
     setMessages([]);
     setCurrentConversationId('');
+    setConversationTitle('');
     setStreamingMessage('');
     setError(null);
     setShowConversations(false);
     // Reset pagination state
     setCurrentPage(1);
     setHasMoreConversations(true);
+    // Navigate to base chat URL
+    navigate('/chat', { replace: true });
   };
 
   const handleStopStreaming = () => {
@@ -286,6 +326,12 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
     setIsStreaming(true);
     setStreamingMessage('');
     setProgressUpdate(null);
+
+    // Generate title from first message if this is a new conversation
+    if (!currentConversationId && messages.length === 0) {
+      const generatedTitle = generateTitleFromMessage(userMessage.content);
+      setConversationTitle(generatedTitle);
+    }
 
     try {
       // Create stream request - only message, no conversationId or history for new conversations
@@ -333,6 +379,12 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
                     sessionId = (parsed.data as any).sessionId || '';
                     isNewConversation = (parsed.data as any).isNewConversation || false;
                     setCurrentConversationId(conversationId);
+                    
+                    // Update URL with new conversation ID
+                    if (conversationId && urlConversationId !== conversationId) {
+                      navigate(`/chat/${conversationId}`, { replace: true });
+                    }
+                    
                     console.log('Stream started:', { conversationId, sessionId, isNewConversation });
                     break;
                     
@@ -427,7 +479,13 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
         <div className="chat-header">
           <div className="chat-header-left">
             <button
-              onClick={() => setShowConversations(!showConversations)}
+              onClick={() => {
+                if (!showConversations) {
+                  // Always load conversations when opening the modal
+                  loadConversations();
+                }
+                setShowConversations(!showConversations);
+              }}
               className="chat-control-btn"
               title="Conversations"
             >
@@ -436,18 +494,13 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
               </svg>
             </button>
             <p className="text-sm text-gray-300">
-              {currentConversationId ? `Conversation: ${currentConversationId.slice(-8)}` : 'New conversation'}
+              {currentConversationId 
+                ? (conversationTitle || conversations.find(c => c.id === currentConversationId)?.title || 'Untitled Conversation')
+                : (conversationTitle || 'New conversation')
+              }
             </p>
           </div>
           <div className="chat-controls">
-            {isStreaming && (
-              <button
-                onClick={handleStopStreaming}
-                className="chat-control-btn stop"
-              >
-                Stop
-              </button>
-            )}
             <button
               onClick={startNewConversation}
               disabled={isStreaming}
@@ -478,7 +531,10 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
               <div className="conversations-header-content">
                 <h3>Past Conversations</h3>
                 <p className="conversations-subtitle">
-                  {conversations.length} conversation{conversations.length !== 1 ? 's' : ''} found
+                  {totalConversations === 0 
+                    ? '0 Conversations found'
+                    : `${conversations.length} of ${totalConversations} conversation${totalConversations !== 1 ? 's' : ''} loaded`
+                  }
                 </p>
               </div>
               <button
@@ -497,7 +553,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
                 {conversations.length === 0 && !isLoadingConversations ? (
                   <div className="conversations-empty">
                     <div className="conversations-empty-icon">
-                      <svg className="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-16 h-16 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                       </svg>
                     </div>
@@ -526,7 +582,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
                         </div>
                         <div className="conversation-details">
                           <div className="conversation-title">
-                            {conversation.title || `Conversation ${conversation.id.slice(-8)}`}
+                            {conversation.title || 'Untitled Conversation'}
                           </div>
                           <div className="conversation-time">
                             {new Date(conversation.updatedAt).toLocaleDateString('en-US', {

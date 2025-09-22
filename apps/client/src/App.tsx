@@ -80,6 +80,19 @@ function App({ user, onLogout, isAuthenticated }: AppProps) {
         />
         
         <Route 
+          path="/chat/:conversationId" 
+          element={
+            isAuthenticated ? (
+              <Layout user={user} onLogout={onLogout}>
+                <ChatInterface userId={userId} />
+              </Layout>
+            ) : (
+              <Navigate to="/login" replace />
+            )
+          } 
+        />
+        
+        <Route 
           path="/oauth-integrations" 
           element={
             isAuthenticated ? (

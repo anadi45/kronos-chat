@@ -2878,6 +2878,48 @@ input:checked + .toggle-slider:before {
   margin: 0;
 }
 
+.conversations-subtitle {
+  font-size: 0.875rem;
+  color: rgba(255, 255, 255, 0.7);
+  margin: 0.5rem 0 0 0;
+  font-weight: 400;
+}
+
+/* Conversations Empty State */
+.conversations-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 3rem 2rem;
+  min-height: 200px;
+}
+
+.conversations-empty-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1.5rem;
+  opacity: 0.6;
+}
+
+.conversations-empty-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
+  margin: 0 0 0.75rem 0;
+  line-height: 1.4;
+}
+
+.conversations-empty-description {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.6);
+  margin: 0;
+  line-height: 1.5;
+  max-width: 300px;
+}
+
 .conversations-modal-close {
   background: rgba(255, 255, 255, 0.1);
   border: 1px solid rgba(255, 255, 255, 0.2);
@@ -3423,6 +3465,35 @@ input:checked + .toggle-slider:before {
 
   .conversations-modal-header h3 {
     font-size: 1.25rem;
+  }
+
+  .conversations-subtitle {
+    font-size: 0.8rem;
+    margin: 0.25rem 0 0 0;
+  }
+
+  .conversations-empty {
+    padding: 2rem 1rem;
+    min-height: 150px;
+  }
+
+  .conversations-empty-icon {
+    margin-bottom: 1rem;
+  }
+
+  .conversations-empty-icon svg {
+    width: 3rem;
+    height: 3rem;
+  }
+
+  .conversations-empty-title {
+    font-size: 1.1rem;
+    margin: 0 0 0.5rem 0;
+  }
+
+  .conversations-empty-description {
+    font-size: 0.85rem;
+    max-width: 250px;
   }
 
   .conversations-list {

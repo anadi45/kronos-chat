@@ -12,6 +12,7 @@ import { ToolsExecutorService } from '../tools/tools-executor.service';
 import { ToolsProviderService } from '../tools/tools-provider.service';
 import { HumanMessage } from '@langchain/core/messages';
 import { ProgressMessages } from '../utils/progress-messages';
+import { createConversationTitle } from '../utils/title.utils';
 
 @Injectable()
 export class ChatService {
@@ -91,8 +92,11 @@ export class ChatService {
             }
           } else {
             isNewConversation = true;
+            // Create a properly truncated and sanitized title
+            const conversationTitle = createConversationTitle(request.message);
+            
             conversation = conversationRepository.create({
-              title: null,
+              title: conversationTitle, // Set title to first human message (processed)
               messages: [],
               metadata: {},
               createdBy: userId,
