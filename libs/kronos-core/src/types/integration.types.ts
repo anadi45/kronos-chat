@@ -10,6 +10,7 @@ export enum AuthType {
   OAUTH = 'oauth',
   API_KEY = 'api_key',
   WEBHOOK = 'webhook',
+  NOT_NEEDED = 'not_needed',
 }
 
 export enum Provider {
@@ -23,6 +24,7 @@ export enum Provider {
   GOOGLE_DRIVE = 'GOOGLEDRIVE',
   GOOGLE_CALENDAR = 'GOOGLECALENDAR',
   INSTAGRAM = 'INSTAGRAM',
+  WEB_RESEARCH = 'WEBRESEARCH',
 }
 
 export interface Integration {

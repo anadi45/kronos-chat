@@ -106,6 +106,13 @@ export const TOOLKIT_TOOLS_MAPPING: ToolkitToolMapping = {
     'INSTAGRAM_GET_USER_INSIGHTS',
     'INSTAGRAM_GET_USER_INFO',
   ],
+
+  // Web Research Integration Tools
+  [Provider.WEB_RESEARCH]: [
+    'TAVILY_SEARCH',
+    'TAVILY_SEARCH_ANSWER',
+    'TAVILY_GET_CONTENT',
+  ],
 };
 
 /**

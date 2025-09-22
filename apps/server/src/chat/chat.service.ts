@@ -38,11 +38,16 @@ export class ChatService {
         })
         .filter(Boolean) as Provider[];
 
+      // Always include Web Research as it's always available
+      if (!providerEnums.includes(Provider.WEB_RESEARCH)) {
+        providerEnums.push(Provider.WEB_RESEARCH);
+      }
+
       console.log(`Found ${providerEnums.length} user integrations: ${providerEnums.join(', ')}`);
       return providerEnums;
     } catch (error) {
-      console.warn('Failed to get user integrations, using empty array:', error.message);
-      return [];
+      console.warn('Failed to get user integrations, using Web Research only:', error.message);
+      return [Provider.WEB_RESEARCH];
     }
   }
 
@@ -58,11 +63,8 @@ export class ChatService {
   ): Promise<ReadableStream> {
     const conversationRepository = this.conversationRepository;
 
-    // Get user's integrations if no toolkits provided
-    let finalToolkits = request.toolkits;
-    if (!finalToolkits || finalToolkits.length === 0) {
-      finalToolkits = await this.getUserIntegrations(userId);
-    }
+    // Use provided toolkits, or empty array if none provided (let model answer directly)
+    let finalToolkits = request.toolkits || [];
 
     const agent = await new KronosAgent({
       userId: userId,

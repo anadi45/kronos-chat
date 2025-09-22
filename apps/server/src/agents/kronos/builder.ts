@@ -103,7 +103,7 @@ export class KronosAgentBuilder {
         apiKey: process.env.GEMINI_API_KEY,
         streaming: true,
       }).withConfig({
-        tags: ["final_answer_node"],
+        tags: ['final_answer_node'],
       });
     } catch (error) {
       throw new Error(`Failed to initialize Providers: ${error.message}`);
@@ -144,6 +144,7 @@ export class KronosAgentBuilder {
    * Add all nodes to the workflow graph
    */
   private async addNodes(workflow: any): Promise<void> {
+    workflow.addNode('validation', this.createValidationNode());
     workflow.addNode('agent', this.createAgentNode());
     workflow.addNode('tool', this.createToolNode());
     workflow.addNode('final_answer', this.createFinalAnswerNode());
@@ -153,8 +154,27 @@ export class KronosAgentBuilder {
    * Configure the workflow execution flow
    */
   private configureEdges(workflow: any): void {
-    // Set entry point
-    workflow.setEntryPoint('agent');
+    // Set entry point to validation node
+    workflow.setEntryPoint('validation');
+
+    // Validation -> agent or final answer based on toolkits
+    workflow.addConditionalEdges(
+      'validation',
+      (state: KronosAgentState) => {
+        // If no toolkits are provided or toolkits is undefined, go directly to final answer
+        if (!this.toolkits || this.toolkits.length === 0) {
+          return 'no';
+        }
+
+        // If toolkits exist, route to agent node
+        console.log('shouldUseTools - routing to yes (use tools)');
+        return 'yes';
+      },
+      {
+        yes: 'agent',
+        no: 'final_answer',
+      }
+    );
 
     // Agent -> tools or final answer node
     workflow.addConditionalEdges('agent', this.shouldAct, {
@@ -167,6 +187,15 @@ export class KronosAgentBuilder {
 
     // Final answer -> END
     workflow.addEdge('final_answer', END);
+  }
+
+  /**
+   * Create the validation node that checks for toolkits and routes accordingly
+   */
+  private createValidationNode() {
+    return async (state: KronosAgentState, config: RunnableConfig) => {
+      return state;
+    };
   }
 
   /**

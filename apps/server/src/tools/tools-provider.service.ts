@@ -160,13 +160,18 @@ export class ToolsProviderService {
     agentName: string = 'subagent'
   ): Promise<any[]> {
     try {
-      // If no toolkits provided, fetch user's OAuth integrations from database
+      // Use provided toolkits as-is (empty array means no tools)
       let finalToolkits = toolkits;
-      if (toolkits.length === 0) {
+      
+      // Only fall back to user's OAuth integrations if toolkits is undefined/null
+      // but not if it's explicitly an empty array
+      if (toolkits === undefined || toolkits === null) {
         finalToolkits = await this.getUserOAuthIntegrations(userId);
         this.logger.log(
           `No toolkits provided, using user's OAuth integrations: ${finalToolkits.join(', ')}`
         );
+      } else if (toolkits.length === 0) {
+        this.logger.log('Empty toolkits array provided, returning no tools');
       }
 
       this.logger.log(
