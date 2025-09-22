@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import type { ChatRequest, PaginatedResponse } from '@kronos/core';
+import { Provider } from '@kronos/core';
 import { StreamEventFactory, StreamEventSerializer } from '@kronos/core';
 import { Conversation, ChatMessage } from '../entities/conversation.entity';
 import { ChatMessageRole } from '../enum/roles.enum';
@@ -22,6 +23,30 @@ export class ChatService {
   ) {}
 
   /**
+   * Get user's OAuth integrations from the database
+   */
+  private async getUserIntegrations(userId: string): Promise<Provider[]> {
+    try {
+      // Use the tools provider service to get user's OAuth integrations
+      const userIntegrations = await this.toolsProviderService.getUserOAuthIntegrations(userId);
+      
+      // Convert string platform names to Provider enum values
+      const providerEnums = userIntegrations
+        .map(integration => {
+          const upperProvider = integration.toUpperCase();
+          return Object.values(Provider).find(p => p === upperProvider);
+        })
+        .filter(Boolean) as Provider[];
+
+      console.log(`Found ${providerEnums.length} user integrations: ${providerEnums.join(', ')}`);
+      return providerEnums;
+    } catch (error) {
+      console.warn('Failed to get user integrations, using empty array:', error.message);
+      return [];
+    }
+  }
+
+  /**
    * Send a chat message with streaming response using LangGraph streaming
    * @param request The chat request
    * @param userId The user ID
@@ -33,12 +58,18 @@ export class ChatService {
   ): Promise<ReadableStream> {
     const conversationRepository = this.conversationRepository;
 
+    // Get user's integrations if no toolkits provided
+    let finalToolkits = request.toolkits;
+    if (!finalToolkits || finalToolkits.length === 0) {
+      finalToolkits = await this.getUserIntegrations(userId);
+    }
+
     const agent = await new KronosAgent({
       userId: userId,
       checkpointerService: this.checkpointerService,
       toolsExecutorService: this.toolsExecutorService,
       toolsProviderService: this.toolsProviderService,
-      toolkits: request.toolkits,
+      toolkits: finalToolkits,
     }).getCompiledAgent();
 
     return new ReadableStream({
@@ -94,7 +125,7 @@ export class ChatService {
           // Send initial progress update
           const initialProgressEvent =
             StreamEventFactory.createProgressUpdateEvent(
-              '🤖 Kronos is analyzing your request...'
+              '🤖 Getting started...'
             );
           controller.enqueue(
             new TextEncoder().encode(
@@ -115,7 +146,7 @@ export class ChatService {
             if (!progressUpdateSent && event.event === 'on_chain_start') {
               const processingProgressEvent =
                 StreamEventFactory.createProgressUpdateEvent(
-                  '🧠 Kronos is thinking and planning the response...'
+                  '🧠 Working on your request...'
                 );
               controller.enqueue(
                 new TextEncoder().encode(
@@ -137,10 +168,19 @@ export class ChatService {
                     const toolNames = message.tool_calls
                       .map((tc) => tc.name)
                       .join(', ');
+                    
+                    // Check if this is a delegation call
+                    const delegationMatch = toolNames.match(/delegateTo(\w+)Agent/);
+                    let progressMessage = '🔧 Gathering information...';
+                    
+                    if (delegationMatch) {
+                      const agentName = delegationMatch[1].toLowerCase();
+                      const capitalizedAgent = agentName.charAt(0).toUpperCase() + agentName.slice(1);
+                      progressMessage = `🔧 ${capitalizedAgent} agent is processing your request...`;
+                    }
+                    
                     const toolCallProgressEvent =
-                      StreamEventFactory.createProgressUpdateEvent(
-                        `🔧 Kronos is executing tools: ${toolNames}`
-                      );
+                      StreamEventFactory.createProgressUpdateEvent(progressMessage);
                     controller.enqueue(
                       new TextEncoder().encode(
                         StreamEventSerializer.serialize(toolCallProgressEvent)
@@ -155,10 +195,18 @@ export class ChatService {
                 const toolMessages = chunk.tools.messages;
                 for (const message of toolMessages) {
                   if (message.name && message.content) {
+                    // Check if this is a delegation tool result
+                    const delegationMatch = message.name.match(/delegateTo(\w+)Agent/);
+                    let resultMessage = '✅ Found what I need!';
+                    
+                    if (delegationMatch) {
+                      const agentName = delegationMatch[1].toLowerCase();
+                      const capitalizedAgent = agentName.charAt(0).toUpperCase() + agentName.slice(1);
+                      resultMessage = `✅ ${capitalizedAgent} agent completed the task!`;
+                    }
+                    
                     const toolResultProgressEvent =
-                      StreamEventFactory.createProgressUpdateEvent(
-                        `✅ Kronos completed tool: ${message.name}`
-                      );
+                      StreamEventFactory.createProgressUpdateEvent(resultMessage);
                     controller.enqueue(
                       new TextEncoder().encode(
                         StreamEventSerializer.serialize(toolResultProgressEvent)
@@ -170,11 +218,12 @@ export class ChatService {
             }
 
             try {
-              // Only stream from on_chat_model_stream events to avoid duplication
-              // These events contain the actual streaming chunks from the model
+              // Only stream from on_chat_model_stream events with final_answer_node tag
+              // This ensures we only stream tokens from the final answer node, not subagents
               if (
                 event.event === 'on_chat_model_stream' &&
-                event.data?.chunk?.content
+                event.data?.chunk?.content &&
+                event.tags?.includes('final_answer_node')
               ) {
                 const content = event.data.chunk.content;
                 if (typeof content === 'string' && content.trim()) {
@@ -182,7 +231,7 @@ export class ChatService {
                   if (assistantMessage === '') {
                     const generatingProgressEvent =
                       StreamEventFactory.createProgressUpdateEvent(
-                        '✍️ Kronos is generating response...'
+                        '✍️ Writing your response...'
                       );
                     controller.enqueue(
                       new TextEncoder().encode(

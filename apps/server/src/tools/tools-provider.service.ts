@@ -7,6 +7,8 @@ import { Tool, DynamicStructuredTool } from '@langchain/core/tools';
 import { LangChainToolConverter } from './langchain-tool-converter';
 import { ComposioOAuth } from '../entities/composio-oauth.entity';
 import { getToolsForToolkits } from './toolkit-mappings';
+import { DelegationToolsFactory } from './delegation-tools';
+import { Provider } from '@kronos/core';
 
 /**
  * Signal Context Readiness Tool
@@ -53,6 +55,7 @@ export class ToolsProviderService {
   private readonly logger = new Logger(ToolsProviderService.name);
   private readonly composio: Composio;
   private readonly inhouseTools: Map<string, any> = new Map();
+  private delegationToolsFactory: DelegationToolsFactory;
 
   constructor(
     private readonly configService: ConfigService,
@@ -82,7 +85,22 @@ export class ToolsProviderService {
       SignalContextReadinessTool
     );
 
+
     this.logger.log(`Initialized ${this.inhouseTools.size} in-house tools`);
+  }
+
+  /**
+   * Initialize delegation tools factory
+   */
+  private initializeDelegationToolsFactory(
+    checkpointerService: any,
+    toolsExecutorService: any
+  ): void {
+    this.delegationToolsFactory = new DelegationToolsFactory({
+      checkpointerService,
+      toolsExecutorService,
+      toolsProviderService: this
+    });
   }
 
   /**
@@ -107,7 +125,7 @@ export class ToolsProviderService {
    * @param userId - The user identifier
    * @returns Promise<string[]> - Array of platform names (toolkits)
    */
-  private async getUserOAuthIntegrations(userId: string): Promise<string[]> {
+  async getUserOAuthIntegrations(userId: string): Promise<string[]> {
     try {
       const integrations = await this.composioOAuthRepository.find({
         where: { userId },
@@ -133,11 +151,13 @@ export class ToolsProviderService {
    *
    * @param userId - The user identifier
    * @param toolkits - Array of toolkit names to retrieve tools for
+   * @param agentName - The name of the agent requesting tools (e.g., 'kronos_agent', 'gmail_subagent', 'github_subagent')
    * @returns Promise<any[]> - Array of LangChain compatible tools
    */
   async getAvailableTools(
     userId: string,
-    toolkits: string[] = []
+    toolkits: string[] = [],
+    agentName: string = 'subagent'
   ): Promise<any[]> {
     try {
       // If no toolkits provided, fetch user's OAuth integrations from database
@@ -152,54 +172,143 @@ export class ToolsProviderService {
       this.logger.log(
         `Retrieving tools for user ${userId} with toolkits: ${finalToolkits.join(
           ', '
-        )}`
+        )} (agent: ${agentName})`
       );
-
-      // Get specific tool names from our mappings instead of passing toolkits
-      const allowedToolNames = getToolsForToolkits(finalToolkits);
-      this.logger.log(`Extracted tool names from mappings: ${allowedToolNames.join(', ')}`);
-
-      // Get MCP tools from Composio using specific tool names
-      const composioTools = await this.composio.tools.get(userId, {
-        tools: allowedToolNames, // Pass specific tool names instead of toolkits
-      });
-
-      // Convert Composio tools to LangChain compatible tools
-      const mcpLangchainTools = composioTools
-        .map((tool: any) => {
-          try {
-            // Use type assertion to completely bypass strict typing
-            const convertedTool = (LangChainToolConverter as any).convert(tool);
-            return convertedTool;
-          } catch (conversionError) {
-            this.logger.warn(
-              `Failed to convert tool ${tool?.function?.name || 'unknown'}:`,
-              conversionError.message
-            );
-            return null;
-          }
-        })
-        .filter(Boolean); // Remove null values
 
       // Get in-house tools
       const inhouseTools = Array.from(this.inhouseTools.values());
 
-      // Combine all tools
-      const allTools = [...mcpLangchainTools, ...inhouseTools];
+      if (agentName === 'kronos_agent') {
+        // For Kronos agent: only delegation tools + in-house tools (NO integration tools)
+        const delegationTools = this.getDelegationToolsForProviders(finalToolkits);
+        // Get updated in-house tools (which now includes registered delegation tools)
+        const updatedInhouseTools = Array.from(this.inhouseTools.values());
 
-      this.logger.log(
-        `Successfully retrieved ${allTools.length} tools (${mcpLangchainTools.length} MCP, ${inhouseTools.length} in-house)`
-      );
-      return allTools;
+        this.logger.log(
+          `Successfully retrieved ${updatedInhouseTools.length} Kronos agent tools (including ${delegationTools.length} delegation tools)`
+        );
+        return updatedInhouseTools;
+      } else {
+        // For subagents: integration tools + in-house tools (NO delegation tools)
+        const allowedToolNames = getToolsForToolkits(finalToolkits);
+        this.logger.log(`Extracted tool names from mappings: ${allowedToolNames.join(', ')}`);
+
+        // Get MCP tools from Composio using specific tool names
+        const composioTools = await this.composio.tools.get(userId, {
+          tools: allowedToolNames, // Pass specific tool names instead of toolkits
+        });
+
+        // Convert Composio tools to LangChain compatible tools
+        const mcpLangchainTools = composioTools
+          .map((tool: any) => {
+            try {
+              // Use type assertion to completely bypass strict typing
+              const convertedTool = (LangChainToolConverter as any).convert(tool);
+              return convertedTool;
+            } catch (conversionError) {
+              this.logger.warn(
+                `Failed to convert tool ${tool?.function?.name || 'unknown'}:`,
+                conversionError.message
+              );
+              return null;
+            }
+          })
+          .filter(Boolean); // Remove null values
+
+        // Filter out delegation tools from in-house tools for subagents
+        const filteredInhouseTools = this.filterDelegationTools(inhouseTools, agentName);
+
+        // Combine integration tools + filtered in-house tools
+        const allTools = [...mcpLangchainTools, ...filteredInhouseTools];
+
+        this.logger.log(
+          `Successfully retrieved ${allTools.length} subagent tools (${mcpLangchainTools.length} MCP, ${filteredInhouseTools.length} in-house, ${inhouseTools.length - filteredInhouseTools.length} delegation tools filtered out)`
+        );
+        return allTools;
+      }
     } catch (error) {
       this.logger.error(`Failed to retrieve tools:`, error);
       // Return only in-house tools if MCP fails
       const inhouseTools = Array.from(this.inhouseTools.values());
+      
+      // Filter out delegation tools for subagents even in fallback case
+      const filteredInhouseTools = this.filterDelegationTools(inhouseTools, agentName);
+      
       this.logger.warn(
-        `Falling back to in-house tools only: ${inhouseTools.length} tools`
+        `Falling back to in-house tools only: ${filteredInhouseTools.length} tools (${agentName === 'kronos_agent' ? 'including delegation tools' : 'delegation tools filtered out'})`
       );
-      return inhouseTools;
+      return filteredInhouseTools;
     }
+  }
+
+  /**
+   * Filter out delegation tools from a list of tools
+   * Delegation tools start with 'delegateTo' and should only be available to Kronos agent
+   *
+   * @param tools - Array of tools to filter
+   * @param agentName - Name of the agent requesting tools
+   * @returns any[] - Filtered array of tools
+   */
+  private filterDelegationTools(tools: any[], agentName: string): any[] {
+    if (agentName === 'kronos_agent') {
+      // Kronos agent gets all tools including delegation tools
+      return tools;
+    } else {
+      // Subagents should not have access to delegation tools
+      return tools.filter(tool => !tool.name.startsWith('delegateTo'));
+    }
+  }
+
+  /**
+   * Get delegation tools for available providers
+   *
+   * @param providers - Array of provider names
+   * @returns any[] - Array of delegation tools
+   */
+  private getDelegationToolsForProviders(providers: string[]): any[] {
+    if (!this.delegationToolsFactory) {
+      this.logger.warn('Delegation tools factory not initialized');
+      return [];
+    }
+
+    try {
+      // Convert provider strings to Provider enum values
+      const providerEnums = providers
+        .map(provider => {
+          const upperProvider = provider.toUpperCase();
+          return Object.values(Provider).find(p => p === upperProvider);
+        })
+        .filter(Boolean) as Provider[];
+
+      // Create delegation tools for each provider
+      const delegationTools = this.delegationToolsFactory.createAllDelegationTools(providerEnums);
+      
+      // Register delegation tools as in-house tools
+      delegationTools.forEach(tool => {
+        this.inhouseTools.set(tool.name, tool);
+        this.logger.debug(`Registered delegation tool: ${tool.name}`);
+      });
+      
+      this.logger.log(`Created and registered ${delegationTools.length} delegation tools for providers: ${providers.join(', ')}`);
+      return delegationTools;
+    } catch (error) {
+      this.logger.error('Failed to create delegation tools:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Initialize delegation tools factory with required services
+   *
+   * @param checkpointerService - Checkpointer service instance
+   * @param toolsExecutorService - Tools executor service instance
+   */
+  initializeDelegationTools(
+    checkpointerService: any,
+    toolsExecutorService: any
+  ): void {
+    this.initializeDelegationToolsFactory(checkpointerService, toolsExecutorService);
+    this.logger.log('Delegation tools factory initialized');
   }
 
   /**

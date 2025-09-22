@@ -8,84 +8,55 @@ import {
 } from '@langchain/core/messages';
 import { Runnable, RunnableConfig } from '@langchain/core/runnables';
 import { Logger } from '@nestjs/common';
-import { KronosAgentState, KronosAgentStateSchema } from './state';
-import { MODELS } from '../../constants/models.constants';
-import { generateSystemPrompt, formatFinalAnswerSystemPrompt } from './prompts';
-import { getContextValue, extractToolCalls } from '../common/utils';
-import { getCurrentDate } from '@kronos/core';
-import { CheckpointerService } from '../../checkpointer';
-import { ToolsExecutorService } from '../../tools/tools-executor.service';
-import { ToolsProviderService } from '../../tools/tools-provider.service';
+import { CheckpointerService } from '../checkpointer';
+import { ToolsExecutorService } from '../tools/tools-executor.service';
+import { ToolsProviderService } from '../tools/tools-provider.service';
 import { Provider } from '@kronos/core';
+import { getContextValue, extractToolCalls } from '../agents/common/utils';
+import { getCurrentDate } from '@kronos/core';
+import { MODELS } from '../constants/models.constants';
+import { SubagentState, SubagentStateSchema } from './state';
 
-export type KronosAgentConfig = {
+export interface SubagentConfig {
   userId: string;
   checkpointerService: CheckpointerService;
   toolsExecutorService: ToolsExecutorService;
   toolsProviderService: ToolsProviderService;
-  toolkits: Provider[];
-};
+  provider: Provider;
+}
 
 /**
- * Kronos Agent Builder
- *
- * Encapsulates the complex logic for building the Kronos agent graph using LangGraph.
- * This builder creates a workflow with tool execution, agent reasoning, and response generation.
+ * Base Subagent class for integration-specific agents
+ * Each subagent handles a specific integration type (Gmail, GitHub, etc.)
  */
-export class KronosAgentBuilder {
-  private model: ChatGoogleGenerativeAI;
-  private answerModel: Runnable;
-  private tools: any[] = [];
-  private toolkits: Provider[] = [];
-  private checkpointerService: CheckpointerService;
-  private toolsExecutorService: ToolsExecutorService;
-  private toolsProviderService: ToolsProviderService;
-  private userId: string;
-  private readonly logger = new Logger(KronosAgentBuilder.name);
-
-  AGENT_NAME = 'kronos_agent';
+export abstract class BaseSubagent {
+  protected model: ChatGoogleGenerativeAI;
+  protected answerModel: Runnable;
+  protected tools: any[] = [];
+  protected checkpointerService: CheckpointerService;
+  protected toolsExecutorService: ToolsExecutorService;
+  protected toolsProviderService: ToolsProviderService;
+  protected userId: string;
+  protected provider: Provider;
+  protected readonly logger = new Logger(this.constructor.name);
 
   constructor({
     userId,
     checkpointerService,
     toolsExecutorService,
     toolsProviderService,
-    toolkits,
-  }: KronosAgentConfig) {
+    provider,
+  }: SubagentConfig) {
     this.userId = userId;
     this.checkpointerService = checkpointerService;
     this.toolsExecutorService = toolsExecutorService;
     this.toolsProviderService = toolsProviderService;
-    this.toolkits = toolkits;
+    this.provider = provider;
     this.initializeProviders();
   }
 
   /**
-   * Build and return the complete Kronos agent graph
-   */
-  async build(): Promise<ReturnType<StateGraph<any>['compile']>> {
-    try {
-      await this.loadTools(this.userId, this.toolkits);
-
-      const workflow = new StateGraph(KronosAgentStateSchema);
-
-      await this.addNodes(workflow);
-      this.configureEdges(workflow);
-
-      const compileOptions: any = {
-        name: this.AGENT_NAME,
-        checkpointer: this.checkpointerService.getCheckpointer(),
-      };
-
-      const compiledGraph = workflow.compile(compileOptions);
-      return compiledGraph;
-    } catch (error) {
-      throw new Error(`Failed to build Kronos agent: ${error.message}`);
-    }
-  }
-
-  /**
-   * Initialize Providers
+   * Initialize AI models
    */
   private initializeProviders(): void {
     try {
@@ -96,44 +67,33 @@ export class KronosAgentBuilder {
         apiKey: process.env.GEMINI_API_KEY,
         streaming: true,
       });
-      // Add tag to identify the final answer model for streaming
       this.answerModel = new ChatGoogleGenerativeAI({
         model: MODELS.GEMINI_2_0_FLASH,
         temperature: 0,
         apiKey: process.env.GEMINI_API_KEY,
         streaming: true,
-      }).withConfig({
-        tags: ["final_answer_node"],
       });
     } catch (error) {
-      throw new Error(`Failed to initialize Providers: ${error.message}`);
+      throw new Error(`Failed to initialize AI models: ${error.message}`);
     }
   }
 
   /**
-   * Load all available tools for a given user
+   * Load tools specific to this subagent's provider
    */
-  private async loadTools(userId: string, toolkits: Provider[]): Promise<void> {
+  protected async loadTools(): Promise<void> {
     try {
-      // Initialize delegation tools factory
-      this.toolsProviderService.initializeDelegationTools(
-        this.checkpointerService,
-        this.toolsExecutorService
-      );
-
-      // Use the tools provider service to get Kronos agent tools (delegation tools only)
       this.tools = await this.toolsProviderService.getAvailableTools(
-        userId,
-        toolkits,
-        'kronos_agent'
+        this.userId,
+        [this.provider],
+        `${this.provider.toLowerCase()}_subagent`
       );
-
       this.logger.log(
-        `Loaded ${this.tools.length} tools using ToolsProviderService`
+        `Loaded ${this.tools.length} tools for ${this.provider} subagent`
       );
     } catch (error) {
       this.logger.warn(
-        'Failed to load tools, continuing without tools',
+        `Failed to load tools for ${this.provider}, continuing without tools`,
         error.message
       );
       this.tools = [];
@@ -141,9 +101,33 @@ export class KronosAgentBuilder {
   }
 
   /**
-   * Add all nodes to the workflow graph
+   * Build and return the compiled subagent graph
    */
-  private async addNodes(workflow: any): Promise<void> {
+  async build(): Promise<ReturnType<StateGraph<any>['compile']>> {
+    try {
+      await this.loadTools();
+
+      const workflow = new StateGraph(SubagentStateSchema);
+
+      await this.addNodes(workflow);
+      this.configureEdges(workflow);
+
+      const compileOptions: any = {
+        name: `${this.provider.toLowerCase()}_subagent`,
+        checkpointer: this.checkpointerService.getCheckpointer(),
+      };
+
+      const compiledGraph = workflow.compile(compileOptions);
+      return compiledGraph;
+    } catch (error) {
+      throw new Error(`Failed to build ${this.provider} subagent: ${error.message}`);
+    }
+  }
+
+  /**
+   * Add nodes to the workflow graph
+   */
+  protected async addNodes(workflow: any): Promise<void> {
     workflow.addNode('agent', this.createAgentNode());
     workflow.addNode('tool', this.createToolNode());
     workflow.addNode('final_answer', this.createFinalAnswerNode());
@@ -152,7 +136,7 @@ export class KronosAgentBuilder {
   /**
    * Configure the workflow execution flow
    */
-  private configureEdges(workflow: any): void {
+  protected configureEdges(workflow: any): void {
     // Set entry point
     workflow.setEntryPoint('agent');
 
@@ -172,10 +156,9 @@ export class KronosAgentBuilder {
   /**
    * Determine if the agent should use tools or move to final answer
    */
-  private shouldAct(state: KronosAgentState): string {
+  protected shouldAct(state: SubagentState): string {
     const lastMessage = state.messages[state.messages.length - 1];
 
-    // Handle AIMessage with tool routing logic
     if (lastMessage && isAIMessage(lastMessage)) {
       const aiMessage = lastMessage;
       const toolCalls = aiMessage.tool_calls || [];
@@ -193,10 +176,10 @@ export class KronosAgentBuilder {
   }
 
   /**
-   * Create the tool execution node with enhanced error handling and context support
+   * Create the tool execution node
    */
-  private createToolNode() {
-    return async (state: KronosAgentState, config: RunnableConfig) => {
+  protected createToolNode() {
+    return async (state: SubagentState, config: RunnableConfig) => {
       const lastMessage = state.messages[state.messages.length - 1];
 
       if (!lastMessage || !isAIMessage(lastMessage)) {
@@ -214,10 +197,8 @@ export class KronosAgentBuilder {
         return {};
       }
 
-      // Get context values for tool execution
       const userId = getContextValue(config, 'userId');
 
-      // Convert tool calls to the format expected by ToolExecutorService
       const toolCallInfos = toolCalls.map((toolCall) => ({
         name: toolCall.name,
         args: toolCall.args,
@@ -228,7 +209,6 @@ export class KronosAgentBuilder {
       }));
 
       try {
-        // Use the tools executor service to execute all tools
         const toolResults =
           await this.toolsExecutorService.executeToolsAndReturnMessages(
             toolCallInfos,
@@ -236,16 +216,15 @@ export class KronosAgentBuilder {
           );
 
         this.logger.debug(
-          `Executed ${toolResults.length} tools using ToolExecutorService`
+          `Executed ${toolResults.length} tools for ${this.provider} subagent`
         );
 
         return {
           messages: toolResults,
         };
       } catch (error) {
-        this.logger.error('Tool execution failed:', error);
+        this.logger.error(`Tool execution failed for ${this.provider}:`, error);
 
-        // Return error messages for all tool calls
         const errorResults = toolCalls.map(
           (toolCall) =>
             new ToolMessage({
@@ -263,12 +242,12 @@ export class KronosAgentBuilder {
   }
 
   /**
-   * Create the agent reasoning node with enhanced message handling
+   * Create the agent reasoning node
    */
-  private createAgentNode() {
-    return async (state: KronosAgentState, config: RunnableConfig) => {
+  protected createAgentNode() {
+    return async (state: SubagentState, config: RunnableConfig) => {
       const todayDate = getCurrentDate();
-      const formattedPrompt = generateSystemPrompt(this.toolkits, todayDate);
+      const formattedPrompt = this.getSystemPrompt(todayDate);
 
       const messages = [new SystemMessage(formattedPrompt), ...state.messages];
 
@@ -285,12 +264,12 @@ export class KronosAgentBuilder {
   }
 
   /**
-   * Create the final answer node with LLM-based response synthesis
+   * Create the final answer node
    */
-  private createFinalAnswerNode() {
-    return async (state: KronosAgentState, config: RunnableConfig) => {
+  protected createFinalAnswerNode() {
+    return async (state: SubagentState, config: RunnableConfig) => {
       const todayDate = getCurrentDate();
-      const formattedPrompt = formatFinalAnswerSystemPrompt(todayDate);
+      const formattedPrompt = this.getFinalAnswerPrompt(todayDate);
 
       const allMessages = state.messages;
 
@@ -306,11 +285,23 @@ export class KronosAgentBuilder {
 
       const result = finalResponse.content as string;
 
-      this.logger.log('Final answer generated successfully');
+      this.logger.log(`${this.provider} subagent final answer generated successfully`);
       return {
         result,
         messages: [new AIMessage(result)],
       };
     };
   }
+
+  /**
+   * Get the system prompt for this subagent
+   * Must be implemented by each subagent
+   */
+  protected abstract getSystemPrompt(todayDate: string): string;
+
+  /**
+   * Get the final answer prompt for this subagent
+   * Must be implemented by each subagent
+   */
+  protected abstract getFinalAnswerPrompt(todayDate: string): string;
 }
