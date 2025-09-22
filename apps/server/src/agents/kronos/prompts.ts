@@ -26,9 +26,15 @@ You are Kronos, the master AI assistant and orchestrator of a comprehensive inte
 {integrations}
 </available_integrations>
 
+<delegation_tools>
+{delegation_tools}
+</delegation_tools>
+
 <orchestration_guidelines>
 <guideline>Always identify the primary integration type(s) needed for the user's request</guideline>
-<guideline>Route tasks to the most appropriate specialized subagent(s)</guideline>
+<guideline>Route tasks to the most appropriate specialized subagent(s) using delegation tools</guideline>
+<guideline>Call multiple delegation tools in a single API call for parallel processing when tasks are independent</guideline>
+<guideline>Call delegation tools in separate API calls for sequential processing when steps are dependent</guideline>
 <guideline>Coordinate multi-integration workflows when necessary</guideline>
 <guideline>Maintain context across different integration boundaries</guideline>
 <guideline>Provide comprehensive responses that synthesize results from multiple sources</guideline>
@@ -37,11 +43,13 @@ You are Kronos, the master AI assistant and orchestrator of a comprehensive inte
 
 <response_approach>
 1. Analyze the user's request to identify required integration types
-2. Determine the appropriate subagent(s) to handle the task
-3. Coordinate execution across specialized agents
-4. Synthesize results from multiple integrations when applicable
-5. Provide comprehensive responses that address all aspects of the request
-6. Maintain context for follow-up actions and multi-step workflows
+2. Determine the appropriate subagent(s) to handle the task using delegation tools
+3. Call multiple delegation tools in a single API call for parallel processing when tasks are independent
+4. Call delegation tools in separate API calls for sequential processing when steps are dependent
+5. Coordinate execution across specialized agents
+6. Synthesize results from multiple integrations when applicable
+7. Provide comprehensive responses that address all aspects of the request
+8. Maintain context for follow-up actions and multi-step workflows
 </response_approach>
 
 <quality_standards>
@@ -81,61 +89,71 @@ export const INTEGRATION_DEFINITIONS = {
     name: 'Gmail',
     subagent: 'GmailSubagent',
     scope: 'Email management, drafts, sending, replying, and profile operations',
-    capabilities: 'Create drafts, send emails, reply to threads, manage drafts, fetch messages'
+    capabilities: 'Create drafts, send emails, reply to threads, manage drafts, fetch messages',
+    delegationTool: 'delegateToGmailAgent'
   },
   [Provider.GITHUB]: {
     name: 'GitHub',
     subagent: 'GitHubSubagent',
     scope: 'Repository management, pull requests, issues, commits, and collaboration',
-    capabilities: 'Manage repos, handle PRs, work with issues, manage commits, access user info'
+    capabilities: 'Manage repos, handle PRs, work with issues, manage commits, access user info',
+    delegationTool: 'delegateToGitHubAgent'
   },
   [Provider.NOTION]: {
     name: 'Notion',
     subagent: 'NotionSubagent',
     scope: 'Page search, data fetching, and knowledge management',
-    capabilities: 'Search pages, fetch data, organize knowledge, handle structured data'
+    capabilities: 'Search pages, fetch data, organize knowledge, handle structured data',
+    delegationTool: 'delegateToNotionAgent'
   },
   [Provider.SLACK]: {
     name: 'Slack',
     subagent: 'SlackSubagent',
     scope: 'Team communication, messaging, channels, and workspace management',
-    capabilities: 'Send messages, manage channels, handle users, search conversations'
+    capabilities: 'Send messages, manage channels, handle users, search conversations',
+    delegationTool: 'delegateToSlackAgent'
   },
   [Provider.TWITTER]: {
     name: 'Twitter/X',
     subagent: 'TwitterSubagent',
     scope: 'Social media monitoring, content discovery, and trend analysis',
-    capabilities: 'Search tweets, monitor trends, analyze social media content'
+    capabilities: 'Search tweets, monitor trends, analyze social media content',
+    delegationTool: 'delegateToTwitterAgent'
   },
   [Provider.LINKEDIN]: {
     name: 'LinkedIn',
     subagent: 'LinkedInSubagent',
     scope: 'Professional networking, company information, and business intelligence',
-    capabilities: 'Access company info, manage profiles, handle business intelligence'
+    capabilities: 'Access company info, manage profiles, handle business intelligence',
+    delegationTool: 'delegateToLinkedInAgent'
   },
   [Provider.REDDIT]: {
     name: 'Reddit',
     subagent: 'RedditSubagent',
     scope: 'Community monitoring, content discovery, and social media research',
-    capabilities: 'Monitor communities, search content, analyze posts and comments'
+    capabilities: 'Monitor communities, search content, analyze posts and comments',
+    delegationTool: 'delegateToRedditAgent'
   },
   [Provider.GOOGLE_DRIVE]: {
     name: 'Google Drive',
     subagent: 'GoogleDriveSubagent',
     scope: 'File management, document creation, and cloud storage operations',
-    capabilities: 'Create files, manage folders, handle cloud storage, organize documents'
+    capabilities: 'Create files, manage folders, handle cloud storage, organize documents',
+    delegationTool: 'delegateToGoogleDriveAgent'
   },
   [Provider.GOOGLE_CALENDAR]: {
     name: 'Google Calendar',
     subagent: 'GoogleCalendarSubagent',
     scope: 'Event management, schedule coordination, and time management',
-    capabilities: 'Manage events, coordinate schedules, handle time management'
+    capabilities: 'Manage events, coordinate schedules, handle time management',
+    delegationTool: 'delegateToGoogleCalendarAgent'
   },
   [Provider.INSTAGRAM]: {
     name: 'Instagram',
     subagent: 'InstagramSubagent',
     scope: 'Social media monitoring, content analysis, and user insights',
-    capabilities: 'Monitor content, analyze user insights, handle media management'
+    capabilities: 'Monitor content, analyze user insights, handle media management',
+    delegationTool: 'delegateToInstagramAgent'
   }
 };
 
@@ -244,10 +262,26 @@ function generateIntegrationsXML(toolkits: Provider[]): string {
 <subagent>${integration.subagent}</subagent>
 <scope>${integration.scope}</scope>
 <capabilities>${integration.capabilities}</capabilities>
+<delegation_tool>${integration.delegationTool}</delegation_tool>
 </integration>`;
     })
     .filter(xml => xml !== '')
     .join('\n\n');
+}
+
+/**
+ * Generate delegation tools XML for the system prompt based on available toolkits
+ */
+function generateDelegationToolsXML(toolkits: Provider[]): string {
+  return toolkits
+    .map(toolkit => {
+      const integration = INTEGRATION_DEFINITIONS[toolkit];
+      if (!integration) return '';
+      
+      return `<tool>${integration.delegationTool} - Delegate ${integration.name}-specific tasks to the ${integration.name} subagent</tool>`;
+    })
+    .filter(xml => xml !== '')
+    .join('\n');
 }
 
 /**
@@ -262,8 +296,10 @@ export function generateSystemPrompt(toolkits: Provider[], todayDate?: string): 
   });
   
   const integrationsXML = generateIntegrationsXML(toolkits);
+  const delegationToolsXML = generateDelegationToolsXML(toolkits);
   
   return SYSTEM_PROMPT_TEMPLATE
     .replace('{today_date}', date)
-    .replace('{integrations}', integrationsXML);
+    .replace('{integrations}', integrationsXML)
+    .replace('{delegation_tools}', delegationToolsXML);
 }

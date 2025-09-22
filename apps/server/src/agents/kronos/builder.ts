@@ -112,6 +112,12 @@ export class KronosAgentBuilder {
    */
   private async loadTools(userId: string, toolkits: Provider[]): Promise<void> {
     try {
+      // Initialize delegation tools factory
+      this.toolsProviderService.initializeDelegationTools(
+        this.checkpointerService,
+        this.toolsExecutorService
+      );
+
       // Use the tools provider service to get all available tools
       this.tools = await this.toolsProviderService.getAvailableTools(
         userId,

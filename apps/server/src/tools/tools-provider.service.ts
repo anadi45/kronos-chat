@@ -7,6 +7,8 @@ import { Tool, DynamicStructuredTool } from '@langchain/core/tools';
 import { LangChainToolConverter } from './langchain-tool-converter';
 import { ComposioOAuth } from '../entities/composio-oauth.entity';
 import { getToolsForToolkits } from './toolkit-mappings';
+import { DelegationToolsFactory } from './delegation-tools';
+import { Provider } from '@kronos/core';
 
 /**
  * Signal Context Readiness Tool
@@ -53,6 +55,7 @@ export class ToolsProviderService {
   private readonly logger = new Logger(ToolsProviderService.name);
   private readonly composio: Composio;
   private readonly inhouseTools: Map<string, any> = new Map();
+  private delegationToolsFactory: DelegationToolsFactory;
 
   constructor(
     private readonly configService: ConfigService,
@@ -82,7 +85,22 @@ export class ToolsProviderService {
       SignalContextReadinessTool
     );
 
+
     this.logger.log(`Initialized ${this.inhouseTools.size} in-house tools`);
+  }
+
+  /**
+   * Initialize delegation tools factory
+   */
+  private initializeDelegationToolsFactory(
+    checkpointerService: any,
+    toolsExecutorService: any
+  ): void {
+    this.delegationToolsFactory = new DelegationToolsFactory({
+      checkpointerService,
+      toolsExecutorService,
+      toolsProviderService: this
+    });
   }
 
   /**
@@ -184,11 +202,14 @@ export class ToolsProviderService {
       // Get in-house tools
       const inhouseTools = Array.from(this.inhouseTools.values());
 
+      // Get delegation tools for available providers
+      const delegationTools = this.getDelegationToolsForProviders(finalToolkits);
+
       // Combine all tools
-      const allTools = [...mcpLangchainTools, ...inhouseTools];
+      const allTools = [...mcpLangchainTools, ...inhouseTools, ...delegationTools];
 
       this.logger.log(
-        `Successfully retrieved ${allTools.length} tools (${mcpLangchainTools.length} MCP, ${inhouseTools.length} in-house)`
+        `Successfully retrieved ${allTools.length} tools (${mcpLangchainTools.length} MCP, ${inhouseTools.length} in-house, ${delegationTools.length} delegation)`
       );
       return allTools;
     } catch (error) {
@@ -200,6 +221,52 @@ export class ToolsProviderService {
       );
       return inhouseTools;
     }
+  }
+
+  /**
+   * Get delegation tools for available providers
+   *
+   * @param providers - Array of provider names
+   * @returns any[] - Array of delegation tools
+   */
+  private getDelegationToolsForProviders(providers: string[]): any[] {
+    if (!this.delegationToolsFactory) {
+      this.logger.warn('Delegation tools factory not initialized');
+      return [];
+    }
+
+    try {
+      // Convert provider strings to Provider enum values
+      const providerEnums = providers
+        .map(provider => {
+          const upperProvider = provider.toUpperCase();
+          return Object.values(Provider).find(p => p === upperProvider);
+        })
+        .filter(Boolean) as Provider[];
+
+      // Create delegation tools for each provider
+      const delegationTools = this.delegationToolsFactory.createAllDelegationTools(providerEnums);
+      
+      this.logger.log(`Created ${delegationTools.length} delegation tools for providers: ${providers.join(', ')}`);
+      return delegationTools;
+    } catch (error) {
+      this.logger.error('Failed to create delegation tools:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Initialize delegation tools factory with required services
+   *
+   * @param checkpointerService - Checkpointer service instance
+   * @param toolsExecutorService - Tools executor service instance
+   */
+  initializeDelegationTools(
+    checkpointerService: any,
+    toolsExecutorService: any
+  ): void {
+    this.initializeDelegationToolsFactory(checkpointerService, toolsExecutorService);
+    this.logger.log('Delegation tools factory initialized');
   }
 
   /**
