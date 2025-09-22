@@ -2092,23 +2092,6 @@ input:focus, textarea:focus, select:focus {
   opacity: 1;
 }
 
-.integration-card.connected::after {
-  content: '✓';
-  position: absolute;
-  top: 1rem;
-  right: 1rem;
-  width: 1.5rem;
-  height: 1.5rem;
-  background: rgba(16, 185, 129, 0.9);
-  color: white;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.75rem;
-  font-weight: bold;
-  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
-}
 
 .integration-connected-info {
   background: rgba(16, 185, 129, 0.1);
@@ -2198,6 +2181,13 @@ input:focus, textarea:focus, select:focus {
   margin-bottom: 0.75rem;
 }
 
+.integration-title-container {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex: 1;
+}
+
 .integration-title {
   font-size: 1.25rem;
   font-weight: 600;
@@ -2205,6 +2195,7 @@ input:focus, textarea:focus, select:focus {
   margin: 0;
   line-height: 1.3;
   flex: 1;
+  min-width: 0;
 }
 
 .integration-description {
@@ -3911,6 +3902,138 @@ input:checked + .toggle-slider:before {
   box-shadow: none;
 }
 
+/* Info Icon and Tooltip Styles */
+.integration-info-icon {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.info-icon {
+  width: 16px;
+  height: 16px;
+  opacity: 0.6;
+  transition: all 0.2s ease;
+  filter: brightness(0) invert(1);
+}
+
+.integration-info-icon:hover .info-icon {
+  opacity: 1;
+  transform: scale(1.1);
+}
+
+.info-tooltip-container {
+  position: relative;
+  display: inline-block;
+}
+
+.info-tooltip {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-bottom: 8px;
+  z-index: 1000;
+  pointer-events: none;
+  animation: tooltipFadeIn 0.2s ease-out;
+}
+
+.info-tooltip-content {
+  background: rgba(30, 41, 59, 0.95);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  padding: 12px 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  min-width: 200px;
+  max-width: 300px;
+}
+
+.info-tooltip::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 6px solid transparent;
+  border-top-color: rgba(30, 41, 59, 0.95);
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+}
+
+.info-tooltip-title {
+  color: white;
+  font-size: 0.875rem;
+  font-weight: 600;
+  margin: 0 0 8px 0;
+  line-height: 1.2;
+}
+
+.info-tooltip-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.info-tooltip-item {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.75rem;
+  line-height: 1.4;
+  margin-bottom: 4px;
+  padding-left: 8px;
+  position: relative;
+}
+
+.info-tooltip-item::before {
+  content: '•';
+  color: rgba(59, 130, 246, 0.8);
+  font-weight: bold;
+  position: absolute;
+  left: 0;
+}
+
+.info-tooltip-item:last-child {
+  margin-bottom: 0;
+}
+
+@keyframes tooltipFadeIn {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+/* Mobile responsive styles for info tooltip */
+@media (max-width: 768px) {
+  .info-tooltip {
+    position: fixed;
+    bottom: auto;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    margin-bottom: 0;
+    z-index: 1001;
+  }
+
+  .info-tooltip::after {
+    display: none;
+  }
+
+  .info-tooltip-content {
+    min-width: 280px;
+    max-width: 90vw;
+    max-height: 60vh;
+    overflow-y: auto;
+  }
+}
+
 /* Integration Selector Styles */
 .integration-selector {
   position: relative;
@@ -4055,6 +4178,23 @@ input:checked + .toggle-slider:before {
 .integration-selector-item-info {
   flex: 1;
   min-width: 0;
+}
+
+.integration-selector-item-name-container {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.125rem;
+}
+
+.integration-selector-info-icon {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
 }
 
 .integration-selector-item-name {
