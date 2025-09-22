@@ -31,6 +31,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
   const [isLoadingConversations, setIsLoadingConversations] = useState(false);
   const [hasMoreConversations, setHasMoreConversations] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
+  const [totalConversations, setTotalConversations] = useState(0);
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
   const [conversationToDelete, setConversationToDelete] = useState<Conversation | null>(null);
   const [isDeletingConversation, setIsDeletingConversation] = useState(false);
@@ -63,10 +64,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
     adjustTextareaHeight();
   }, [input, adjustTextareaHeight]);
 
-  // Load conversations on component mount
+  // Load persisted conversation ID from localStorage on component mount
   useEffect(() => {
-    loadConversations();
-    // Load persisted conversation ID from localStorage
     const persistedConversationId = localStorage.getItem('kronos-current-conversation-id');
     if (persistedConversationId) {
       setCurrentConversationId(persistedConversationId);
@@ -137,6 +136,9 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
       } else {
         setConversations(response.items || []);
       }
+      
+      // Use the actual total from API response, not calculated
+      setTotalConversations(response.total);
       setHasMoreConversations(page < response.totalPages);
       setCurrentPage(page);
       setError(null); // Clear any previous errors
@@ -427,7 +429,13 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
         <div className="chat-header">
           <div className="chat-header-left">
             <button
-              onClick={() => setShowConversations(!showConversations)}
+              onClick={() => {
+                if (!showConversations && conversations.length === 0) {
+                  // Load conversations when opening the modal (only if not already loaded)
+                  loadConversations();
+                }
+                setShowConversations(!showConversations);
+              }}
               className="chat-control-btn"
               title="Conversations"
             >
@@ -481,7 +489,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
               <div className="conversations-header-content">
                 <h3>Past Conversations</h3>
                 <p className="conversations-subtitle">
-                  {conversations.length} conversation{conversations.length !== 1 ? 's' : ''} found
+                  {conversations.length} of {totalConversations} conversation{totalConversations !== 1 ? 's' : ''} loaded
                 </p>
               </div>
               <button
