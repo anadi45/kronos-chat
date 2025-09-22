@@ -366,14 +366,6 @@ class ApiService {
     return response.data;
   }
 
-  /**
-   * Get service configuration status
-   * GET /oauth-integrations/service/status
-   */
-  async getServiceStatus(): Promise<{ configured: boolean; message: string }> {
-    const response = await this.client.get('/oauth-integrations/service/status');
-    return response.data;
-  }
 }
 
 // Create and export singleton instance

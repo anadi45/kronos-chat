@@ -170,20 +170,4 @@ export class OAuthIntegrationsController {
     };
   }
 
-  /**
-   * Checks the service configuration status
-   *
-   * @returns Promise<{ configured: boolean; message: string }> - Configuration status
-   */
-  @Get('service/status')
-  async getServiceStatus(): Promise<{ configured: boolean; message: string }> {
-    const isConfigured = this.oauthIntegrationsService.isServiceConfigured();
-
-    return {
-      configured: isConfigured,
-      message: isConfigured
-        ? 'OAuth integration service is properly configured and ready to use'
-        : 'OAuth integration service is not configured. Please check COMPOSIO_API_KEY environment variable',
-    };
-  }
 }
