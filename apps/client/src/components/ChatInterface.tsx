@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { useParams, useNavigate } from 'react-router-dom';
 import { apiService } from '../services/apiService';
 import type { 
   ChatMessage, 
@@ -18,10 +19,14 @@ interface ChatInterfaceProps {
 // Remove the old StreamChunk interface as we'll use the new StreamEvent types
 
 const ChatInterface: React.FC<ChatInterfaceProps> = () => {
+  const { conversationId: urlConversationId } = useParams<{ conversationId?: string }>();
+  const navigate = useNavigate();
+  
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [isStreaming, setIsStreaming] = useState(false);
   const [currentConversationId, setCurrentConversationId] = useState<string>('');
+  const [conversationTitle, setConversationTitle] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
   const [streamingMessage, setStreamingMessage] = useState('');
   const [streamingMarkdown, setStreamingMarkdown] = useState('');
@@ -42,6 +47,13 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
   const conversationsListRef = useRef<HTMLDivElement>(null);
+
+  // Generate a title from the first message
+  const generateTitleFromMessage = (message: string): string => {
+    // Take first 50 characters and clean up
+    const title = message.trim().substring(0, 50);
+    return title.length < message.trim().length ? `${title}...` : title;
+  };
 
   // Auto-scroll to bottom when new messages arrive
   const scrollToBottom = useCallback(() => {
@@ -64,13 +76,25 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
     adjustTextareaHeight();
   }, [input, adjustTextareaHeight]);
 
-  // Load persisted conversation ID from localStorage on component mount
+  // Handle URL-based conversation loading
   useEffect(() => {
-    const persistedConversationId = localStorage.getItem('kronos-current-conversation-id');
-    if (persistedConversationId) {
-      setCurrentConversationId(persistedConversationId);
+    if (urlConversationId && urlConversationId !== currentConversationId) {
+      // Load conversation from URL parameter
+      loadConversationMessages(urlConversationId);
     }
-  }, []);
+    // Remove the automatic redirect to conversation ID - let /chat stay as /chat for new conversations
+  }, [urlConversationId, currentConversationId, navigate]);
+
+  // Load persisted conversation ID from localStorage on component mount (fallback)
+  // Only load from localStorage if we're not on the base /chat route
+  useEffect(() => {
+    if (!urlConversationId) {
+      // Don't automatically load conversation from localStorage on /chat
+      // Let users start fresh conversations on /chat
+      setCurrentConversationId('');
+      setConversationTitle('');
+    }
+  }, [urlConversationId]);
 
   // Handle escape key to close modals
   useEffect(() => {
@@ -230,6 +254,17 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
       setStreamingMarkdown('');
       setIsMarkdownMode(false);
       setError(null);
+      
+      // Update URL if not already there
+      if (urlConversationId !== conversationId) {
+        navigate(`/chat/${conversationId}`, { replace: true });
+      }
+      
+      // Set conversation title from the conversation data
+      const conversation = conversations.find(c => c.id === conversationId);
+      if (conversation) {
+        setConversationTitle(conversation.title || 'Untitled Conversation');
+      }
     } catch (error: any) {
       console.error('Failed to load conversation messages:', error);
       
@@ -253,12 +288,15 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
   const startNewConversation = () => {
     setMessages([]);
     setCurrentConversationId('');
+    setConversationTitle('');
     setStreamingMessage('');
     setError(null);
     setShowConversations(false);
     // Reset pagination state
     setCurrentPage(1);
     setHasMoreConversations(true);
+    // Navigate to base chat URL
+    navigate('/chat', { replace: true });
   };
 
   const handleStopStreaming = () => {
@@ -288,6 +326,12 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
     setIsStreaming(true);
     setStreamingMessage('');
     setProgressUpdate(null);
+
+    // Generate title from first message if this is a new conversation
+    if (!currentConversationId && messages.length === 0) {
+      const generatedTitle = generateTitleFromMessage(userMessage.content);
+      setConversationTitle(generatedTitle);
+    }
 
     try {
       // Create stream request - only message, no conversationId or history for new conversations
@@ -335,6 +379,12 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
                     sessionId = (parsed.data as any).sessionId || '';
                     isNewConversation = (parsed.data as any).isNewConversation || false;
                     setCurrentConversationId(conversationId);
+                    
+                    // Update URL with new conversation ID
+                    if (conversationId && urlConversationId !== conversationId) {
+                      navigate(`/chat/${conversationId}`, { replace: true });
+                    }
+                    
                     console.log('Stream started:', { conversationId, sessionId, isNewConversation });
                     break;
                     
@@ -445,8 +495,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
             </button>
             <p className="text-sm text-gray-300">
               {currentConversationId 
-                ? (conversations.find(c => c.id === currentConversationId)?.title || 'Untitled Conversation')
-                : 'New conversation'
+                ? (conversationTitle || conversations.find(c => c.id === currentConversationId)?.title || 'Untitled Conversation')
+                : (conversationTitle || 'New conversation')
               }
             </p>
           </div>
