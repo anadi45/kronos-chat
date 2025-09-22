@@ -480,8 +480,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
           <div className="chat-header-left">
             <button
               onClick={() => {
-                if (!showConversations && conversations.length === 0) {
-                  // Load conversations when opening the modal (only if not already loaded)
+                if (!showConversations) {
+                  // Always load conversations when opening the modal
                   loadConversations();
                 }
                 setShowConversations(!showConversations);
