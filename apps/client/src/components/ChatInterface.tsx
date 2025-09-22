@@ -436,7 +436,10 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
               </svg>
             </button>
             <p className="text-sm text-gray-300">
-              {currentConversationId ? `Conversation: ${currentConversationId.slice(-8)}` : 'New conversation'}
+              {currentConversationId 
+                ? (conversations.find(c => c.id === currentConversationId)?.title || 'Untitled Conversation')
+                : 'New conversation'
+              }
             </p>
           </div>
           <div className="chat-controls">
@@ -526,7 +529,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
                         </div>
                         <div className="conversation-details">
                           <div className="conversation-title">
-                            {conversation.title || `Conversation ${conversation.id.slice(-8)}`}
+                            {conversation.title || 'Untitled Conversation'}
                           </div>
                           <div className="conversation-time">
                             {new Date(conversation.updatedAt).toLocaleDateString('en-US', {
