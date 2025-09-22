@@ -40,6 +40,135 @@ interface IntegrationCardProps {
   isDisconnecting: boolean;
 }
 
+interface InfoTooltipProps {
+  capabilities: string[];
+  children: React.ReactNode;
+}
+
+const InfoTooltip: React.FC<InfoTooltipProps> = ({ capabilities, children }) => {
+  const [isVisible, setIsVisible] = useState(false);
+
+  return (
+    <div 
+      className="info-tooltip-container"
+      onMouseEnter={() => setIsVisible(true)}
+      onMouseLeave={() => setIsVisible(false)}
+    >
+      {children}
+      {isVisible && (
+        <div className="info-tooltip">
+          <div className="info-tooltip-content">
+            <h4 className="info-tooltip-title">Capabilities</h4>
+            <ul className="info-tooltip-list">
+              {capabilities.map((capability, index) => (
+                <li key={index} className="info-tooltip-item">
+                  {capability}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// Integration capabilities mapping
+const getIntegrationCapabilities = (integrationId: string): string[] => {
+  const capabilities: { [key: string]: string[] } = {
+    'github': [
+      'Read and search repositories',
+      'Create and manage issues',
+      'Review pull requests',
+      'Access commit history',
+      'Manage branches and tags'
+    ],
+    'gmail': [
+      'Read and search emails',
+      'Send new emails',
+      'Manage email labels',
+      'Access email threads',
+      'Search email content'
+    ],
+    'googlecalendar': [
+      'View calendar events',
+      'Create new events',
+      'Update existing events',
+      'Manage event attendees',
+      'Access calendar settings'
+    ],
+    'googledrive': [
+      'Read and search files',
+      'Upload new files',
+      'Share files and folders',
+      'Manage file permissions',
+      'Access file metadata'
+    ],
+    'slack': [
+      'Read channel messages',
+      'Send messages to channels',
+      'Manage workspace settings',
+      'Access user information',
+      'Create and manage channels'
+    ],
+    'discord': [
+      'Read server messages',
+      'Send messages to channels',
+      'Manage server settings',
+      'Access user information',
+      'Create and manage channels'
+    ],
+    'linkedin': [
+      'Read profile information',
+      'Access connections',
+      'View and manage posts',
+      'Search professional content',
+      'Access company information'
+    ],
+    'twitter': [
+      'Read tweets and mentions',
+      'Post new tweets',
+      'Manage followers',
+      'Access trending topics',
+      'Search tweet content'
+    ],
+    'instagram': [
+      'View posts and stories',
+      'Access profile information',
+      'Manage media content',
+      'View insights and analytics',
+      'Access follower information'
+    ],
+    'reddit': [
+      'Read posts and comments',
+      'Search subreddits',
+      'Access user profiles',
+      'View trending content',
+      'Manage saved posts'
+    ],
+    'notion': [
+      'Read and search pages',
+      'Create new pages',
+      'Update existing content',
+      'Manage databases',
+      'Access workspace information'
+    ],
+    'webresearch': [
+      'Search the web',
+      'Access real-time information',
+      'Find current news and data',
+      'Research topics and trends',
+      'Access public information'
+    ]
+  };
+
+  return capabilities[integrationId.toLowerCase()] || [
+    'Basic integration features',
+    'Data access and management',
+    'Real-time synchronization'
+  ];
+};
+
 const IntegrationCard: React.FC<IntegrationCardProps> = ({
   integration,
   onConnect,
@@ -192,7 +321,18 @@ const IntegrationCard: React.FC<IntegrationCardProps> = ({
     >
       <div className="integration-header">
         <IntegrationIcon integrationId={integration.id} className="w-8 h-8" />
-        <h3 className="integration-title">{integration.name}</h3>
+        <div className="integration-title-container">
+          <h3 className="integration-title">{integration.name}</h3>
+          <InfoTooltip capabilities={getIntegrationCapabilities(integration.id)}>
+            <div className="integration-info-icon">
+              <img 
+                src="/images/integrations/info.png" 
+                alt="Info" 
+                className="info-icon"
+              />
+            </div>
+          </InfoTooltip>
+        </div>
       </div>
       <p className="integration-description">{integration.description}</p>
       <div className="integration-status">

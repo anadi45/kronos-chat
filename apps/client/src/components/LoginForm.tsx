@@ -51,9 +51,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, onSwitchToSignup }) =>
         {/* Logo/Brand Section */}
         <div className="text-center">
           <div className="mx-auto h-16 w-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center mb-6 shadow-2xl">
-            <svg className="h-8 w-8 text-white" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M18 10c0 3.866-3.582 7-8 7a8.841 8.841 0 01-4.083-.98L2 17l1.338-3.123C2.493 12.767 2 11.434 2 10c0-3.866 3.582-7 8-7s8 3.134 8 7zM7 9H5v2h2V9zm8 0h-2v2h2V9zM9 9h2v2H9V9z" clipRule="evenodd" />
-            </svg>
+            <span className="text-white font-bold text-lg">KRONOS</span>
           </div>
           <h2 className="text-3xl font-bold text-white mb-2">
             Welcome Back
@@ -143,7 +141,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, onSwitchToSignup }) =>
               <button
                 type="button"
                 onClick={onSwitchToSignup}
-                className="font-medium text-blue-400 hover:text-blue-300 transition-colors duration-200"
+                className="font-semibold text-blue-400 hover:text-blue-300 hover:underline transition-all duration-200 px-2 py-1 rounded-md hover:bg-blue-400/10"
               >
                 Create one now
               </button>
