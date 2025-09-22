@@ -373,15 +373,6 @@ const IntegrationSelector: React.FC<IntegrationSelectorProps> = ({
                         <div className="integration-selector-item-name">
                           {integration.name}
                         </div>
-                        <InfoTooltip capabilities={getIntegrationCapabilities(integration.id)}>
-                          <div className="integration-selector-info-icon">
-                            <img 
-                              src="/images/integrations/info.png" 
-                              alt="Info" 
-                              className="info-icon"
-                            />
-                          </div>
-                        </InfoTooltip>
                       </div>
                       <div className="integration-selector-item-description">
                         {integration.description}
