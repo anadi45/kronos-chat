@@ -455,6 +455,16 @@ export class OAuthIntegrationsService {
 
       // Mark connection status for each integration based on our database
       const integrationsWithStatus = allIntegrations.map((integration) => {
+        // Web Research is always connected and cannot be disconnected
+        if (integration.id === Provider.WEB_RESEARCH) {
+          return {
+            ...integration,
+            isConnected: true,
+            connectedAt: new Date().toISOString(),
+            authConfigId: 'web-research-builtin',
+          };
+        }
+
         const userIntegration = userIntegrationsMap.get(
           integration.id.toLowerCase()
         );

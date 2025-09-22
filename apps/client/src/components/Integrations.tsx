@@ -56,6 +56,15 @@ const IntegrationCard: React.FC<IntegrationCardProps> = ({
       );
     }
 
+    // Handle integrations that don't need authentication
+    if (integration.authType === 'not_needed') {
+      return (
+        <button className="btn btn-connected" disabled>
+          Ready to Use
+        </button>
+      );
+    }
+
     switch (integration.status) {
       case 'available':
         return (
@@ -89,6 +98,15 @@ const IntegrationCard: React.FC<IntegrationCardProps> = ({
       return (
         <button className="btn btn-integration" disabled>
           Coming Soon
+        </button>
+      );
+    }
+
+    // Handle integrations that don't need authentication
+    if (integration.authType === 'not_needed') {
+      return (
+        <button className="btn btn-integration" disabled>
+          No Setup Required
         </button>
       );
     }
@@ -181,16 +199,20 @@ const IntegrationCard: React.FC<IntegrationCardProps> = ({
         {getStatusBadge()}
         {getActionButton()}
       </div>
-      {integration.isConnected && integration.connectedAt && (
+      {integration.isConnected && (
         <div className="integration-connected-info">
-          <p>
-            Connected on{' '}
-            {new Date(integration.connectedAt).toLocaleDateString()} at{' '}
-            {new Date(integration.connectedAt).toLocaleTimeString([], {
-              hour: '2-digit',
-              minute: '2-digit',
-            })}
-          </p>
+          {integration.authType === 'not_needed' ? (
+            <p>This integration is always available and requires no setup</p>
+          ) : integration.connectedAt ? (
+            <p>
+              Connected on{' '}
+              {new Date(integration.connectedAt).toLocaleDateString()} at{' '}
+              {new Date(integration.connectedAt).toLocaleTimeString([], {
+                hour: '2-digit',
+                minute: '2-digit',
+              })}
+            </p>
+          ) : null}
         </div>
       )}
     </div>

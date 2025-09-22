@@ -30,6 +30,7 @@ import { RedditSubagent } from './reddit-subagent';
 import { GoogleDriveSubagent } from './googledrive-subagent';
 import { GoogleCalendarSubagent } from './googlecalendar-subagent';
 import { InstagramSubagent } from './instagram-subagent';
+import { WebResearchSubagent } from './web-research-subagent';
 
 export class SubagentFactory {
   constructor(
@@ -68,6 +69,8 @@ export class SubagentFactory {
         return new GoogleCalendarSubagent(config);
       case Provider.INSTAGRAM:
         return new InstagramSubagent(config);
+      case Provider.WEB_RESEARCH:
+        return new WebResearchSubagent(config);
       default:
         throw new Error(`Unsupported provider: ${provider}`);
     }

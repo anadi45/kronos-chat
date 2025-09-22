@@ -66,8 +66,18 @@ const IntegrationSelector: React.FC<IntegrationSelectorProps> = ({
     try {
       setLoading(true);
       const integrations = await apiService.getAvailableIntegrations();
-      // Only show connected integrations
+      // Only show connected integrations, but always include Web Research
       const connectedIntegrations = integrations.filter(integration => integration.isConnected);
+      
+      // Add Web Research if it's not already in the list
+      const hasWebResearch = connectedIntegrations.some(integration => integration.id === 'WEB_RESEARCH');
+      if (!hasWebResearch) {
+        const webResearchIntegration = integrations.find(integration => integration.id === 'WEB_RESEARCH');
+        if (webResearchIntegration) {
+          connectedIntegrations.push(webResearchIntegration);
+        }
+      }
+      
       setIntegrations(connectedIntegrations);
     } catch (error) {
       console.error('Error loading integrations:', error);

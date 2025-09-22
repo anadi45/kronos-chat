@@ -7,6 +7,16 @@ import {
 
 export const AVAILABLE_INTEGRATIONS: Integration[] = [
   {
+    id: Provider.WEB_RESEARCH,
+    name: 'Web Research',
+    description:
+      'Search and research information from the web through advanced web search capabilities',
+    category: 'research',
+    status: IntegrationStatusType.AVAILABLE,
+    capabilities: ['web_search', 'real_time_research', 'information_gathering'],
+    authType: AuthType.NOT_NEEDED,
+  },
+  {
     id: Provider.GMAIL,
     name: 'Gmail',
     description: 'Send and manage emails through Gmail integration',
