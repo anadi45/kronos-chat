@@ -15,11 +15,7 @@ import { Provider } from '@kronos/core';
 import { getContextValue, extractToolCalls } from '../agents/common/utils';
 import { getCurrentDate } from '@kronos/core';
 import { MODELS } from '../constants/models.constants';
-
-export interface SubagentState {
-  messages: any[];
-  result?: string;
-}
+import { SubagentState, SubagentStateSchema } from './state';
 
 export interface SubagentConfig {
   userId: string;
@@ -110,16 +106,7 @@ export abstract class BaseSubagent {
     try {
       await this.loadTools();
 
-      const workflow = new StateGraph({
-        messages: {
-          value: (x: any[], y: any[]) => x.concat(y),
-          default: () => [],
-        },
-        result: {
-          value: (x: string, y: string) => y ?? x,
-          default: () => undefined,
-        },
-      });
+      const workflow = new StateGraph(SubagentStateSchema);
 
       await this.addNodes(workflow);
       this.configureEdges(workflow);

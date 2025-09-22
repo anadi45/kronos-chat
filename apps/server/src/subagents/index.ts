@@ -1,5 +1,7 @@
 // Subagents exports
-export { BaseSubagent, SubagentConfig, SubagentState } from './base-subagent';
+export { BaseSubagent } from './base-subagent';
+export type { SubagentConfig } from './base-subagent';
+export type { SubagentState, SubagentStateSchema } from './state';
 
 // Integration-specific subagents
 export { GmailSubagent } from './gmail-subagent';
@@ -18,6 +20,16 @@ import { Provider } from '@kronos/core';
 import { CheckpointerService } from '../checkpointer';
 import { ToolsExecutorService } from '../tools/tools-executor.service';
 import { ToolsProviderService } from '../tools/tools-provider.service';
+import { GmailSubagent } from './gmail-subagent';
+import { GitHubSubagent } from './github-subagent';
+import { NotionSubagent } from './notion-subagent';
+import { SlackSubagent } from './slack-subagent';
+import { TwitterSubagent } from './twitter-subagent';
+import { LinkedInSubagent } from './linkedin-subagent';
+import { RedditSubagent } from './reddit-subagent';
+import { GoogleDriveSubagent } from './googledrive-subagent';
+import { GoogleCalendarSubagent } from './googlecalendar-subagent';
+import { InstagramSubagent } from './instagram-subagent';
 
 export class SubagentFactory {
   constructor(
