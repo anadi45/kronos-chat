@@ -316,13 +316,16 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
       timestamp: new Date().toISOString()
     };
 
+    // Clear any previous streaming state before adding user message
+    setStreamingMessage('');
+    setStreamingMarkdown('');
+    setProgressUpdate(null);
+    setError(null);
+    setIsStreaming(true);
+
     // Add user message to the conversation
     setMessages(prev => [...prev, userMessage]);
     setInput('');
-    setError(null);
-    setIsStreaming(true);
-    setStreamingMessage('');
-    setProgressUpdate(null);
 
     // Generate title from first message if this is a new conversation
     if (!currentConversationId && messages.length === 0) {
