@@ -13,7 +13,12 @@ export const AVAILABLE_INTEGRATIONS: Integration[] = [
       'Search and research information from the web through advanced web search capabilities',
     category: 'research',
     status: IntegrationStatusType.AVAILABLE,
-    capabilities: ['web_search', 'real_time_research', 'information_gathering'],
+    capabilities: [
+      'Search the web for real-time information',
+      'Access current news and data',
+      'Research topics and trends',
+      'Find public information'
+    ],
     authType: AuthType.NOT_NEEDED,
   },
   {
@@ -22,7 +27,13 @@ export const AVAILABLE_INTEGRATIONS: Integration[] = [
     description: 'Send and manage emails through Gmail integration',
     category: 'communication',
     status: IntegrationStatusType.AVAILABLE,
-    capabilities: ['send_emails', 'read_emails', 'manage_labels'],
+    capabilities: [
+      'Read and search emails',
+      'Send new emails and replies',
+      'Manage email drafts',
+      'Access email threads',
+      'Get Gmail profile information'
+    ],
     authType: AuthType.OAUTH,
   },
   {
@@ -33,9 +44,13 @@ export const AVAILABLE_INTEGRATIONS: Integration[] = [
     category: 'development',
     status: IntegrationStatusType.AVAILABLE,
     capabilities: [
-      'manage_repositories',
-      'manage_issues',
-      'manage_pull_requests',
+      'Read and search repositories',
+      'Create and manage issues',
+      'Review pull requests',
+      'Access commit history',
+      'Manage branches and tags',
+      'Create forks and commits',
+      'Compare commits and branches'
     ],
     authType: AuthType.OAUTH,
   },
@@ -46,7 +61,11 @@ export const AVAILABLE_INTEGRATIONS: Integration[] = [
       'Create and manage Notion pages and databases through Notion integration',
     category: 'productivity',
     status: IntegrationStatusType.AVAILABLE,
-    capabilities: ['manage_pages', 'manage_databases'],
+    capabilities: [
+      'Search and read Notion pages',
+      'Access and manage databases',
+      'Retrieve page content and metadata'
+    ],
     authType: AuthType.OAUTH,
   },
   {
@@ -56,7 +75,14 @@ export const AVAILABLE_INTEGRATIONS: Integration[] = [
       'Send messages and manage Slack channels through Slack integration',
     category: 'communication',
     status: IntegrationStatusType.AVAILABLE,
-    capabilities: ['send_messages', 'manage_channels'],
+    capabilities: [
+      'Send messages to channels',
+      'Search and read messages',
+      'Manage channels and users',
+      'Find users and channels',
+      'Create new channels',
+      'Access workspace information'
+    ],
     authType: AuthType.OAUTH,
   },
   {
@@ -66,7 +92,10 @@ export const AVAILABLE_INTEGRATIONS: Integration[] = [
       'Manage X (Twitter) accounts and tweets through X (Twitter) integration',
     category: 'communication',
     status: IntegrationStatusType.AVAILABLE,
-    capabilities: ['manage_tweets', 'manage_accounts'],
+    capabilities: [
+      'Search recent tweets and content',
+      'Access Twitter data and trends'
+    ],
     authType: AuthType.OAUTH,
   },
   {
@@ -76,7 +105,10 @@ export const AVAILABLE_INTEGRATIONS: Integration[] = [
       'Manage LinkedIn accounts and posts through LinkedIn integration',
     category: 'communication',
     status: IntegrationStatusType.COMING_SOON,
-    capabilities: ['manage_posts', 'manage_accounts'],
+    capabilities: [
+      'Access LinkedIn profile information',
+      'Manage professional content'
+    ],
     authType: AuthType.OAUTH,
   },
   {
@@ -85,7 +117,11 @@ export const AVAILABLE_INTEGRATIONS: Integration[] = [
     description: 'Manage Reddit accounts and posts through Reddit integration',
     category: 'communication',
     status: IntegrationStatusType.AVAILABLE,
-    capabilities: ['manage_posts', 'manage_accounts'],
+    capabilities: [
+      'Read posts and comments',
+      'Search across subreddits',
+      'Access Reddit content and discussions'
+    ],
     authType: AuthType.OAUTH,
   },
   {
@@ -95,7 +131,11 @@ export const AVAILABLE_INTEGRATIONS: Integration[] = [
       'Manage Google Drive files and folders through Google Drive integration',
     category: 'storage',
     status: IntegrationStatusType.AVAILABLE,
-    capabilities: ['manage_files', 'manage_folders'],
+    capabilities: [
+      'Create files from text',
+      'Create and manage folders',
+      'Access file metadata'
+    ],
     authType: AuthType.OAUTH,
   },
   {
@@ -105,10 +145,14 @@ export const AVAILABLE_INTEGRATIONS: Integration[] = [
       'Manage Google Calendar events and scheduling through Google Calendar integration',
     category: 'calendar',
     status: IntegrationStatusType.AVAILABLE,
-    capabilities: ['manage_events', 'manage_scheduling'],
+    capabilities: [
+      'View and search calendar events',
+      'Create new events',
+      'Update existing events',
+      'Manage event scheduling'
+    ],
     authType: AuthType.OAUTH,
   },
-
   {
     id: Provider.INSTAGRAM,
     name: 'Instagram',
@@ -116,7 +160,11 @@ export const AVAILABLE_INTEGRATIONS: Integration[] = [
       'Manage Instagram accounts and posts through Instagram integration',
     category: 'communication',
     status: IntegrationStatusType.COMING_SOON,
-    capabilities: ['manage_posts', 'manage_accounts'],
+    capabilities: [
+      'Access user media and content',
+      'View user insights and analytics',
+      'Get user profile information'
+    ],
     authType: AuthType.OAUTH,
   },
 ];
