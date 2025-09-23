@@ -27,7 +27,6 @@ export const TOOLKIT_TOOLS_MAPPING: ToolkitToolMapping = {
     'GMAIL_GET_PROFILE',
     'GMAIL_FETCH_MESSAGE_BY_THREAD_ID',
     'GMAIL_FETCH_MESSAGE_BY_MESSAGE_ID',
-    'GMAIL_DELETE_DRAFT',
     'GMAIL_FETCH_EMAILS',
   ],
 
@@ -56,6 +55,7 @@ export const TOOLKIT_TOOLS_MAPPING: ToolkitToolMapping = {
     'GITHUB_CREATE_A_COMMIT',
     'GITHUB_COMPARE_TWO_COMMITS',
     'GITHUB_CHECK_IF_A_PULL_REQUEST_HAS_BEEN_MERGED',
+    'GITHUB_CREATE_A_REVIEW_FOR_A_PULL_REQUEST',
   ],
 
   // Notion Integration Tools
@@ -98,6 +98,8 @@ export const TOOLKIT_TOOLS_MAPPING: ToolkitToolMapping = {
   [Provider.GOOGLE_CALENDAR]: [
     'GOOGLECALENDAR_FIND_EVENT',
     'GOOGLECALENDAR_EVENTS_LIST',
+    'GOOGLECALENDAR_CREATE_EVENT',
+    'GOOGLECALENDAR_UPDATE_EVENT',
   ],
 
   // Instagram Integration Tools
@@ -108,9 +110,7 @@ export const TOOLKIT_TOOLS_MAPPING: ToolkitToolMapping = {
   ],
 
   // Web Research Integration Tools
-  [Provider.WEB_RESEARCH]: [
-    'TAVILY_SEARCH',
-  ],
+  [Provider.WEB_RESEARCH]: ['TAVILY_SEARCH'],
 };
 
 /**
