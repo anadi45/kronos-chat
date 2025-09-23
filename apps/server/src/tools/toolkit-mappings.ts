@@ -110,8 +110,6 @@ export const TOOLKIT_TOOLS_MAPPING: ToolkitToolMapping = {
   // Web Research Integration Tools
   [Provider.WEB_RESEARCH]: [
     'TAVILY_SEARCH',
-    'TAVILY_SEARCH_ANSWER',
-    'TAVILY_GET_CONTENT',
   ],
 };
 

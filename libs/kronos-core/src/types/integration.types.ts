@@ -60,15 +60,3 @@ export interface DisconnectIntegrationResponse {
   success: boolean;
   message?: string;
 }
-
-export interface IntegrationDetails {
-  id: Provider;
-  name: string;
-  description: string;
-  category: string;
-  status: IntegrationStatusType;
-  capabilities: string[];
-  authType: AuthType;
-  documentation?: string;
-  setupInstructions?: string[];
-}
