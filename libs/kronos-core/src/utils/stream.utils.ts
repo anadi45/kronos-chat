@@ -2,7 +2,6 @@ export enum StreamEventType {
   START = 'start',
   END = 'end',
   TOKEN = 'token',
-  MARKDOWN_TOKEN = 'markdown_token',
   PROGRESS_UPDATE = 'progress_update',
 }
 
@@ -68,22 +67,6 @@ export class TokenEvent extends StreamEvent {
   }
 }
 
-export class MarkdownTokenEvent extends StreamEvent {
-  constructor(
-    public readonly token: string,
-    public readonly markdownType?: 'text' | 'code' | 'bold' | 'italic' | 'link' | 'list' | 'quote'
-  ) {
-    super(StreamEventType.MARKDOWN_TOKEN, { token, markdownType });
-  }
-
-  serialize(): string {
-    return `data: ${JSON.stringify({
-      type: this.type,
-      data: this.data,
-      timestamp: this.timestamp,
-    })}\n\n`;
-  }
-}
 
 export class ProgressUpdateEvent extends StreamEvent {
   constructor(public readonly message: string) {
@@ -112,12 +95,6 @@ export class StreamEventFactory {
     return new TokenEvent(token);
   }
 
-  static createMarkdownTokenEvent(
-    token: string,
-    markdownType?: 'text' | 'code' | 'bold' | 'italic' | 'link' | 'list' | 'quote'
-  ): MarkdownTokenEvent {
-    return new MarkdownTokenEvent(token, markdownType);
-  }
 
   static createProgressUpdateEvent(message: string): ProgressUpdateEvent {
     return new ProgressUpdateEvent(message);
@@ -186,11 +163,6 @@ export class StreamEventParser {
         return new EndEvent(eventData['conversationId'] as string);
       case StreamEventType.TOKEN:
         return new TokenEvent(eventData['token'] as string);
-      case StreamEventType.MARKDOWN_TOKEN:
-        return new MarkdownTokenEvent(
-          eventData['token'] as string, 
-          eventData['markdownType'] as 'text' | 'code' | 'bold' | 'italic' | 'link' | 'list' | 'quote'
-        );
       default:
         return null;
     }
@@ -251,9 +223,6 @@ export class StreamEventFilter {
     return this.byType(events, StreamEventType.TOKEN) as TokenEvent[];
   }
 
-  static markdownTokenEvents(events: StreamEvent[]): MarkdownTokenEvent[] {
-    return this.byType(events, StreamEventType.MARKDOWN_TOKEN) as MarkdownTokenEvent[];
-  }
 }
 
 // ============================================================================
@@ -265,9 +234,6 @@ export class StreamEventAggregator {
     return events.map(event => event.token).join('');
   }
 
-  static aggregateMarkdownTokens(events: MarkdownTokenEvent[]): string {
-    return events.map(event => event.token).join('');
-  }
 
   static getConversationId(events: StreamEvent[]): string | null {
     const startEvents = StreamEventFilter.startEvents(events);
@@ -276,15 +242,13 @@ export class StreamEventAggregator {
 
   static getTokenCount(events: StreamEvent[]): number {
     const tokenEvents = StreamEventFilter.tokenEvents(events);
-    const markdownTokenEvents = StreamEventFilter.markdownTokenEvents(events);
-    return tokenEvents.length + markdownTokenEvents.length;
+    return tokenEvents.length;
   }
 
   static getFullMessage(events: StreamEvent[]): string {
     const tokenEvents = StreamEventFilter.tokenEvents(events);
-    const markdownTokenEvents = StreamEventFilter.markdownTokenEvents(events);
     
-    const allTokens = [...tokenEvents, ...markdownTokenEvents]
+    const allTokens = tokenEvents
       .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
       .map(event => event.token);
     
@@ -366,20 +330,16 @@ export class StreamEventStatistics {
     totalTokens: number;
     averageTokenLength: number;
     tokenEvents: number;
-    markdownTokenEvents: number;
   } {
     const tokenEvents = StreamEventFilter.tokenEvents(events);
-    const markdownTokenEvents = StreamEventFilter.markdownTokenEvents(events);
-    
-    const totalTokens = tokenEvents.length + markdownTokenEvents.length;
-    const totalTokenLength = [...tokenEvents, ...markdownTokenEvents]
+    const totalTokens = tokenEvents.length;
+    const totalTokenLength = tokenEvents
       .reduce((sum, event) => sum + event.token.length, 0);
     
     return {
       totalTokens,
       averageTokenLength: totalTokens > 0 ? totalTokenLength / totalTokens : 0,
       tokenEvents: tokenEvents.length,
-      markdownTokenEvents: markdownTokenEvents.length,
     };
   }
 }
@@ -408,9 +368,6 @@ export class StreamEventBuilder {
     return this.addEvent(StreamEventFactory.createTokenEvent(token));
   }
 
-  addMarkdownTokenEvent(token: string, markdownType?: 'text' | 'code' | 'bold' | 'italic' | 'link' | 'list' | 'quote'): StreamEventBuilder {
-    return this.addEvent(StreamEventFactory.createMarkdownTokenEvent(token, markdownType));
-  }
 
   build(): StreamEvent[] {
     return [...this.events];

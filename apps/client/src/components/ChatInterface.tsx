@@ -32,7 +32,6 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
   const [streamingMarkdown, setStreamingMarkdown] = useState('');
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [showConversations, setShowConversations] = useState(false);
-  const [isMarkdownMode, setIsMarkdownMode] = useState(false);
   const [isLoadingConversations, setIsLoadingConversations] = useState(false);
   const [hasMoreConversations, setHasMoreConversations] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
@@ -252,7 +251,6 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
       setCurrentConversationId(conversationId);
       setStreamingMessage('');
       setStreamingMarkdown('');
-      setIsMarkdownMode(false);
       setError(null);
       
       // Update URL if not already there
@@ -307,7 +305,6 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
     setIsStreaming(false);
     setStreamingMessage('');
     setStreamingMarkdown('');
-    setIsMarkdownMode(false);
   };
 
   const handleSendMessage = async () => {
@@ -391,12 +388,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
                   case StreamEventType.TOKEN:
                     assistantMessage += (parsed.data as any).token || '';
                     setStreamingMessage(assistantMessage);
-                    break;
-                    
-                  case StreamEventType.MARKDOWN_TOKEN:
-                    assistantMessage += (parsed.data as any).token || '';
                     setStreamingMarkdown(assistantMessage);
-                    setIsMarkdownMode(true);
                     break;
                     
                   case StreamEventType.PROGRESS_UPDATE:
@@ -778,51 +770,47 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
           <div className="chat-message assistant">
             <div className="message-bubble assistant">
               <div className="whitespace-pre-wrap break-words">
-                {isMarkdownMode ? (
-                  <ReactMarkdown 
-                    remarkPlugins={[remarkGfm]}
-                    components={{
-                      code: ({ node, className, children, ...props }: any) => {
-                        const match = /language-(\w+)/.exec(className || '');
-                        const isInline = !match;
-                        return !isInline && match ? (
-                          <pre className="bg-gray-800 text-gray-100 p-4 rounded-lg overflow-x-auto">
-                            <code className={className} {...props}>
-                              {children}
-                            </code>
-                          </pre>
-                        ) : (
-                          <code className="bg-gray-200 text-gray-800 px-1 py-0.5 rounded text-sm" {...props}>
+                <ReactMarkdown 
+                  remarkPlugins={[remarkGfm]}
+                  components={{
+                    code: ({ node, className, children, ...props }: any) => {
+                      const match = /language-(\w+)/.exec(className || '');
+                      const isInline = !match;
+                      return !isInline && match ? (
+                        <pre className="bg-gray-800 text-gray-100 p-4 rounded-lg overflow-x-auto">
+                          <code className={className} {...props}>
                             {children}
                           </code>
-                        );
-                      },
-                      p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
-                      ul: ({ children }) => <ul className="list-disc list-inside mb-2">{children}</ul>,
-                      ol: ({ children }) => <ol className="list-decimal list-inside mb-2">{children}</ol>,
-                      li: ({ children }) => <li className="mb-1">{children}</li>,
-                      blockquote: ({ children }) => (
-                        <blockquote className="border-l-4 border-gray-300 pl-4 italic text-gray-600 mb-2">
+                        </pre>
+                      ) : (
+                        <code className="bg-gray-200 text-gray-800 px-1 py-0.5 rounded text-sm" {...props}>
                           {children}
-                        </blockquote>
-                      ),
-                      h1: ({ children }) => <h1 className="text-2xl font-bold mb-2">{children}</h1>,
-                      h2: ({ children }) => <h2 className="text-xl font-bold mb-2">{children}</h2>,
-                      h3: ({ children }) => <h3 className="text-lg font-bold mb-2">{children}</h3>,
-                      strong: ({ children }) => <strong className="font-bold">{children}</strong>,
-                      em: ({ children }) => <em className="italic">{children}</em>,
-                      a: ({ href, children }) => (
-                        <a href={href} className="text-blue-600 hover:underline" target="_blank" rel="noopener noreferrer">
-                          {children}
-                        </a>
-                      ),
-                    }}
-                  >
-                    {streamingMarkdown || streamingMessage}
-                  </ReactMarkdown>
-                ) : (
-                  streamingMessage
-                )}
+                        </code>
+                      );
+                    },
+                    p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
+                    ul: ({ children }) => <ul className="list-disc list-inside mb-2">{children}</ul>,
+                    ol: ({ children }) => <ol className="list-decimal list-inside mb-2">{children}</ol>,
+                    li: ({ children }) => <li className="mb-1">{children}</li>,
+                    blockquote: ({ children }) => (
+                      <blockquote className="border-l-4 border-gray-300 pl-4 italic text-gray-600 mb-2">
+                        {children}
+                      </blockquote>
+                    ),
+                    h1: ({ children }) => <h1 className="text-2xl font-bold mb-2">{children}</h1>,
+                    h2: ({ children }) => <h2 className="text-xl font-bold mb-2">{children}</h2>,
+                    h3: ({ children }) => <h3 className="text-lg font-bold mb-2">{children}</h3>,
+                    strong: ({ children }) => <strong className="font-bold">{children}</strong>,
+                    em: ({ children }) => <em className="italic">{children}</em>,
+                    a: ({ href, children }) => (
+                      <a href={href} className="text-blue-600 hover:underline" target="_blank" rel="noopener noreferrer">
+                        {children}
+                      </a>
+                    ),
+                  }}
+                >
+                  {streamingMarkdown || streamingMessage}
+                </ReactMarkdown>
                 <span className="chat-streaming-cursor"></span>
               </div>
             </div>
