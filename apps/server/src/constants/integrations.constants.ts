@@ -75,7 +75,7 @@ export const AVAILABLE_INTEGRATIONS: Integration[] = [
     description:
       'Manage LinkedIn accounts and posts through LinkedIn integration',
     category: 'communication',
-    status: IntegrationStatusType.AVAILABLE,
+    status: IntegrationStatusType.COMING_SOON,
     capabilities: ['manage_posts', 'manage_accounts'],
     authType: AuthType.OAUTH,
   },
@@ -115,7 +115,7 @@ export const AVAILABLE_INTEGRATIONS: Integration[] = [
     description:
       'Manage Instagram accounts and posts through Instagram integration',
     category: 'communication',
-    status: IntegrationStatusType.AVAILABLE,
+    status: IntegrationStatusType.COMING_SOON,
     capabilities: ['manage_posts', 'manage_accounts'],
     authType: AuthType.OAUTH,
   },

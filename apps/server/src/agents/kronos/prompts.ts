@@ -192,13 +192,6 @@ export const INTEGRATION_DEFINITIONS = {
     capabilities: 'Search tweets, monitor trends, analyze social media content',
     delegationTool: 'delegateToTwitterAgent'
   },
-  [Provider.LINKEDIN]: {
-    name: 'LinkedIn',
-    subagent: 'LinkedInSubagent',
-    scope: 'Professional networking, company information, and business intelligence',
-    capabilities: 'Access company info, manage profiles, handle business intelligence',
-    delegationTool: 'delegateToLinkedInAgent'
-  },
   [Provider.REDDIT]: {
     name: 'Reddit',
     subagent: 'RedditSubagent',
@@ -219,13 +212,6 @@ export const INTEGRATION_DEFINITIONS = {
     scope: 'Event management, schedule coordination, and time management',
     capabilities: 'Manage events, coordinate schedules, handle time management',
     delegationTool: 'delegateToGoogleCalendarAgent'
-  },
-  [Provider.INSTAGRAM]: {
-    name: 'Instagram',
-    subagent: 'InstagramSubagent',
-    scope: 'Social media monitoring, content analysis, and user insights',
-    capabilities: 'Monitor content, analyze user insights, handle media management',
-    delegationTool: 'delegateToInstagramAgent'
   },
   [Provider.WEB_RESEARCH]: {
     name: 'Web Research',
