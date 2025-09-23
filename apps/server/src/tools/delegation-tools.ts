@@ -89,8 +89,14 @@ export class DelegationToolsFactory {
             ],
           };
 
-          // Execute the subagent
-          const result = await compiledSubagent.invoke(initialState);
+          // Execute the subagent with delegation context and proper thread ID
+          const result = await compiledSubagent.invoke(initialState, {
+            configurable: {
+              delegationContext: true,
+              userId: userId,
+              thread_id: `delegation_${provider}_${Date.now()}`,
+            },
+          });
 
           this.logger.debug(`${provider} subagent completed successfully`);
 

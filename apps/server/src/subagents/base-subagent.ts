@@ -120,7 +120,9 @@ export abstract class BaseSubagent {
       const compiledGraph = workflow.compile(compileOptions);
       return compiledGraph;
     } catch (error) {
-      throw new Error(`Failed to build ${this.provider} subagent: ${error.message}`);
+      throw new Error(
+        `Failed to build ${this.provider} subagent: ${error.message}`
+      );
     }
   }
 
@@ -264,33 +266,80 @@ export abstract class BaseSubagent {
   }
 
   /**
-   * Create the final answer node
+   * Create the final answer node - context-aware response handling
+   * Returns raw AI messages when called by parent agent (Kronos)
+   * Uses LLM summarization when called directly
    */
   protected createFinalAnswerNode() {
     return async (state: SubagentState, config: RunnableConfig) => {
-      const todayDate = getCurrentDate();
-      const formattedPrompt = this.getFinalAnswerPrompt(todayDate);
+      // Check if this subagent is being called by a parent agent
+      const isCalledByParent = this.isCalledByParentAgent(state, config);
 
-      const allMessages = state.messages;
+      if (isCalledByParent) {
+        // When called by parent agent (like Kronos), return raw AI messages
+        const aiMessages = state.messages.filter((msg) => isAIMessage(msg));
+        const result = aiMessages.map((msg) => msg.content).join('\n\n');
 
-      const conversationHistory = [
-        new SystemMessage(formattedPrompt),
-        ...allMessages,
-      ];
+        this.logger.log(
+          `${this.provider} subagent returning AI messages for parent agent`
+        );
+        return {
+          result,
+          messages: [new AIMessage(result)],
+        };
+      } else {
+        // When called directly, use LLM to provide a proper summary
+        const todayDate = getCurrentDate();
+        const formattedPrompt = this.getFinalAnswerPrompt(todayDate);
 
-      const finalResponse = await this.answerModel.invoke(
-        conversationHistory,
-        config
-      );
+        const allMessages = state.messages;
+        const conversationHistory = [
+          new SystemMessage(formattedPrompt),
+          ...allMessages,
+        ];
 
-      const result = finalResponse.content as string;
+        const finalResponse = await this.answerModel.invoke(
+          conversationHistory,
+          config
+        );
 
-      this.logger.log(`${this.provider} subagent final answer generated successfully`);
-      return {
-        result,
-        messages: [new AIMessage(result)],
-      };
+        const result = finalResponse.content as string;
+
+        this.logger.log(
+          `${this.provider} subagent final answer generated successfully`
+        );
+        return {
+          result,
+          messages: [new AIMessage(result)],
+        };
+      }
     };
+  }
+
+  /**
+   * Determine if this subagent is being called by a parent agent
+   * This can be detected by checking for delegation context or specific patterns
+   */
+  private isCalledByParentAgent(
+    state: SubagentState,
+    config: RunnableConfig
+  ): boolean {
+    // Check if there's a delegation context in the config
+    const delegationContext = getContextValue(config, 'delegationContext');
+    if (delegationContext) {
+      return true;
+    }
+
+    // Check if the initial message contains delegation patterns
+    const firstMessage = state.messages[0];
+    if (firstMessage && firstMessage.content) {
+      const content = firstMessage.content.toString();
+      // Look for patterns that indicate delegation from Kronos
+      return content.includes('Context:') || content.includes('delegation');
+    }
+
+    // Default to direct call if no delegation indicators found
+    return false;
   }
 
   /**
