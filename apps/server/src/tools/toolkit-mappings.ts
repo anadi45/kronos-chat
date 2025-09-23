@@ -79,7 +79,7 @@ export const TOOLKIT_TOOLS_MAPPING: ToolkitToolMapping = {
   [Provider.TWITTER]: ['TWITTER_RECENT_SEARCH'],
 
   // LinkedIn Integration Tools
-  [Provider.LINKEDIN]: ['LINKEDIN_GET_COMPANY_INFO', 'LINKEDIN_GET_MY_INFO'],
+  [Provider.LINKEDIN]: ['LINKEDIN_GET_MY_INFO'],
 
   // Reddit Integration Tools
   [Provider.REDDIT]: [
