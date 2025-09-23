@@ -47,6 +47,7 @@ export const AVAILABLE_INTEGRATIONS: Integration[] = [
       'Read and search repositories',
       'Create and manage issues',
       'Review pull requests',
+      'Create pull request reviews',
       'Access commit history',
       'Manage branches and tags',
       'Create forks and commits',
