@@ -5,6 +5,7 @@ import { CheckpointerService } from '../checkpointer';
 import { ToolsExecutorService } from './tools-executor.service';
 import { ToolsProviderService } from './tools-provider.service';
 import { Logger } from '@nestjs/common';
+import { HumanMessage } from '@langchain/core/messages';
 
 /**
  * Interface for delegation tool configuration
@@ -38,7 +39,12 @@ export class DelegationToolsFactory {
 
     return new DynamicStructuredTool({
       name: toolName,
-      description: `Delegate tasks to the ${provider} subagent for specialized handling of ${provider}-related operations. Use this when the user's request involves ${provider} functionality.`,
+      description: `Delegate tasks to the ${provider} subagent for specialized handling of ${provider}-related operations. Use this when the user's request involves ${provider} functionality. 
+
+IMPORTANT EXECUTION GUIDELINES:
+- For INDEPENDENT tasks (no data flow between them), call multiple delegation tools in a single API call (PARALLEL execution)
+- For DEPENDENT tasks (one task's output feeds into another), call delegation tools in separate API calls (SEQUENTIAL execution)
+- Use the 'context' parameter to pass results from previous tasks when doing SEQUENTIAL execution`,
       schema: {
         type: 'object',
         properties: {
@@ -50,7 +56,7 @@ export class DelegationToolsFactory {
           context: {
             type: 'string',
             description:
-              'Additional context or information that might be relevant for the subagent',
+              'Additional context or information that might be relevant for the subagent. For SEQUENTIAL execution, use this to pass results from previous tasks (e.g., Reddit data for email content)',
             default: '',
           },
         },
@@ -80,12 +86,11 @@ export class DelegationToolsFactory {
           // Prepare the state for the subagent
           const initialState = {
             messages: [
-              {
-                role: 'user',
-                content: context
+              new HumanMessage(
+                context
                   ? `${userQuery}\n\nContext: ${context}`
-                  : userQuery,
-              },
+                  : userQuery
+              ),
             ],
           };
 
