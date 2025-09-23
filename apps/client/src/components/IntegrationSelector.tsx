@@ -350,7 +350,9 @@ const IntegrationSelector: React.FC<IntegrationSelectorProps> = ({
           </div>
 
           <div className="integration-selector-list">
-            {integrations.map((integration) => {
+            {integrations
+              .filter((integration) => integration.status !== 'coming_soon')
+              .map((integration) => {
               const isSelected = selectedToolkits.includes(integration.id);
               return (
                 <button

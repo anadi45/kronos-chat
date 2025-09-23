@@ -223,7 +223,11 @@ const IntegrationCard: React.FC<IntegrationCardProps> = ({
   };
 
   const getActionButton = () => {
-    if (integration.status === 'coming_soon' || integration.status === 'beta') {
+    if (integration.status === 'coming_soon') {
+      return null; // Don't show action button for coming_soon integrations
+    }
+    
+    if (integration.status === 'beta') {
       return (
         <button className="btn btn-integration" disabled>
           Coming Soon
