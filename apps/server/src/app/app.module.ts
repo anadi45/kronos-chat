@@ -7,9 +7,10 @@ import { AuthModule } from '../auth/auth.module';
 import { ChatModule } from '../chat/chat.module';
 import { OAuthIntegrationsModule } from '../oauth-integrations/oauth-integrations.module';
 import { CheckpointerModule } from '../checkpointer';
+import { CacheModule } from '../cache';
 
 @Module({
-  imports: [ConfigModule, CheckpointerModule, UsersModule, AuthModule, ChatModule, OAuthIntegrationsModule],
+  imports: [ConfigModule, CheckpointerModule, UsersModule, AuthModule, ChatModule, OAuthIntegrationsModule, CacheModule],
   controllers: [AppController],
   providers: [AppService],
 })

@@ -25,35 +25,6 @@ export class ChatService {
   ) {}
 
   /**
-   * Get user's OAuth integrations from the database
-   */
-  private async getUserIntegrations(userId: string): Promise<Provider[]> {
-    try {
-      // Use the tools provider service to get user's OAuth integrations
-      const userIntegrations = await this.toolsProviderService.getUserOAuthIntegrations(userId);
-      
-      // Convert string platform names to Provider enum values
-      const providerEnums = userIntegrations
-        .map(integration => {
-          const upperProvider = integration.toUpperCase();
-          return Object.values(Provider).find(p => p === upperProvider);
-        })
-        .filter(Boolean) as Provider[];
-
-      // Always include Web Research as it's always available
-      if (!providerEnums.includes(Provider.WEB_RESEARCH)) {
-        providerEnums.push(Provider.WEB_RESEARCH);
-      }
-
-      console.log(`Found ${providerEnums.length} user integrations: ${providerEnums.join(', ')}`);
-      return providerEnums;
-    } catch (error) {
-      console.warn('Failed to get user integrations, using Web Research only:', error.message);
-      return [Provider.WEB_RESEARCH];
-    }
-  }
-
-  /**
    * Send a chat message with streaming response using LangGraph streaming
    * @param request The chat request
    * @param userId The user ID
