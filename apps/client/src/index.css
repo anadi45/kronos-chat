@@ -4269,6 +4269,7 @@ input:checked + .toggle-slider:before {
   cursor: pointer;
   transition: all 0.2s ease;
   text-align: left;
+  margin-bottom: 0.25rem;
 }
 
 .integration-selector-item:hover {
@@ -4278,6 +4279,10 @@ input:checked + .toggle-slider:before {
 .integration-selector-item.selected {
   background: rgba(59, 130, 246, 0.1);
   border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.integration-selector-item:last-child {
+  margin-bottom: 0;
 }
 
 .integration-selector-item-content {
