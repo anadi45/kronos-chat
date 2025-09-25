@@ -60,20 +60,29 @@ export abstract class BaseSubagent {
    */
   private initializeProviders(): void {
     try {
+      // Validate API key before creating models
+      if (!process.env.GEMINI_API_KEY) {
+        throw new Error('GEMINI_API_KEY environment variable is not set');
+      }
+
       this.model = new ChatGoogleGenerativeAI({
         model: MODELS.GEMINI_2_0_FLASH,
         maxOutputTokens: 2048,
         temperature: 0,
         apiKey: process.env.GEMINI_API_KEY,
         streaming: true,
+        maxRetries: 3,
       });
+
       this.answerModel = new ChatGoogleGenerativeAI({
         model: MODELS.GEMINI_2_0_FLASH,
         temperature: 0,
         apiKey: process.env.GEMINI_API_KEY,
         streaming: true,
+        maxRetries: 3,
       });
     } catch (error) {
+      console.error('Failed to initialize AI models for subagent:', error);
       throw new Error(`Failed to initialize AI models: ${error.message}`);
     }
   }

@@ -89,23 +89,32 @@ export class KronosAgentBuilder {
    */
   private initializeProviders(): void {
     try {
+      // Validate API key before creating models
+      if (!process.env.GEMINI_API_KEY) {
+        throw new Error('GEMINI_API_KEY environment variable is not set');
+      }
+
       this.model = new ChatGoogleGenerativeAI({
         model: MODELS.GEMINI_2_0_FLASH,
         maxOutputTokens: 2048,
         temperature: 0,
         apiKey: process.env.GEMINI_API_KEY,
         streaming: true,
+        maxRetries: 3,
       });
+
       // Add tag to identify the final answer model for streaming
       this.answerModel = new ChatGoogleGenerativeAI({
         model: MODELS.GEMINI_2_0_FLASH,
         temperature: 0,
         apiKey: process.env.GEMINI_API_KEY,
         streaming: true,
+        maxRetries: 3,
       }).withConfig({
         tags: ['final_answer_node'],
       });
     } catch (error) {
+      console.error('Failed to initialize Google Generative AI models:', error);
       throw new Error(`Failed to initialize Providers: ${error.message}`);
     }
   }

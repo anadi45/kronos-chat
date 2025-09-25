@@ -65,7 +65,7 @@ export class ChatService {
             isNewConversation = true;
             // Create a properly truncated and sanitized title
             const conversationTitle = createConversationTitle(request.message);
-            
+
             conversation = conversationRepository.create({
               title: conversationTitle, // Set title to first human message (processed)
               messages: [],
@@ -120,6 +120,14 @@ export class ChatService {
           let progressUpdateSent = false;
 
           for await (const event of eventStream) {
+            // Validate stream event structure early
+            if (!event || typeof event !== 'object' || !event.event) {
+              console.error('Invalid stream event received:', event);
+              // End stream silently without error message to UI
+              controller.close();
+              return;
+            }
+
             // Send progress update when agent starts processing
             if (!progressUpdateSent && event.event === 'on_chain_start') {
               const processingProgressEvent =
@@ -146,18 +154,23 @@ export class ChatService {
                     const toolNames = message.tool_calls
                       .map((tc) => tc.name)
                       .join(', ');
-                    
+
                     // Check if this is a delegation call
-                    const delegationMatch = toolNames.match(/delegateTo(\w+)Agent/);
-                    let progressMessage = ProgressMessages.getRandomToolCallMessage();
-                    
+                    const delegationMatch =
+                      toolNames.match(/delegateTo(\w+)Agent/);
+                    let progressMessage =
+                      ProgressMessages.getRandomToolCallMessage();
+
                     if (delegationMatch) {
                       const agentName = delegationMatch[1].toLowerCase();
-                      progressMessage = ProgressMessages.getRandomAgentMessage(agentName);
+                      progressMessage =
+                        ProgressMessages.getRandomAgentMessage(agentName);
                     }
-                    
+
                     const toolCallProgressEvent =
-                      StreamEventFactory.createProgressUpdateEvent(progressMessage);
+                      StreamEventFactory.createProgressUpdateEvent(
+                        progressMessage
+                      );
                     controller.enqueue(
                       new TextEncoder().encode(
                         StreamEventSerializer.serialize(toolCallProgressEvent)
@@ -173,16 +186,21 @@ export class ChatService {
                 for (const message of toolMessages) {
                   if (message.name && message.content) {
                     // Check if this is a delegation tool result
-                    const delegationMatch = message.name.match(/delegateTo(\w+)Agent/);
-                    let resultMessage = ProgressMessages.getRandomToolResultMessage();
-                    
+                    const delegationMatch =
+                      message.name.match(/delegateTo(\w+)Agent/);
+                    let resultMessage =
+                      ProgressMessages.getRandomToolResultMessage();
+
                     if (delegationMatch) {
                       const agentName = delegationMatch[1].toLowerCase();
-                      resultMessage = ProgressMessages.getRandomAgentResultMessage(agentName);
+                      resultMessage =
+                        ProgressMessages.getRandomAgentResultMessage(agentName);
                     }
-                    
+
                     const toolResultProgressEvent =
-                      StreamEventFactory.createProgressUpdateEvent(resultMessage);
+                      StreamEventFactory.createProgressUpdateEvent(
+                        resultMessage
+                      );
                     controller.enqueue(
                       new TextEncoder().encode(
                         StreamEventSerializer.serialize(toolResultProgressEvent)
@@ -202,6 +220,19 @@ export class ChatService {
                 event.tags?.includes('final_answer_node')
               ) {
                 const content = event.data.chunk.content;
+
+                // Validate content before processing
+                if (typeof content !== 'string') {
+                  console.error(
+                    'Invalid content type in stream:',
+                    typeof content,
+                    content
+                  );
+                  // End stream silently without error message to UI
+                  controller.close();
+                  return;
+                }
+
                 if (typeof content === 'string' && content.trim()) {
                   // Send progress update when model starts generating
                   if (assistantMessage === '') {
@@ -275,18 +306,39 @@ export class ChatService {
                 }
               }
             } catch (streamError) {
-              // Continue processing other events even if one fails
+              // Log the specific stream error for debugging
+              console.error('Stream processing error:', {
+                error: streamError.message,
+                event: event.event,
+                data: event.data,
+                stack: streamError.stack,
+              });
+
+              // Handle stream parsing errors silently - just log and end stream
+              if (streamError.message.includes('Failed to parse stream')) {
+                console.error('Stream parsing error - ending stream silently');
+
+                // Close the stream immediately without sending error to UI
+                controller.close();
+                return;
+              }
             }
           }
 
-          // Add assistant message to conversation
-          const assistantChatMessage: ChatMessage = {
-            role: ChatMessageRole.AI,
-            content: assistantMessage,
-            timestamp: new Date().toISOString(),
-          };
-          conversation.messages.push(assistantChatMessage);
-          await conversationRepository.save(conversation);
+          // Only save conversation if we have valid content
+          if (assistantMessage && assistantMessage.trim()) {
+            const assistantChatMessage: ChatMessage = {
+              role: ChatMessageRole.AI,
+              content: assistantMessage,
+              timestamp: new Date().toISOString(),
+            };
+            conversation.messages.push(assistantChatMessage);
+            await conversationRepository.save(conversation);
+          } else {
+            console.warn(
+              'No valid assistant message to save - stream may have failed'
+            );
+          }
 
           // Send end event
           const endEvent = StreamEventFactory.createEndEvent(conversation.id);
@@ -296,9 +348,17 @@ export class ChatService {
 
           controller.close();
         } catch (error) {
-          // Send error event
+          // Log the full error for debugging
+          console.error('Chat service error:', {
+            error: error.message,
+            stack: error.stack,
+            userId,
+            conversationId: conversation?.id,
+          });
+
+          // Send error event with more context
           const errorEvent = StreamEventFactory.createTokenEvent(
-            `Error: ${error.message}`
+            `Error: ${error.message}. Please try again.`
           );
           controller.enqueue(
             new TextEncoder().encode(
