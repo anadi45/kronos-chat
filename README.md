@@ -100,7 +100,7 @@ npx nx build client
 ### Development Commands
 ```bash
 # Serve applications
-npx nx serve server    # Backend API
+npx nx serve server    # Backend API / npx nx serve server --output-style=stream
 npx nx serve client    # Frontend app
 
 # Run tests
