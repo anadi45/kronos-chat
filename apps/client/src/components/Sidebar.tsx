@@ -11,14 +11,14 @@ interface SidebarProps {
   onLogout?: () => void;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ 
-  isCollapsed, 
+const Sidebar: React.FC<SidebarProps> = ({
+  isCollapsed,
   onToggle,
   user,
   onLogout
 }) => {
   const location = useLocation();
-  
+
   const menuItems = [
     {
       id: 'chat',
@@ -54,20 +54,16 @@ const Sidebar: React.FC<SidebarProps> = ({
 
   return (
     <div className={`sidebar ${isCollapsed ? 'collapsed' : ''}`}>
-      {/* Sidebar Header */}
+      {/* Enhanced Sidebar Header */}
       <div className="sidebar-header">
-        <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'space-x-3'}`}>
+        <div className={`sidebar-logo ${isCollapsed ? 'justify-center' : ''}`}>
+          <div className="sidebar-logo-icon">
+            <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M18 10c0 3.866-3.582 7-8 7a8.841 8.841 0 01-4.083-.98L2 17l1.338-3.123C2.493 12.767 2 11.434 2 10c0-3.866 3.582-7 8-7s8 3.134 8 7zM7 9H5v2h2V9zm8 0h-2v2h2V9zM9 9h2v2H9V9z" clipRule="evenodd" />
+            </svg>
+          </div>
           {!isCollapsed && (
-            <h2 className="text-5xl font-semibold text-white whitespace-nowrap">Kronos</h2>
-          )}
-          {isCollapsed && (
-            <div 
-              className="cursor-pointer hover:scale-105 transition-transform"
-              onClick={onToggle}
-              title="Click to expand sidebar"
-            >
-              <h2 className="text-5xl font-semibold text-white whitespace-nowrap">K</h2>
-            </div>
+            <span className="sidebar-logo-text">Kronos</span>
           )}
         </div>
         {!isCollapsed && (
@@ -76,18 +72,15 @@ const Sidebar: React.FC<SidebarProps> = ({
             className="sidebar-toggle"
             aria-label="Collapse sidebar"
           >
-            <svg 
-              className="w-5 h-5 transition-all duration-300 ease-in-out" 
-              fill="currentColor" 
+            <svg
+              className="w-5 h-5 transition-all duration-300 ease-in-out"
+              fill="currentColor"
               viewBox="0 0 24 24"
               stroke="currentColor"
               strokeWidth="2"
             >
-              {/* X icon (close) */}
-              <g>
-                <line x1="18" y1="6" x2="6" y2="18" strokeLinecap="round"/>
-                <line x1="6" y1="6" x2="18" y2="18" strokeLinecap="round"/>
-              </g>
+              <line x1="18" y1="6" x2="6" y2="18" strokeLinecap="round" />
+              <line x1="6" y1="6" x2="18" y2="18" strokeLinecap="round" />
             </svg>
           </button>
         )}
@@ -113,40 +106,47 @@ const Sidebar: React.FC<SidebarProps> = ({
         </ul>
       </nav>
 
-      {/* Sidebar Footer */}
+      {/* Enhanced Sidebar Footer */}
       <div className="sidebar-footer">
-        {/* User info and logout */}
+        {/* Enhanced User Profile Section */}
         {user && (
-          <div className="mb-4">
+          <div className="sidebar-user-profile">
+            <div className="sidebar-user-avatar">
+              {user.firstName ? user.firstName.charAt(0).toUpperCase() : user.email.charAt(0).toUpperCase()}
+            </div>
             {!isCollapsed && (
-              <div className="text-xs text-gray-300 mb-2 px-1">
-                <div className="font-medium text-white text-sm">
-                  {user.firstName || user.email}
+              <div className="sidebar-user-info">
+                <div className="sidebar-user-name">
+                  {user.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : 'User'}
                 </div>
-                <div className="text-xs text-gray-400 truncate">
+                <div className="sidebar-user-email">
                   {user.email}
                 </div>
               </div>
             )}
-            <button
-              onClick={onLogout}
-              className="sidebar-item w-full text-left"
-              title={isCollapsed ? 'Logout' : undefined}
-            >
-              <span className="sidebar-icon">
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M3 3a1 1 0 00-1 1v12a1 1 0 102 0V4a1 1 0 00-1-1zm10.293 9.293a1 1 0 001.414 1.414l3-3a1 1 0 000-1.414l-3-3a1 1 0 10-1.414 1.414L14.586 9H7a1 1 0 100 2h7.586l-1.293 1.293z" clipRule="evenodd" />
-                </svg>
-              </span>
-              {!isCollapsed && (
-                <span className="sidebar-label">Logout</span>
-              )}
-            </button>
           </div>
         )}
-        
+
+        {/* Logout Button */}
+        {user && (
+          <button
+            onClick={onLogout}
+            className="sidebar-item w-full text-left"
+            title={isCollapsed ? 'Logout' : undefined}
+          >
+            <span className="sidebar-icon">
+              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M3 3a1 1 0 00-1 1v12a1 1 0 102 0V4a1 1 0 00-1-1zm10.293 9.293a1 1 0 001.414 1.414l3-3a1 1 0 000-1.414l-3-3a1 1 0 10-1.414 1.414L14.586 9H7a1 1 0 100 2h7.586l-1.293 1.293z" clipRule="evenodd" />
+              </svg>
+            </span>
+            {!isCollapsed && (
+              <span className="sidebar-label">Logout</span>
+            )}
+          </button>
+        )}
+
         {!isCollapsed && (
-          <div className="text-xs text-gray-500 text-center mt-2">
+          <div className="text-xs text-gray-500 text-center mt-3">
             Kronos Chat v1.0
           </div>
         )}
