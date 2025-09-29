@@ -2945,6 +2945,7 @@ select:focus {
   flex-direction: column;
   background: transparent;
   position: relative;
+  align-items: center;
 }
 
 .chat-header-section {
@@ -2953,6 +2954,8 @@ select:focus {
   background: var(--gradient-glass);
   backdrop-filter: blur(20px);
   position: relative;
+  width: 100%;
+  max-width: 768px;
 }
 
 .chat-header-section::after {
@@ -3083,6 +3086,9 @@ select:focus {
   flex-direction: column;
   gap: 1.5rem;
   background: transparent;
+  max-width: 768px;
+  width: 100%;
+  margin: 0 auto;
 }
 
 .chat-message {
@@ -3112,7 +3118,7 @@ select:focus {
 }
 
 .message-bubble {
-  max-width: 85%;
+  max-width: 100%;
   padding: 1.25rem 1.5rem;
   border-radius: 1.25rem;
   position: relative;
@@ -3147,7 +3153,7 @@ select:focus {
   border-color: var(--accent-blue);
   color: white;
   margin-left: auto;
-  max-width: 80%;
+  max-width: 100%;
   border-bottom-right-radius: 0.5rem;
   box-shadow: 0 8px 25px rgba(59, 130, 246, 0.3), 0 2px 8px rgba(59, 130, 246, 0.15);
 }
@@ -3289,6 +3295,9 @@ select:focus {
   padding: 2rem;
   position: relative;
   transition: all 0.3s ease;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .chat-input-container::before {
@@ -3306,7 +3315,8 @@ select:focus {
   display: flex;
   flex-direction: column;
   gap: 1rem;
-  max-width: 100%;
+  max-width: 768px;
+  width: 100%;
   position: relative;
   transition: all 0.3s ease;
 }
@@ -3318,10 +3328,11 @@ select:focus {
   position: relative;
   background: var(--gradient-card);
   border: 1px solid var(--border-subtle);
-  border-radius: 1rem;
-  padding: 0.5rem;
+  border-radius: 1.5rem;
+  padding: 0.75rem;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   transition: all 0.3s ease;
+  min-height: 3.5rem;
 }
 
 .chat-input-main:focus-within {
@@ -3337,10 +3348,10 @@ select:focus {
   border-radius: 0.75rem;
   padding: 1rem 3.5rem 1rem 1.25rem;
   color: var(--text-primary);
-  font-size: 0.95rem;
+  font-size: 1rem;
   line-height: 1.6;
   resize: none;
-  min-height: 3.5rem;
+  min-height: 1.5rem;
   max-height: 8rem;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1), height 0.2s ease-out;
   font-family: inherit;
@@ -3385,22 +3396,22 @@ select:focus {
 
 .chat-send-btn {
   position: absolute;
-  right: 0.75rem;
+  right: 0.5rem;
   top: 50%;
   transform: translateY(-50%);
   background: var(--gradient-button);
   color: white;
   border: none;
   border-radius: 0.5rem;
-  padding: 0.75rem;
+  padding: 0.5rem;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 2.75rem;
-  height: 2.75rem;
+  width: 2.5rem;
+  height: 2.5rem;
   z-index: 10;
   box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
   position: relative;
@@ -3779,6 +3790,12 @@ input:checked+.toggle-slider:before {
   text-align: center;
   padding: 3rem 2rem;
   min-height: 200px;
+  background: var(--gradient-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 1rem;
+  margin: 2rem 0;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(10px);
 }
 
 .conversations-empty-icon {
@@ -3792,14 +3809,14 @@ input:checked+.toggle-slider:before {
 .conversations-empty-title {
   font-size: 1.25rem;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--text-primary);
   margin: 0 0 0.75rem 0;
   line-height: 1.4;
 }
 
 .conversations-empty-description {
   font-size: 0.9rem;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--text-secondary);
   margin: 0;
   line-height: 1.5;
   max-width: 300px;
@@ -5841,33 +5858,27 @@ input:checked+.toggle-slider:before {
 
 /* Conversations Page Styles */
 .conversations-page {
+  height: 100%;
   display: flex;
   flex-direction: column;
-  height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
+  background: transparent;
 }
 
 .conversations-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1.5rem 2rem;
+  padding: 2rem 2rem 1rem 2rem;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(10px);
 }
 
 .conversations-header-content h1 {
   font-size: 1.5rem;
   font-weight: 600;
   margin: 0;
-  color: white;
+  color: var(--text-primary);
 }
 
 .conversations-subtitle {
   font-size: 0.875rem;
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--text-secondary);
   margin: 0.25rem 0 0 0;
 }
 
@@ -5876,30 +5887,31 @@ input:checked+.toggle-slider:before {
   align-items: center;
   gap: 0.5rem;
   padding: 0.75rem 1rem;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: var(--gradient-button);
+  border: 1px solid var(--accent-blue);
   border-radius: 0.5rem;
   color: white;
   font-size: 0.875rem;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
 }
 
 .new-conversation-btn:hover {
-  background: rgba(255, 255, 255, 0.2);
-  border-color: rgba(255, 255, 255, 0.3);
+  background: var(--gradient-button-hover);
+  border-color: var(--accent-blue-dark);
+  transform: translateY(-1px);
+  box-shadow: 0 8px 25px rgba(59, 130, 246, 0.3);
 }
 
 .conversations-content {
   flex: 1;
-  overflow: hidden;
-  padding: 1rem 2rem;
+  padding: 2rem;
+  overflow-y: auto;
 }
 
 .conversations-list {
-  height: 100%;
-  overflow-y: auto;
   padding-right: 0.5rem;
 }
 
@@ -5925,15 +5937,19 @@ input:checked+.toggle-slider:before {
   display: flex;
   align-items: center;
   margin-bottom: 0.75rem;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--gradient-card);
+  border: 1px solid var(--border-subtle);
   border-radius: 0.75rem;
-  transition: all 0.2s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(10px);
 }
 
 .conversation-item:hover {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.2);
+  background: var(--gradient-card-hover);
+  border-color: var(--accent-blue);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
 }
 
 .conversation-content {
@@ -5944,9 +5960,9 @@ input:checked+.toggle-slider:before {
   text-align: left;
   background: none;
   border: none;
-  color: white;
+  color: var(--text-primary);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .conversation-icon {
@@ -5955,10 +5971,11 @@ input:checked+.toggle-slider:before {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--gradient-button);
   border-radius: 0.5rem;
   margin-right: 1rem;
   flex-shrink: 0;
+  color: white;
 }
 
 .conversation-details {
@@ -5969,7 +5986,7 @@ input:checked+.toggle-slider:before {
 .conversation-title {
   font-size: 0.875rem;
   font-weight: 500;
-  color: white;
+  color: var(--text-primary);
   margin-bottom: 0.25rem;
   white-space: nowrap;
   overflow: hidden;
@@ -5978,24 +5995,26 @@ input:checked+.toggle-slider:before {
 
 .conversation-time {
   font-size: 0.75rem;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--text-muted);
 }
 
 .conversation-delete-btn {
   padding: 0.5rem;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
   border-radius: 0.5rem;
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--error-color);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   margin-right: 1rem;
 }
 
 .conversation-delete-btn:hover {
   background: rgba(239, 68, 68, 0.2);
-  border-color: rgba(239, 68, 68, 0.4);
+  border-color: rgba(239, 68, 68, 0.5);
   color: #fca5a5;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
 }
 
 .conversations-empty {
