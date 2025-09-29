@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import './App.css'
 import ChatInterface from './components/ChatInterface'
+import Conversations from './components/Conversations'
 import Integrations from './components/Integrations'
 import Settings from './components/Settings'
 import HomePage from './components/HomePage'
@@ -24,50 +25,50 @@ function App({ user, onLogout, isAuthenticated }: AppProps) {
     <Router>
       <Routes>
         {/* Home page route - only accessible when authenticated */}
-        <Route 
-          path="/" 
+        <Route
+          path="/"
           element={
             isAuthenticated ? (
               <HomePage user={user} onLogout={onLogout} />
             ) : (
               <Navigate to="/login" replace />
             )
-          } 
+          }
         />
-        
+
         {/* Login route - only accessible when not authenticated */}
-        <Route 
-          path="/login" 
+        <Route
+          path="/login"
           element={
             !isAuthenticated ? (
-              <LoginForm 
-                onSuccess={() => window.location.reload()} 
+              <LoginForm
+                onSuccess={() => window.location.reload()}
                 onSwitchToSignup={() => window.location.href = '/signup'}
               />
             ) : (
               <Navigate to="/" replace />
             )
-          } 
+          }
         />
-        
+
         {/* Signup route - only accessible when not authenticated */}
-        <Route 
-          path="/signup" 
+        <Route
+          path="/signup"
           element={
             !isAuthenticated ? (
-              <SignupForm 
-                onSuccess={() => window.location.reload()} 
+              <SignupForm
+                onSuccess={() => window.location.reload()}
                 onSwitchToLogin={() => window.location.href = '/login'}
               />
             ) : (
               <Navigate to="/" replace />
             )
-          } 
+          }
         />
-        
+
         {/* Layout routes with sidebar - only accessible when authenticated */}
-        <Route 
-          path="/chat" 
+        <Route
+          path="/chat"
           element={
             isAuthenticated ? (
               <Layout user={user} onLogout={onLogout}>
@@ -76,11 +77,11 @@ function App({ user, onLogout, isAuthenticated }: AppProps) {
             ) : (
               <Navigate to="/login" replace />
             )
-          } 
+          }
         />
-        
-        <Route 
-          path="/chat/:conversationId" 
+
+        <Route
+          path="/chat/:conversationId"
           element={
             isAuthenticated ? (
               <Layout user={user} onLogout={onLogout}>
@@ -89,11 +90,24 @@ function App({ user, onLogout, isAuthenticated }: AppProps) {
             ) : (
               <Navigate to="/login" replace />
             )
-          } 
+          }
         />
-        
-        <Route 
-          path="/oauth-integrations" 
+
+        <Route
+          path="/conversations"
+          element={
+            isAuthenticated ? (
+              <Layout user={user} onLogout={onLogout}>
+                <Conversations userId={userId} />
+              </Layout>
+            ) : (
+              <Navigate to="/login" replace />
+            )
+          }
+        />
+
+        <Route
+          path="/oauth-integrations"
           element={
             isAuthenticated ? (
               <Layout user={user} onLogout={onLogout}>
@@ -102,11 +116,11 @@ function App({ user, onLogout, isAuthenticated }: AppProps) {
             ) : (
               <Navigate to="/login" replace />
             )
-          } 
+          }
         />
-        
-        <Route 
-          path="/settings" 
+
+        <Route
+          path="/settings"
           element={
             isAuthenticated ? (
               <Layout user={user} onLogout={onLogout}>
@@ -115,15 +129,15 @@ function App({ user, onLogout, isAuthenticated }: AppProps) {
             ) : (
               <Navigate to="/login" replace />
             )
-          } 
+          }
         />
-        
+
         {/* Redirect any unknown routes to appropriate page based on auth status */}
-        <Route 
-          path="*" 
+        <Route
+          path="*"
           element={
             <Navigate to={isAuthenticated ? "/" : "/login"} replace />
-          } 
+          }
         />
       </Routes>
     </Router>
