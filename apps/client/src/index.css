@@ -6,14 +6,14 @@
   line-height: 1.6;
   font-weight: 400;
 
-  /* Enhanced Dark theme colors with better contrast and modern palette */
-  --primary-bg: #0f0f23;
+  /* Enhanced Dark theme colors with modern palette inspired by logo */
+  --primary-bg: #0a0a0f;
   --secondary-bg: #1a1a2e;
   --tertiary-bg: #2a2a3e;
   --surface-bg: #1e293b;
   --surface-elevated: #334155;
-  --accent-blue: #2563eb;
-  --accent-blue-light: #3b82f6;
+  --accent-blue: #3b82f6;
+  --accent-blue-light: #60a5fa;
   --accent-blue-dark: #1d4ed8;
   --accent-purple: #8b5cf6;
   --accent-purple-light: #a78bfa;
@@ -23,6 +23,8 @@
   --accent-orange-light: #fbbf24;
   --accent-pink: #ec4899;
   --accent-pink-light: #f472b6;
+  --accent-cyan: #06b6d4;
+  --accent-cyan-light: #22d3ee;
   --text-primary: #ffffff;
   --text-secondary: #e2e8f0;
   --text-muted: #94a3b8;
@@ -39,20 +41,22 @@
   --warning-color: #f59e0b;
   --info-color: #3b82f6;
 
-  /* Enhanced Gradients with modern color combinations */
-  --gradient-primary: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #1e293b 100%);
-  --gradient-secondary: linear-gradient(135deg, #1a1a2e 0%, #2563eb 50%, #3b82f6 100%);
+  /* Enhanced Gradients with modern color combinations inspired by logo */
+  --gradient-primary: linear-gradient(135deg, #0a0a0f 0%, #1a1a2e 50%, #1e293b 100%);
+  --gradient-secondary: linear-gradient(135deg, #1a1a2e 0%, #3b82f6 50%, #60a5fa 100%);
   --gradient-card: linear-gradient(145deg, #1e293b 0%, #334155 100%);
   --gradient-card-hover: linear-gradient(145deg, #334155 0%, #475569 100%);
-  --gradient-button: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);
-  --gradient-button-hover: linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%);
+  --gradient-button: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
+  --gradient-button-hover: linear-gradient(135deg, #1d4ed8 0%, #3b82f6 100%);
   --gradient-accent: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
   --gradient-success: linear-gradient(135deg, #10b981 0%, #34d399 100%);
   --gradient-warning: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
+  --gradient-cyan: linear-gradient(135deg, #06b6d4 0%, #22d3ee 100%);
   --gradient-glass: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
   --gradient-glass-strong: linear-gradient(135deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.08) 100%);
   --gradient-text: linear-gradient(135deg, #ffffff 0%, #e2e8f0 100%);
   --gradient-text-accent: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+  --gradient-logo: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 50%, #06b6d4 100%);
 }
 
 /* Light theme variables */
@@ -95,15 +99,17 @@
   --gradient-secondary: linear-gradient(135deg, #f8fafc 0%, #e0f2fe 50%, #3b82f6 100%);
   --gradient-card: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
   --gradient-card-hover: linear-gradient(145deg, #f8fafc 0%, #f1f5f9 100%);
-  --gradient-button: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);
-  --gradient-button-hover: linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%);
+  --gradient-button: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
+  --gradient-button-hover: linear-gradient(135deg, #1d4ed8 0%, #3b82f6 100%);
   --gradient-accent: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
   --gradient-success: linear-gradient(135deg, #10b981 0%, #34d399 100%);
   --gradient-warning: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
+  --gradient-cyan: linear-gradient(135deg, #06b6d4 0%, #22d3ee 100%);
   --gradient-glass: linear-gradient(135deg, rgba(0, 0, 0, 0.05) 0%, rgba(0, 0, 0, 0.02) 100%);
   --gradient-glass-strong: linear-gradient(135deg, rgba(0, 0, 0, 0.08) 0%, rgba(0, 0, 0, 0.04) 100%);
   --gradient-text: linear-gradient(135deg, #0f172a 0%, #334155 100%);
-  --gradient-text-accent: linear-gradient(135deg, #2563eb 0%, #8b5cf6 100%);
+  --gradient-text-accent: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+  --gradient-logo: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 50%, #06b6d4 100%);
 }
 
 :root {
@@ -5544,6 +5550,14 @@ input:checked+.toggle-slider:before {
   font-size: 1.25rem;
   font-weight: 700;
   color: white;
+  z-index: 1;
+  position: relative;
+}
+
+.auth-logo-image {
+  width: 2.5rem;
+  height: 2.5rem;
+  object-fit: contain;
   z-index: 1;
   position: relative;
 }

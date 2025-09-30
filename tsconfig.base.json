@@ -5,9 +5,7 @@
     "emitDeclarationOnly": true,
     "importHelpers": true,
     "isolatedModules": true,
-    "lib": [
-      "es2022"
-    ],
+    "lib": ["es2022"],
     "module": "nodenext",
     "moduleResolution": "nodenext",
     "noEmitOnError": true,
@@ -20,15 +18,9 @@
     "target": "es2022",
     "baseUrl": ".",
     "paths": {
-      "@quark/core": [
-        "libs/quark-core/src/index.ts"
-      ],
-      "@quark/core/types": [
-        "libs/quark-core/src/types/index.ts"
-      ],
-      "@quark/core/utils": [
-        "libs/quark-core/src/utils/index.ts"
-      ]
+      "@quark/core": ["libs/quark-core/src/index.ts"],
+      "@quark/core/types": ["libs/quark-core/src/types/index.ts"],
+      "@quark/core/utils": ["libs/quark-core/src/utils/index.ts"]
     }
   }
 }

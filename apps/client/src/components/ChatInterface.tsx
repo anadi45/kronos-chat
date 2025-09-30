@@ -344,7 +344,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
       <div className="chat-messages">
         {messages.length === 0 && !streamingMessage && (
           <div className="chat-welcome">
-            <h3>Welcome to Kronos AI</h3>
+            <h3>Welcome to Quark AI</h3>
             <p>
               Start a conversation with our AI assistant. Ask questions, get help, or just chat!
             </p>
@@ -488,7 +488,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
                 <div className="chat-loading-dot"></div>
                 <div className="chat-loading-dot"></div>
               </div>
-              <span className="text-sm text-gray-300">Kronos is thinking...</span>
+              <span className="text-sm text-gray-300">Quark is thinking...</span>
             </div>
           </div>
         )}
@@ -550,7 +550,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
         </div>
 
         <div className="chat-disclaimer">
-          Kronos AI can make mistakes. Consider checking important information.
+          Quark AI can make mistakes. Consider checking important information.
         </div>
       </div>
     </div>
