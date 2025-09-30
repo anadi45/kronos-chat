@@ -79,7 +79,7 @@ const Layout: React.FC<LayoutProps> = ({ user, onLogout, children }) => {
               <div className="flex items-center space-x-4" style={{ paddingTop: '3rem' }}>
                 <div className="flex items-center space-x-3">
                   {shouldShowLogo() && (
-                    <div className="h-8 w-8 rounded-lg flex items-center justify-center shadow-lg">
+                    <div className="h-8 w-8 rounded-full flex items-center justify-center">
                       <img src="/logo.png" alt="Quark Chat" className="h-6 w-6" />
                     </div>
                   )}
