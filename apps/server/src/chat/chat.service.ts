@@ -1,18 +1,18 @@
-import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import type { ChatRequest, PaginatedResponse } from '@quark/core';
-import { Provider } from '@quark/core';
-import { StreamEventFactory, StreamEventSerializer } from '@quark/core';
-import { Conversation, ChatMessage } from '../entities/conversation.entity';
-import { ChatMessageRole } from '../enum/roles.enum';
-import { QuarkAgent } from '../agents/quark/agent';
-import { CheckpointerService } from '../checkpointer';
-import { ToolsExecutorService } from '../tools/tools-executor.service';
-import { ToolsProviderService } from '../tools/tools-provider.service';
-import { HumanMessage } from '@langchain/core/messages';
-import { ProgressMessages } from '../utils/progress-messages';
-import { createConversationTitle } from '../utils/title.utils';
+import { Injectable } from "@nestjs/common";
+import { InjectRepository } from "@nestjs/typeorm";
+import { Repository } from "typeorm";
+import type { ChatRequest, PaginatedResponse } from "@quark/core";
+import { Provider } from "@quark/core";
+import { StreamEventFactory, StreamEventSerializer } from "@quark/core";
+import { Conversation, ChatMessage } from "../entities/conversation.entity";
+import { ChatMessageRole } from "../enum/roles.enum";
+import { QuarkAgent } from "../agents/quark/agent";
+import { CheckpointerService } from "../checkpointer";
+import { ToolsExecutorService } from "../tools/tools-executor.service";
+import { ToolsProviderService } from "../tools/tools-provider.service";
+import { HumanMessage } from "@langchain/core/messages";
+import { ProgressMessages } from "../utils/progress-messages";
+import { createConversationTitle } from "../utils/title.utils";
 
 @Injectable()
 export class ChatService {
@@ -59,7 +59,7 @@ export class ChatService {
             });
 
             if (!conversation) {
-              throw new Error('Conversation not found');
+              throw new Error("Conversation not found");
             }
           } else {
             isNewConversation = true;
@@ -94,7 +94,7 @@ export class ChatService {
 
           conversation.messages.push(userMessage);
 
-          let assistantMessage = '';
+          let assistantMessage = "";
 
           const agentInput = {
             messages: new HumanMessage(request.message),
@@ -114,22 +114,22 @@ export class ChatService {
           const eventStream = agent.streamEvents(agentInput, {
             configurable: { thread_id: conversation.id },
             context: { userId },
-            version: 'v2',
+            version: "v2",
           });
 
           let progressUpdateSent = false;
 
           for await (const event of eventStream) {
             // Validate stream event structure early
-            if (!event || typeof event !== 'object' || !event.event) {
-              console.error('Invalid stream event received:', event);
+            if (!event || typeof event !== "object" || !event.event) {
+              console.error("Invalid stream event received:", event);
               // End stream silently without error message to UI
               controller.close();
               return;
             }
 
             // Send progress update when agent starts processing
-            if (!progressUpdateSent && event.event === 'on_chain_start') {
+            if (!progressUpdateSent && event.event === "on_chain_start") {
               const processingProgressEvent =
                 StreamEventFactory.createProgressUpdateEvent(
                   ProgressMessages.getRandomProcessingMessage()
@@ -143,7 +143,7 @@ export class ChatService {
             }
 
             // Handle tool call events
-            if (event.event === 'on_chain_stream' && event.data?.chunk) {
+            if (event.event === "on_chain_stream" && event.data?.chunk) {
               const chunk = event.data.chunk;
 
               // Check if AI message contains tool calls
@@ -153,7 +153,7 @@ export class ChatService {
                   if (message.tool_calls && message.tool_calls.length > 0) {
                     const toolNames = message.tool_calls
                       .map((tc) => tc.name)
-                      .join(', ');
+                      .join(", ");
 
                     // Check if this is a delegation call
                     const delegationMatch =
@@ -215,16 +215,16 @@ export class ChatService {
               // Only stream from on_chat_model_stream events with final_answer_node tag
               // This ensures we only stream tokens from the final answer node, not subagents
               if (
-                event.event === 'on_chat_model_stream' &&
+                event.event === "on_chat_model_stream" &&
                 event.data?.chunk?.content &&
-                event.tags?.includes('final_answer_node')
+                event.tags?.includes("final_answer_node")
               ) {
                 const content = event.data.chunk.content;
 
                 // Validate content before processing
-                if (typeof content !== 'string') {
+                if (typeof content !== "string") {
                   console.error(
-                    'Invalid content type in stream:',
+                    "Invalid content type in stream:",
                     typeof content,
                     content
                   );
@@ -233,9 +233,9 @@ export class ChatService {
                   return;
                 }
 
-                if (typeof content === 'string' && content.trim()) {
+                if (typeof content === "string" && content.trim()) {
                   // Send progress update when model starts generating
-                  if (assistantMessage === '') {
+                  if (assistantMessage === "") {
                     const generatingProgressEvent =
                       StreamEventFactory.createProgressUpdateEvent(
                         ProgressMessages.getRandomGeneratingMessage()
@@ -261,11 +261,11 @@ export class ChatService {
 
               // Collect final content from other events for logging but don't stream to avoid duplication
               if (
-                event.event === 'on_chat_model_end' &&
+                event.event === "on_chat_model_end" &&
                 event.data?.output?.content
               ) {
                 const content = event.data.output.content;
-                if (typeof content === 'string' && content.trim()) {
+                if (typeof content === "string" && content.trim()) {
                   // Only add to assistantMessage if not already included
                   if (!assistantMessage.includes(content)) {
                     assistantMessage += content;
@@ -274,14 +274,14 @@ export class ChatService {
               }
 
               // Collect final result from chain stream events but don't stream to avoid duplication
-              if (event.event === 'on_chain_stream' && event.data?.chunk) {
+              if (event.event === "on_chain_stream" && event.data?.chunk) {
                 const chunk = event.data.chunk;
 
                 // Check for final_answer result
                 if (chunk.final_answer?.result) {
                   const result = chunk.final_answer.result;
                   if (
-                    typeof result === 'string' &&
+                    typeof result === "string" &&
                     result.trim() &&
                     !assistantMessage.includes(result)
                   ) {
@@ -295,7 +295,7 @@ export class ChatService {
                   for (const message of messages) {
                     if (
                       message.content &&
-                      typeof message.content === 'string' &&
+                      typeof message.content === "string" &&
                       message.content.trim()
                     ) {
                       if (!assistantMessage.includes(message.content)) {
@@ -307,7 +307,7 @@ export class ChatService {
               }
             } catch (streamError) {
               // Log the specific stream error for debugging
-              console.error('Stream processing error:', {
+              console.error("Stream processing error:", {
                 error: streamError.message,
                 event: event.event,
                 data: event.data,
@@ -315,8 +315,8 @@ export class ChatService {
               });
 
               // Handle stream parsing errors silently - just log and end stream
-              if (streamError.message.includes('Failed to parse stream')) {
-                console.error('Stream parsing error - ending stream silently');
+              if (streamError.message.includes("Failed to parse stream")) {
+                console.error("Stream parsing error - ending stream silently");
 
                 // Close the stream immediately without sending error to UI
                 controller.close();
@@ -336,7 +336,7 @@ export class ChatService {
             await conversationRepository.save(conversation);
           } else {
             console.warn(
-              'No valid assistant message to save - stream may have failed'
+              "No valid assistant message to save - stream may have failed"
             );
           }
 
@@ -349,7 +349,7 @@ export class ChatService {
           controller.close();
         } catch (error) {
           // Log the full error for debugging
-          console.error('Chat service error:', {
+          console.error("Chat service error:", {
             error: error.message,
             stack: error.stack,
             userId,
@@ -380,7 +380,7 @@ export class ChatService {
   async getConversations(userId: string): Promise<Conversation[]> {
     return this.conversationRepository.find({
       where: { createdBy: userId },
-      order: { updatedAt: 'DESC' },
+      order: { updatedAt: "DESC" },
     });
   }
 
@@ -401,7 +401,7 @@ export class ChatService {
     const [conversations, total] =
       await this.conversationRepository.findAndCount({
         where: { createdBy: userId },
-        order: { updatedAt: 'DESC' },
+        order: { updatedAt: "DESC" },
         skip,
         take: limit,
       });
@@ -448,13 +448,13 @@ export class ChatService {
       });
 
       if (!conversation) {
-        return { success: false, message: 'Conversation not found' };
+        return { success: false, message: "Conversation not found" };
       }
 
       await this.conversationRepository.remove(conversation);
-      return { success: true, message: 'Conversation deleted successfully' };
+      return { success: true, message: "Conversation deleted successfully" };
     } catch (error) {
-      return { success: false, message: 'Failed to delete conversation' };
+      return { success: false, message: "Failed to delete conversation" };
     }
   }
 }
