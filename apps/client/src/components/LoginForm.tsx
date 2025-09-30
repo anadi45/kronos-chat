@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { apiService } from '../services/apiService';
-import { type UserLogin } from '@kronos/core';
+import { type UserLogin } from '@quark/core';
 
 interface LoginFormProps {
   onSuccess?: () => void;
@@ -51,13 +51,13 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, onSwitchToSignup }) =>
         {/* Logo/Brand Section */}
         <div className="auth-header">
           <div className="auth-logo">
-            <span className="auth-logo-text">KRONOS</span>
+            <img src="/logo.png" alt="Quark Chat" className="auth-logo-image" />
           </div>
           <h2 className="auth-title">
             Welcome Back
           </h2>
           <p className="auth-subtitle">
-            Sign in to your Kronos Chat account
+            Sign in to your Quark Chat account
           </p>
         </div>
 

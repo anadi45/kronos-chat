@@ -11,9 +11,9 @@ Create a `.env` file in the project root with the following variables:
 ```env
 DATABASE_HOST=localhost
 DATABASE_PORT=5432
-DATABASE_USERNAME=kronos_user
-DATABASE_PASSWORD=kronos_password
-DATABASE_NAME=kronos_chat
+DATABASE_USERNAME=quark_user
+DATABASE_PASSWORD=quark_password
+DATABASE_NAME=quark_chat
 DATABASE_LOGGING=false
 NODE_ENV=development
 ```
@@ -23,9 +23,9 @@ NODE_ENV=development
 Make sure PostgreSQL is running and create the database:
 
 ```sql
-CREATE DATABASE kronos_chat;
-CREATE USER kronos_user WITH PASSWORD 'kronos_password';
-GRANT ALL PRIVILEGES ON DATABASE kronos_chat TO kronos_user;
+CREATE DATABASE quark_chat;
+CREATE USER quark_user WITH PASSWORD 'quark_password';
+GRANT ALL PRIVILEGES ON DATABASE quark_chat TO quark_user;
 ```
 
 ### 3. Run Initial Migration
