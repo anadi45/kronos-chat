@@ -324,32 +324,12 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
               }
             </p>
           </div>
-          <div className="chat-controls">
-            <button
-              onClick={startNewConversation}
-              disabled={isStreaming}
-              className="chat-control-btn"
-              title="New conversation"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-              </svg>
-            </button>
-          </div>
         </div>
       </div>
 
 
       {/* Messages Area */}
       <div className="chat-messages">
-        {messages.length === 0 && !streamingMessage && (
-          <div className="chat-welcome">
-            <h3>Welcome to Quark AI</h3>
-            <p>
-              Start a conversation with our AI assistant. Ask questions, get help, or just chat!
-            </p>
-          </div>
-        )}
 
         {messages.map((message, index) => (
           <div
