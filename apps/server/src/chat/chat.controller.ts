@@ -14,7 +14,7 @@ import {
 import type { Response } from 'express';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ChatService } from './chat.service';
-import type { ChatRequest, PaginatedResponse, Conversation } from '@kronos/core';
+import type { ChatRequest, PaginatedResponse, Conversation } from '@quark/core';
 
 @Controller('chat')
 @UseGuards(JwtAuthGuard)

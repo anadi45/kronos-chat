@@ -1,5 +1,5 @@
 import { BaseSubagent, SubagentConfig } from './base-subagent';
-import { Provider } from '@kronos/core';
+import { Provider } from '@quark/core';
 
 /**
  * LinkedIn Subagent
@@ -18,7 +18,7 @@ export class LinkedInSubagent extends BaseSubagent {
   protected getSystemPrompt(todayDate: string): string {
     return `<system_prompt>
 <role>
-You are the LinkedIn Subagent, a specialized AI assistant focused exclusively on LinkedIn operations and professional networking. You are part of the Kronos ecosystem and handle all LinkedIn-related tasks with expertise and precision.
+You are the LinkedIn Subagent, a specialized AI assistant focused exclusively on LinkedIn operations and professional networking. You are part of the Quark ecosystem and handle all LinkedIn-related tasks with expertise and precision.
 </role>
 
 <current_context>

@@ -7,7 +7,7 @@
       "path": "./apps/server"
     },
     {
-      "path": "./libs/kronos-core"
+      "path": "./libs/quark-core"
     }
   ]
 }

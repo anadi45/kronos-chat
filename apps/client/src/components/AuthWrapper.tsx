@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { apiService } from '../services/apiService';
-import { type UserProfile } from '@kronos/core';
+import { type UserProfile } from '@quark/core';
 
 interface AuthWrapperProps {
   children: React.ReactNode;
@@ -24,13 +24,13 @@ const AuthWrapper: React.FC<AuthWrapperProps> = ({ children }) => {
         // Check if token is close to expiring (within 5 minutes)
         const loginTime = localStorage.getItem('loginTime');
         const expiresIn = localStorage.getItem('expiresIn');
-        
+
         if (loginTime && expiresIn) {
           const now = Date.now();
           const loginTimestamp = parseInt(loginTime);
           const expirationTime = loginTimestamp + parseInt(expiresIn) * 1000;
           const timeUntilExpiry = expirationTime - now;
-          
+
           // Refresh if token expires within 5 minutes
           if (timeUntilExpiry < 5 * 60 * 1000 && timeUntilExpiry > 0) {
             await apiService.refreshToken();
@@ -51,7 +51,7 @@ const AuthWrapper: React.FC<AuthWrapperProps> = ({ children }) => {
 
   const checkAuthStatus = async () => {
     setIsLoading(true);
-    
+
     if (apiService.isAuthenticated()) {
       try {
         const userProfile = await apiService.getCurrentUser();
@@ -75,7 +75,7 @@ const AuthWrapper: React.FC<AuthWrapperProps> = ({ children }) => {
       setIsAuthenticated(false);
       setUser(null);
     }
-    
+
     setIsLoading(false);
   };
 
@@ -98,7 +98,7 @@ const AuthWrapper: React.FC<AuthWrapperProps> = ({ children }) => {
               </svg>
             </div>
             <div>
-              <h3 className="text-lg font-medium text-white">Loading Kronos Chat</h3>
+              <h3 className="text-lg font-medium text-white">Loading Quark Chat</h3>
               <p className="text-gray-400 text-sm">Please wait while we authenticate...</p>
             </div>
           </div>

@@ -1,5 +1,5 @@
 import { BaseSubagent, SubagentConfig } from './base-subagent';
-import { Provider } from '@kronos/core';
+import { Provider } from '@quark/core';
 
 /**
  * Notion Subagent
@@ -18,7 +18,7 @@ export class NotionSubagent extends BaseSubagent {
   protected getSystemPrompt(todayDate: string): string {
     return `<system_prompt>
 <role>
-You are the Notion Subagent, a specialized AI assistant focused exclusively on Notion operations and knowledge management. You are part of the Kronos ecosystem and handle all Notion-related tasks with expertise and precision.
+You are the Notion Subagent, a specialized AI assistant focused exclusively on Notion operations and knowledge management. You are part of the Quark ecosystem and handle all Notion-related tasks with expertise and precision.
 </role>
 
 <current_context>

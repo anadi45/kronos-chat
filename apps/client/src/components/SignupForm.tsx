@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { apiService } from '../services/apiService';
-import { type UserSignup } from '@kronos/core';
+import { type UserSignup } from '@quark/core';
 
 interface SignupFormProps {
   onSuccess?: () => void;
@@ -81,7 +81,7 @@ const SignupForm: React.FC<SignupFormProps> = ({ onSuccess, onSwitchToLogin }) =
             </svg>
           </div>
           <h2 className="auth-title">
-            Join Kronos Chat
+            Join Quark Chat
           </h2>
           <p className="auth-subtitle">
             Create your account and start chatting
@@ -231,7 +231,7 @@ const SignupForm: React.FC<SignupFormProps> = ({ onSuccess, onSwitchToLogin }) =
 
         {/* Footer */}
         <div className="auth-footer">
-          <p className="auth-footer-text">Powered by Kronos Chat • Secure & Private</p>
+          <p className="auth-footer-text">Powered by Quark Chat • Secure & Private</p>
         </div>
       </div>
     </div>

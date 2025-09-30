@@ -17,13 +17,13 @@ interface ThemeProviderProps {
 export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
   const [theme, setThemeState] = useState<Theme>(() => {
     // Get theme from localStorage or default to 'dark'
-    const savedTheme = localStorage.getItem('kronos-theme') as Theme;
+    const savedTheme = localStorage.getItem('quark-theme') as Theme;
     return savedTheme || 'dark';
   });
 
   const setTheme = (newTheme: Theme) => {
     setThemeState(newTheme);
-    localStorage.setItem('kronos-theme', newTheme);
+    localStorage.setItem('quark-theme', newTheme);
     applyTheme(newTheme);
   };
 

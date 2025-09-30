@@ -15,7 +15,7 @@ import {
   Provider,
   ConnectIntegrationResponse,
   DisconnectIntegrationResponse,
-} from '@kronos/core';
+} from '@quark/core';
 import { AVAILABLE_INTEGRATIONS } from '../constants/integrations.constants';
 import { User } from '../entities/user.entity';
 import { ComposioOAuth } from '../entities/composio-oauth.entity';

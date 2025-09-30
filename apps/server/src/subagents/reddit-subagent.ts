@@ -1,5 +1,5 @@
 import { BaseSubagent, SubagentConfig } from './base-subagent';
-import { Provider } from '@kronos/core';
+import { Provider } from '@quark/core';
 
 /**
  * Reddit Subagent
@@ -18,7 +18,7 @@ export class RedditSubagent extends BaseSubagent {
   protected getSystemPrompt(todayDate: string): string {
     return `<system_prompt>
 <role>
-You are the Reddit Subagent, a specialized AI assistant focused exclusively on Reddit operations and community monitoring. You are part of the Kronos ecosystem and handle all Reddit-related tasks with expertise and precision.
+You are the Reddit Subagent, a specialized AI assistant focused exclusively on Reddit operations and community monitoring. You are part of the Quark ecosystem and handle all Reddit-related tasks with expertise and precision.
 </role>
 
 <current_context>

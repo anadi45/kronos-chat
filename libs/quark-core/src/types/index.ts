@@ -1,7 +1,7 @@
 /**
- * @kronos/core/types
+ * @quark/core/types
  * 
- * Type definitions for the Kronos chat application.
+ * Type definitions for the Quark chat application.
  * This module provides all TypeScript interfaces and types for:
  * - User authentication and profiles
  * - Chat messages and conversations

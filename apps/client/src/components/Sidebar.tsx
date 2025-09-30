@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { type UserProfile } from '@kronos/core';
+import { type UserProfile } from '@quark/core';
 
 interface SidebarProps {
   isCollapsed: boolean;
@@ -73,7 +73,7 @@ const Sidebar: React.FC<SidebarProps> = ({
             </svg>
           </div>
           {!isCollapsed && (
-            <span className="sidebar-logo-text">Kronos</span>
+            <span className="sidebar-logo-text">Quark</span>
           )}
         </div>
         {!isCollapsed && (
@@ -157,7 +157,7 @@ const Sidebar: React.FC<SidebarProps> = ({
 
         {!isCollapsed && (
           <div className="text-xs text-gray-500 text-center mt-3">
-            Kronos Chat v1.0
+            Quark Chat v1.0
           </div>
         )}
       </div>

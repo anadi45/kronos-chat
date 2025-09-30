@@ -2,7 +2,7 @@
   "files": [],
   "references": [
     {
-      "path": "../../libs/kronos-core"
+      "path": "../../libs/quark-core"
     },
     {
       "path": "./tsconfig.app.json"

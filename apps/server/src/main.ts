@@ -1,6 +1,6 @@
 /**
- * Kronos Chat API Server
- * NestJS backend for the Kronos chat application
+ * Quark Chat API Server
+ * NestJS backend for the Quark chat application
  */
 
 import { Logger, ValidationPipe } from '@nestjs/common';
@@ -40,7 +40,7 @@ async function bootstrap() {
   await app.listen(port);
 
   Logger.log(
-    `🚀 Kronos Chat API is running on: http://localhost:${port}/${globalPrefix}`
+    `🚀 Quark Chat API is running on: http://localhost:${port}/${globalPrefix}`
   );
   Logger.log(
     `📚 API Documentation: http://localhost:${port}/${globalPrefix}/docs`

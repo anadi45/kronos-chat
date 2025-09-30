@@ -16,7 +16,7 @@ export { GoogleCalendarSubagent } from './googlecalendar-subagent';
 export { InstagramSubagent } from './instagram-subagent';
 
 // Subagent factory for creating subagents based on provider
-import { Provider } from '@kronos/core';
+import { Provider } from '@quark/core';
 import { CheckpointerService } from '../checkpointer';
 import { ToolsExecutorService } from '../tools/tools-executor.service';
 import { ToolsProviderService } from '../tools/tools-provider.service';

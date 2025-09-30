@@ -1,5 +1,5 @@
 import { DynamicStructuredTool } from '@langchain/core/tools';
-import { Provider } from '@kronos/core';
+import { Provider } from '@quark/core';
 import { SubagentFactory } from '../subagents';
 import { CheckpointerService } from '../checkpointer';
 import { ToolsExecutorService } from './tools-executor.service';

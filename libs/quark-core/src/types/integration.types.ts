@@ -1,4 +1,4 @@
-// Integration-related types for Kronos Chat
+// Integration-related types for Quark Chat
 
 export enum IntegrationStatusType {
   AVAILABLE = 'available',

@@ -6,7 +6,7 @@ import {
   getAllToolkits,
   TOOLKIT_TOOLS_MAPPING
 } from './toolkit-mappings';
-import { Provider } from '@kronos/core';
+import { Provider } from '@quark/core';
 
 describe('Toolkit Mappings', () => {
   describe('getToolsForToolkit', () => {

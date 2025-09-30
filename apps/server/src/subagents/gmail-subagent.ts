@@ -1,5 +1,5 @@
 import { BaseSubagent, SubagentConfig } from './base-subagent';
-import { Provider } from '@kronos/core';
+import { Provider } from '@quark/core';
 
 /**
  * Gmail Subagent
@@ -19,7 +19,7 @@ export class GmailSubagent extends BaseSubagent {
   protected getSystemPrompt(todayDate: string): string {
     return `<system_prompt>
 <role>
-You are the Gmail Subagent, a specialized AI assistant focused exclusively on Gmail operations and email management. You are part of the Kronos ecosystem and handle all Gmail-related tasks with expertise and precision.
+You are the Gmail Subagent, a specialized AI assistant focused exclusively on Gmail operations and email management. You are part of the Quark ecosystem and handle all Gmail-related tasks with expertise and precision.
 </role>
 
 <current_context>

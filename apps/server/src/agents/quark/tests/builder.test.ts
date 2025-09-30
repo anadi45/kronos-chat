@@ -1,7 +1,7 @@
-import { KronosAgentBuilder } from '../builder';
+import { QuarkAgentBuilder } from '../builder';
 
-describe('KronosAgentBuilder', () => {
-  let builder: KronosAgentBuilder;
+describe('QuarkAgentBuilder', () => {
+  let builder: QuarkAgentBuilder;
   let mockCheckpointer: any;
   let mockToolsExecutorService: any;
   let mockToolsProviderService: any;
@@ -27,7 +27,7 @@ describe('KronosAgentBuilder', () => {
       getAvailableTools: jest.fn().mockResolvedValue([]),
     } as any;
     
-    builder = new KronosAgentBuilder(
+    builder = new QuarkAgentBuilder(
       'test-user-id',
       mockCheckpointer,
       mockToolsExecutorService,
@@ -49,7 +49,7 @@ describe('KronosAgentBuilder', () => {
     delete process.env.GEMINI_API_KEY;
     
     expect(() => {
-      new KronosAgentBuilder(
+      new QuarkAgentBuilder(
         'test-user-id',
         mockCheckpointer, 
         mockToolsExecutorService,
@@ -62,7 +62,7 @@ describe('KronosAgentBuilder', () => {
     delete process.env.COMPOSIO_API_KEY;
     
     expect(() => {
-      new KronosAgentBuilder(
+      new QuarkAgentBuilder(
         'test-user-id',
         mockCheckpointer,
         mockToolsExecutorService,

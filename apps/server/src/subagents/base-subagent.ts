@@ -11,9 +11,9 @@ import { Logger } from '@nestjs/common';
 import { CheckpointerService } from '../checkpointer';
 import { ToolsExecutorService } from '../tools/tools-executor.service';
 import { ToolsProviderService } from '../tools/tools-provider.service';
-import { Provider } from '@kronos/core';
+import { Provider } from '@quark/core';
 import { getContextValue, extractToolCalls } from '../agents/common/utils';
-import { getCurrentDate } from '@kronos/core';
+import { getCurrentDate } from '@quark/core';
 import { MODELS } from '../constants/models.constants';
 import { SubagentState, SubagentStateSchema } from './state';
 
@@ -276,7 +276,7 @@ export abstract class BaseSubagent {
 
   /**
    * Create the final answer node - context-aware response handling
-   * Returns raw AI messages when called by parent agent (Kronos)
+   * Returns raw AI messages when called by parent agent (Quark)
    * Uses LLM summarization when called directly
    */
   protected createFinalAnswerNode() {
@@ -285,7 +285,7 @@ export abstract class BaseSubagent {
       const isCalledByParent = this.isCalledByParentAgent(state, config);
 
       if (isCalledByParent) {
-        // When called by parent agent (like Kronos), return raw AI messages
+        // When called by parent agent (like Quark), return raw AI messages
         const aiMessages = state.messages.filter((msg) => isAIMessage(msg));
         const result = aiMessages.map((msg) => msg.content).join('\n\n');
 
@@ -343,7 +343,7 @@ export abstract class BaseSubagent {
     const firstMessage = state.messages[0];
     if (firstMessage && firstMessage.content) {
       const content = firstMessage.content.toString();
-      // Look for patterns that indicate delegation from Kronos
+      // Look for patterns that indicate delegation from Quark
       return content.includes('Context:') || content.includes('delegation');
     }
 

@@ -1,5 +1,5 @@
 import { BaseSubagent, SubagentConfig } from './base-subagent';
-import { Provider } from '@kronos/core';
+import { Provider } from '@quark/core';
 
 /**
  * GitHub Subagent
@@ -19,7 +19,7 @@ export class GitHubSubagent extends BaseSubagent {
   protected getSystemPrompt(todayDate: string): string {
     return `<system_prompt>
 <role>
-You are the GitHub Subagent, a specialized AI assistant focused exclusively on GitHub operations and code collaboration. You are part of the Kronos ecosystem and handle all GitHub-related tasks with expertise and precision.
+You are the GitHub Subagent, a specialized AI assistant focused exclusively on GitHub operations and code collaboration. You are part of the Quark ecosystem and handle all GitHub-related tasks with expertise and precision.
 </role>
 
 <current_context>

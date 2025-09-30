@@ -1,7 +1,7 @@
-import { KronosAgent } from '../agent';
+import { QuarkAgent } from '../agent';
 
-describe('KronosAgent', () => {
-  let agent: KronosAgent;
+describe('QuarkAgent', () => {
+  let agent: QuarkAgent;
   let mockCheckpointer: any;
   let mockToolsExecutorService: any;
   let mockToolsProviderService: any;
@@ -23,7 +23,7 @@ describe('KronosAgent', () => {
       getAvailableTools: jest.fn().mockResolvedValue([]),
     } as any;
     
-    agent = new KronosAgent({  
+    agent = new QuarkAgent({  
       userId: 'test-user-id',
       checkpointerService: mockCheckpointer, 
       toolsExecutorService: mockToolsExecutorService,

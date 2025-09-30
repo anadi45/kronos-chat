@@ -23,7 +23,9 @@
     "serve": {
       "executor": "@nx/js:node",
       "defaultConfiguration": "development",
-      "dependsOn": ["build"],
+      "dependsOn": [
+        "build"
+      ],
       "options": {
         "buildTarget": "server:build",
         "watch": true
@@ -34,12 +36,19 @@
     },
     "test": {
       "executor": "@nx/jest:jest",
-      "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
+      "outputs": [
+        "{workspaceRoot}/coverage/{projectRoot}"
+      ],
       "options": {
         "jestConfig": "apps/server/jest.config.ts"
       }
     }
   },
-  "tags": ["type:app", "scope:server"],
-  "implicitDependencies": ["@kronos/core"]
+  "tags": [
+    "type:app",
+    "scope:server"
+  ],
+  "implicitDependencies": [
+    "@quark/core"
+  ]
 }

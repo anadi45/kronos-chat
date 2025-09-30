@@ -1,5 +1,5 @@
 import { BaseSubagent, SubagentConfig } from './base-subagent';
-import { Provider } from '@kronos/core';
+import { Provider } from '@quark/core';
 
 /**
  * Instagram Subagent
@@ -18,7 +18,7 @@ export class InstagramSubagent extends BaseSubagent {
   protected getSystemPrompt(todayDate: string): string {
     return `<system_prompt>
 <role>
-You are the Instagram Subagent, a specialized AI assistant focused exclusively on Instagram operations and social media management. You are part of the Kronos ecosystem and handle all Instagram-related tasks with expertise and precision.
+You are the Instagram Subagent, a specialized AI assistant focused exclusively on Instagram operations and social media management. You are part of the Quark ecosystem and handle all Instagram-related tasks with expertise and precision.
 </role>
 
 <current_context>

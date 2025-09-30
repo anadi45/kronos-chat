@@ -1,12 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import type { ChatRequest, PaginatedResponse } from '@kronos/core';
-import { Provider } from '@kronos/core';
-import { StreamEventFactory, StreamEventSerializer } from '@kronos/core';
+import type { ChatRequest, PaginatedResponse } from '@quark/core';
+import { Provider } from '@quark/core';
+import { StreamEventFactory, StreamEventSerializer } from '@quark/core';
 import { Conversation, ChatMessage } from '../entities/conversation.entity';
 import { ChatMessageRole } from '../enum/roles.enum';
-import { KronosAgent } from '../agents/kronos/agent';
+import { QuarkAgent } from '../agents/quark/agent';
 import { CheckpointerService } from '../checkpointer';
 import { ToolsExecutorService } from '../tools/tools-executor.service';
 import { ToolsProviderService } from '../tools/tools-provider.service';
@@ -39,7 +39,7 @@ export class ChatService {
     // Use provided toolkits, or empty array if none provided (let model answer directly)
     let finalToolkits = request.toolkits || [];
 
-    const agent = await new KronosAgent({
+    const agent = await new QuarkAgent({
       userId: userId,
       checkpointerService: this.checkpointerService,
       toolsExecutorService: this.toolsExecutorService,

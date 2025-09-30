@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { apiService } from '../services/apiService';
-import type { Conversation } from '@kronos/core';
+import type { Conversation } from '@quark/core';
 
 interface ConversationsProps {
     userId?: string;

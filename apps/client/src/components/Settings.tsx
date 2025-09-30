@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { type UserProfile } from '@kronos/core';
+import { type UserProfile } from '@quark/core';
 
 interface SettingsProps {
   user?: UserProfile;
@@ -18,7 +18,7 @@ const Settings: React.FC<SettingsProps> = ({ user }) => {
   return (
     <div className="settings-page">
       <div className="page-header">
-        <p className="text-gray-300">Customize your Kronos experience</p>
+        <p className="text-gray-300">Customize your Quark experience</p>
       </div>
 
       <div className="page-content">
@@ -35,8 +35,8 @@ const Settings: React.FC<SettingsProps> = ({ user }) => {
                 <div className="setting-control">
                   <div className="account-info-display">
                     <span className="account-info-value">
-                      {user?.firstName && user?.lastName 
-                        ? `${user.firstName} ${user.lastName}` 
+                      {user?.firstName && user?.lastName
+                        ? `${user.firstName} ${user.lastName}`
                         : 'Not available'
                       }
                     </span>
@@ -66,7 +66,7 @@ const Settings: React.FC<SettingsProps> = ({ user }) => {
                     type="password"
                     placeholder="Enter new password"
                     className="chat-input"
-                    style={{ 
+                    style={{
                       minHeight: '2.5rem',
                       maxHeight: '2.5rem',
                       resize: 'none'

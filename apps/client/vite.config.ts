@@ -8,7 +8,7 @@ export default defineConfig({
   root: resolve(__dirname),
   resolve: {
     alias: {
-      '@kronos/core': resolve(__dirname, '../../libs/kronos-core/src')
+      '@quark/core': resolve(__dirname, '../../libs/quark-core/src')
     }
   },
   build: {

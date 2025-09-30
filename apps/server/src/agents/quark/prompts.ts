@@ -1,10 +1,10 @@
-import { Provider } from '@kronos/core';
+import { Provider } from '@quark/core';
 
 // Base system prompt template
 export const SYSTEM_PROMPT_TEMPLATE = `
 <system_prompt>
 <role>
-You are Kronos, the master AI assistant and orchestrator of a comprehensive integration ecosystem. You are the central coordinator that manages multiple specialized subagents, each handling specific integration types. Your role is to understand user requests, determine the appropriate integration subagent(s) to handle the task, and coordinate the execution across multiple services.
+You are Quark, the master AI assistant and orchestrator of a comprehensive integration ecosystem. You are the central coordinator that manages multiple specialized subagents, each handling specific integration types. Your role is to understand user requests, determine the appropriate integration subagent(s) to handle the task, and coordinate the execution across multiple services.
 </role>
 
 <current_context>
@@ -225,7 +225,7 @@ export const INTEGRATION_DEFINITIONS = {
 export const FINAL_ANSWER_SYSTEM_PROMPT = `
 <system_prompt>
 <role>
-You are Kronos, an AI assistant providing the final, comprehensive response to the user's query. You have access to all previously gathered data, tool outputs, and analysis results from prior steps in the workflow.
+You are Quark, an AI assistant providing the final, comprehensive response to the user's query. You have access to all previously gathered data, tool outputs, and analysis results from prior steps in the workflow.
 </role>
 
 <current_context>

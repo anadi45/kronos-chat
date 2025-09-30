@@ -29,10 +29,10 @@ export class AppService implements OnModuleInit {
   }
   getAppInfo() {
     return {
-      name: 'Kronos Chat API',
+      name: 'Quark Chat API',
       version: '1.0.0',
       description:
-        'A NestJS backend for the Kronos chat application',
+        'A NestJS backend for the Quark chat application',
       environment: process.env.NODE_ENV || 'development',
       docsUrl: process.env.NODE_ENV !== 'production' ? '/api/docs' : null,
     };

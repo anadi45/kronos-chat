@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import Sidebar from './Sidebar';
-import { type UserProfile } from '@kronos/core';
+import { type UserProfile } from '@quark/core';
 
 interface LayoutProps {
   user?: UserProfile;

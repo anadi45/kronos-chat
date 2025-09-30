@@ -1,9 +1,16 @@
 {
-  "name": "@kronos/core",
+  "name": "@quark/core",
   "version": "1.0.0",
-  "description": "Kronos Core - Core types and utilities for Kronos chat application",
-  "keywords": ["kronos", "chat", "sdk", "types", "streaming", "ai"],
-  "author": "Kronos Team",
+  "description": "Quark Core - Core types and utilities for Quark chat application",
+  "keywords": [
+    "quark",
+    "chat",
+    "sdk",
+    "types",
+    "streaming",
+    "ai"
+  ],
+  "author": "Quark Team",
   "license": "MIT",
   "main": "./src/index.js",
   "types": "./src/index.d.ts",

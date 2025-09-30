@@ -10,7 +10,7 @@ import AuthWrapper from './components/AuthWrapper'
 import LoginForm from './components/LoginForm'
 import SignupForm from './components/SignupForm'
 import { ThemeProvider } from './contexts/ThemeContext'
-import { type UserProfile } from '@kronos/core'
+import { type UserProfile } from '@quark/core'
 
 interface AppProps {
   user?: UserProfile;

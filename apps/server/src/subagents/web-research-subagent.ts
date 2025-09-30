@@ -1,5 +1,5 @@
 import { BaseSubagent, SubagentConfig } from './base-subagent';
-import { Provider } from '@kronos/core';
+import { Provider } from '@quark/core';
 
 /**
  * Web Research Subagent
@@ -19,7 +19,7 @@ export class WebResearchSubagent extends BaseSubagent {
   protected getSystemPrompt(todayDate: string): string {
     return `<system_prompt>
 <role>
-You are the Web Research Subagent, a specialized AI assistant focused exclusively on web research and information gathering. You are part of the Kronos ecosystem and handle all web research tasks with expertise and precision using Tavily's advanced search capabilities.
+You are the Web Research Subagent, a specialized AI assistant focused exclusively on web research and information gathering. You are part of the Quark ecosystem and handle all web research tasks with expertise and precision using Tavily's advanced search capabilities.
 </role>
 
 <current_context>

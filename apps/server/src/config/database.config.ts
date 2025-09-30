@@ -10,9 +10,9 @@ export const getDatabaseConfig = (
   type: 'postgres',
   host: configService.get<string>('DATABASE_HOST', 'localhost'),
   port: configService.get<number>('DATABASE_PORT', 5432),
-  username: configService.get<string>('DATABASE_USERNAME', 'kronos_user'),
-  password: configService.get<string>('DATABASE_PASSWORD', 'kronos_password'),
-  database: configService.get<string>('DATABASE_NAME', 'kronos_chat'),
+  username: configService.get<string>('DATABASE_USERNAME', 'quark_user'),
+  password: configService.get<string>('DATABASE_PASSWORD', 'quark_password'),
+  database: configService.get<string>('DATABASE_NAME', 'quark_chat'),
   entities: [User, Conversation, ComposioOAuth],
   synchronize: false, // Always use migrations instead of sync
   logging: configService.get<boolean>('DATABASE_LOGGING', false),

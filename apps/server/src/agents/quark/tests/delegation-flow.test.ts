@@ -1,8 +1,8 @@
-import { KronosAgent } from '../agent';
-import { Provider } from '@kronos/core';
+import { QuarkAgent } from '../agent';
+import { Provider } from '@quark/core';
 
-describe('KronosAgent Delegation Flow', () => {
-  let agent: KronosAgent;
+describe('QuarkAgent Delegation Flow', () => {
+  let agent: QuarkAgent;
   let mockCheckpointer: any;
   let mockToolsExecutorService: any;
   let mockToolsProviderService: any;
@@ -29,7 +29,7 @@ describe('KronosAgent Delegation Flow', () => {
   describe('Sequential Execution Flow', () => {
     it('should handle Reddit -> Gmail sequential flow correctly', async () => {
       // Setup agent with Reddit and Gmail toolkits
-      agent = new KronosAgent({
+      agent = new QuarkAgent({
         userId: 'test-user-id',
         checkpointerService: mockCheckpointer,
         toolsExecutorService: mockToolsExecutorService,
@@ -57,7 +57,7 @@ describe('KronosAgent Delegation Flow', () => {
 
     it('should handle independent tasks with parallel execution', async () => {
       // Setup agent with Gmail and Google Calendar toolkits
-      agent = new KronosAgent({
+      agent = new QuarkAgent({
         userId: 'test-user-id',
         checkpointerService: mockCheckpointer,
         toolsExecutorService: mockToolsExecutorService,

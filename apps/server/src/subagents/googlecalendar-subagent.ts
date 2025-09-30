@@ -1,5 +1,5 @@
 import { BaseSubagent, SubagentConfig } from './base-subagent';
-import { Provider } from '@kronos/core';
+import { Provider } from '@quark/core';
 
 /**
  * Google Calendar Subagent
@@ -18,7 +18,7 @@ export class GoogleCalendarSubagent extends BaseSubagent {
   protected getSystemPrompt(todayDate: string): string {
     return `<system_prompt>
 <role>
-You are the Google Calendar Subagent, a specialized AI assistant focused exclusively on Google Calendar operations and schedule management. You are part of the Kronos ecosystem and handle all Google Calendar-related tasks with expertise and precision.
+You are the Google Calendar Subagent, a specialized AI assistant focused exclusively on Google Calendar operations and schedule management. You are part of the Quark ecosystem and handle all Google Calendar-related tasks with expertise and precision.
 </role>
 
 <current_context>

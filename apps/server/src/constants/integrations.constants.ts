@@ -3,7 +3,7 @@ import {
   IntegrationStatusType,
   AuthType,
   Provider,
-} from '@kronos/core';
+} from '@quark/core';
 
 export const AVAILABLE_INTEGRATIONS: Integration[] = [
   {

@@ -1,19 +1,19 @@
-# @kronos/core
+# @quark/core
 
-Core types and utilities for the Kronos chat application.
+Core types and utilities for the Quark chat application.
 
 ## Installation
 
 ```bash
-npm install @kronos/core
+npm install @quark/core
 ```
 
 ## Modular Structure
 
 This package is organized into two main modules:
 
-- **`@kronos/core/types`** - All TypeScript interfaces and type definitions
-- **`@kronos/core/utils`** - Common utility functions for validation, formatting, and API handling
+- **`@quark/core/types`** - All TypeScript interfaces and type definitions
+- **`@quark/core/utils`** - Common utility functions for validation, formatting, and API handling
 
 ## Features
 
@@ -37,17 +37,17 @@ import {
   StreamEventFactory,
   formatDate, 
   validateEmail 
-} from '@kronos/core';
+} from '@quark/core';
 ```
 
 ### Modular Imports (Recommended)
 
 ```typescript
 // Import only types
-import { User, ChatMessage, Conversation } from '@kronos/core/types';
+import { User, ChatMessage, Conversation } from '@quark/core/types';
 
 // Import only utilities
-import { formatDate, validateEmail, createApiUrl } from '@kronos/core/utils';
+import { formatDate, validateEmail, createApiUrl } from '@quark/core/utils';
 ```
 
 ### Stream Events
@@ -58,7 +58,7 @@ import {
   StreamEventParser,
   StartEvent,
   TokenEvent 
-} from '@kronos/core';
+} from '@quark/core';
 
 // Create events
 const startEvent = StreamEventFactory.createStartEvent('conv-123', true);
@@ -72,7 +72,7 @@ const event = parser.parse('data: {"type":"start","data":{"conversationId":"conv
 ### Authentication
 
 ```typescript
-import { User, AuthToken, LoginRequest } from '@kronos/core/types';
+import { User, AuthToken, LoginRequest } from '@quark/core/types';
 
 const user: User = {
   id: 'user-123',
@@ -84,7 +84,7 @@ const user: User = {
 ### Chat
 
 ```typescript
-import { ChatMessage, Conversation } from '@kronos/core/types';
+import { ChatMessage, Conversation } from '@quark/core/types';
 
 const message: ChatMessage = {
   id: 'msg-123',
@@ -104,7 +104,7 @@ import {
   isValidEmail, 
   validateRequired,
   createApiUrl 
-} from '@kronos/core/utils';
+} from '@quark/core/utils';
 
 // Date formatting
 const formatted = formatDate(new Date());
