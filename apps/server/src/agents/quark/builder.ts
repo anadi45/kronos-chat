@@ -1,22 +1,22 @@
-import { StateGraph, END } from '@langchain/langgraph';
-import { ChatGoogleGenerativeAI } from '@langchain/google-genai';
+import { StateGraph, END } from "@langchain/langgraph";
+import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
 import {
   SystemMessage,
   AIMessage,
   ToolMessage,
   isAIMessage,
-} from '@langchain/core/messages';
-import { Runnable, RunnableConfig } from '@langchain/core/runnables';
-import { Logger } from '@nestjs/common';
-import { QuarkAgentState, QuarkAgentStateSchema } from './state';
-import { MODELS } from '../../constants/models.constants';
-import { generateSystemPrompt, formatFinalAnswerSystemPrompt } from './prompts';
-import { getContextValue, extractToolCalls } from '../common/utils';
-import { getCurrentDate } from '@quark/core';
-import { CheckpointerService } from '../../checkpointer';
-import { ToolsExecutorService } from '../../tools/tools-executor.service';
-import { ToolsProviderService } from '../../tools/tools-provider.service';
-import { Provider } from '@quark/core';
+} from "@langchain/core/messages";
+import { Runnable, RunnableConfig } from "@langchain/core/runnables";
+import { Logger } from "@nestjs/common";
+import { QuarkAgentState, QuarkAgentStateSchema } from "./state";
+import { MODELS } from "../../constants/models.constants";
+import { generateSystemPrompt, formatFinalAnswerSystemPrompt } from "./prompts";
+import { getContextValue, extractToolCalls } from "../common/utils";
+import { getCurrentDate } from "@quark/core";
+import { CheckpointerService } from "../../checkpointer";
+import { ToolsExecutorService } from "../../tools/tools-executor.service";
+import { ToolsProviderService } from "../../tools/tools-provider.service";
+import { Provider } from "@quark/core";
 
 export type QuarkAgentConfig = {
   userId: string;
@@ -43,27 +43,21 @@ export class QuarkAgentBuilder {
   private userId: string;
   private readonly logger = new Logger(QuarkAgentBuilder.name);
 
-  AGENT_NAME = 'quark_agent';
+  AGENT_NAME = "quark_agent";
 
-  constructor({
-    userId,
-    checkpointerService,
-    toolsExecutorService,
-    toolsProviderService,
-    toolkits,
-  }: QuarkAgentConfig) {
-    this.userId = userId;
-    this.checkpointerService = checkpointerService;
-    this.toolsExecutorService = toolsExecutorService;
-    this.toolsProviderService = toolsProviderService;
-    this.toolkits = toolkits;
+  constructor(config: QuarkAgentConfig) {
+    this.userId = config.userId;
+    this.checkpointerService = config.checkpointerService;
+    this.toolsExecutorService = config.toolsExecutorService;
+    this.toolsProviderService = config.toolsProviderService;
+    this.toolkits = config.toolkits;
     this.initializeProviders();
   }
 
   /**
    * Build and return the complete Quark agent graph
    */
-  async build(): Promise<ReturnType<StateGraph<any>['compile']>> {
+  async build(): Promise<ReturnType<StateGraph<any>["compile"]>> {
     try {
       await this.loadTools(this.userId, this.toolkits);
 
@@ -91,7 +85,7 @@ export class QuarkAgentBuilder {
     try {
       // Validate API key before creating models
       if (!process.env.GEMINI_API_KEY) {
-        throw new Error('GEMINI_API_KEY environment variable is not set');
+        throw new Error("GEMINI_API_KEY environment variable is not set");
       }
 
       this.model = new ChatGoogleGenerativeAI({
@@ -111,10 +105,10 @@ export class QuarkAgentBuilder {
         streaming: true,
         maxRetries: 3,
       }).withConfig({
-        tags: ['final_answer_node'],
+        tags: ["final_answer_node"],
       });
     } catch (error) {
-      console.error('Failed to initialize Google Generative AI models:', error);
+      console.error("Failed to initialize Google Generative AI models:", error);
       throw new Error(`Failed to initialize Providers: ${error.message}`);
     }
   }
@@ -134,7 +128,7 @@ export class QuarkAgentBuilder {
       this.tools = await this.toolsProviderService.getAvailableTools(
         userId,
         toolkits,
-        'quark_agent'
+        "quark_agent"
       );
 
       this.logger.log(
@@ -142,7 +136,7 @@ export class QuarkAgentBuilder {
       );
     } catch (error) {
       this.logger.warn(
-        'Failed to load tools, continuing without tools',
+        "Failed to load tools, continuing without tools",
         error.message
       );
       this.tools = [];
@@ -153,10 +147,10 @@ export class QuarkAgentBuilder {
    * Add all nodes to the workflow graph
    */
   private async addNodes(workflow: any): Promise<void> {
-    workflow.addNode('validation', this.createValidationNode());
-    workflow.addNode('agent', this.createAgentNode());
-    workflow.addNode('tool', this.createToolNode());
-    workflow.addNode('final_answer', this.createFinalAnswerNode());
+    workflow.addNode("validation", this.createValidationNode());
+    workflow.addNode("agent", this.createAgentNode());
+    workflow.addNode("tool", this.createToolNode());
+    workflow.addNode("final_answer", this.createFinalAnswerNode());
   }
 
   /**
@@ -164,38 +158,38 @@ export class QuarkAgentBuilder {
    */
   private configureEdges(workflow: any): void {
     // Set entry point to validation node
-    workflow.setEntryPoint('validation');
+    workflow.setEntryPoint("validation");
 
     // Validation -> agent or final answer based on toolkits
     workflow.addConditionalEdges(
-      'validation',
+      "validation",
       (state: QuarkAgentState) => {
         // If no toolkits are provided or toolkits is undefined, go directly to final answer
         if (!this.toolkits || this.toolkits.length === 0) {
-          return 'no';
+          return "no";
         }
 
         // If toolkits exist, route to agent node
-        console.log('shouldUseTools - routing to yes (use tools)');
-        return 'yes';
+        console.log("shouldUseTools - routing to yes (use tools)");
+        return "yes";
       },
       {
-        yes: 'agent',
-        no: 'final_answer',
+        yes: "agent",
+        no: "final_answer",
       }
     );
 
     // Agent -> tools or final answer node
-    workflow.addConditionalEdges('agent', this.shouldAct, {
-      continue: 'tool',
-      final_answer: 'final_answer',
+    workflow.addConditionalEdges("agent", this.shouldAct, {
+      continue: "tool",
+      final_answer: "final_answer",
     });
 
     // Tool -> agent (loop back)
-    workflow.addEdge('tool', 'agent');
+    workflow.addEdge("tool", "agent");
 
     // Final answer -> END
-    workflow.addEdge('final_answer', END);
+    workflow.addEdge("final_answer", END);
   }
 
   /**
@@ -220,14 +214,14 @@ export class QuarkAgentBuilder {
 
       const toolNames = toolCalls.map((tc) => tc.name);
 
-      if (toolNames.includes('signalContextReadiness')) {
-        return 'final_answer';
+      if (toolNames.includes("signalContextReadiness")) {
+        return "final_answer";
       }
 
-      return 'continue';
+      return "continue";
     }
 
-    return 'final_answer';
+    return "final_answer";
   }
 
   /**
@@ -238,7 +232,7 @@ export class QuarkAgentBuilder {
       const lastMessage = state.messages[state.messages.length - 1];
 
       if (!lastMessage || !isAIMessage(lastMessage)) {
-        this.logger.debug('No AI message found, skipping tool execution');
+        this.logger.debug("No AI message found, skipping tool execution");
         return {};
       }
 
@@ -247,13 +241,13 @@ export class QuarkAgentBuilder {
 
       if (toolCalls.length === 0) {
         this.logger.debug(
-          'No tool calls found in last message, skipping tool execution'
+          "No tool calls found in last message, skipping tool execution"
         );
         return {};
       }
 
       // Get context values for tool execution
-      const userId = getContextValue(config, 'userId');
+      const userId = getContextValue(config, "userId");
 
       // Convert tool calls to the format expected by ToolExecutorService
       const toolCallInfos = toolCalls.map((toolCall) => ({
@@ -261,8 +255,8 @@ export class QuarkAgentBuilder {
         args: toolCall.args,
         id: toolCall.id,
         type: (this.toolsProviderService.isInhouseTool(toolCall.name)
-          ? 'inhouse'
-          : 'mcp') as 'inhouse' | 'mcp',
+          ? "inhouse"
+          : "mcp") as "inhouse" | "mcp",
       }));
 
       try {
@@ -281,7 +275,7 @@ export class QuarkAgentBuilder {
           messages: toolResults,
         };
       } catch (error) {
-        this.logger.error('Tool execution failed:', error);
+        this.logger.error("Tool execution failed:", error);
 
         // Return error messages for all tool calls
         const errorResults = toolCalls.map(
@@ -311,7 +305,7 @@ export class QuarkAgentBuilder {
       const messages = [new SystemMessage(formattedPrompt), ...state.messages];
 
       const modelWithTools = this.model.bindTools(this.tools, {
-        tool_choice: 'any',
+        tool_choice: "any",
       });
 
       const response = await modelWithTools.invoke(messages, config);
@@ -344,7 +338,7 @@ export class QuarkAgentBuilder {
 
       const result = finalResponse.content as string;
 
-      this.logger.log('Final answer generated successfully');
+      this.logger.log("Final answer generated successfully");
       return {
         result,
         messages: [new AIMessage(result)],

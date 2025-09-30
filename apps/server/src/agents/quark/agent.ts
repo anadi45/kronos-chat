@@ -12,18 +12,12 @@ export class QuarkAgent {
   private toolsProviderService: ToolsProviderService;
   private toolkits: Provider[];
 
-  constructor({
-    userId,
-    checkpointerService,
-    toolsExecutorService,
-    toolsProviderService,
-    toolkits,
-  }: QuarkAgentConfig) {
-    this.userId = userId;
-    this.checkpointerService = checkpointerService;
-    this.toolsExecutorService = toolsExecutorService;
-    this.toolsProviderService = toolsProviderService;
-    this.toolkits = toolkits;
+  constructor(config: QuarkAgentConfig) {
+    this.userId = config.userId;
+    this.checkpointerService = config.checkpointerService;
+    this.toolsExecutorService = config.toolsExecutorService;
+    this.toolsProviderService = config.toolsProviderService;
+    this.toolkits = config.toolkits;
   }
 
   async getCompiledAgent(): Promise<ReturnType<StateGraph<any>["compile"]>> {
