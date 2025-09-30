@@ -142,10 +142,10 @@ The client communicates with the NestJS backend via:
 **Development:**
 ```bash
 # Build development image
-docker build -t kronos-client:dev .
+docker build -t quark-client:dev .
 
 # Run container
-docker run -p 3000:80 kronos-client:dev
+docker run -p 3000:80 quark-client:dev
 ```
 
 **Production (via docker-compose):**

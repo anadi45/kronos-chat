@@ -15,12 +15,12 @@ This is an [Nx workspace](https://nx.dev) containing:
 ## Project Structure
 
 ```
-kronos-chat/
+quark-chat/
 ├── apps/
 │   ├── client/          # React frontend application
 │   └── server/          # NestJS backend API
 ├── libs/
-│   └── kronos-core/     # Core types and utilities (@kronos/core)
+│   └── quark-core/      # Core types and utilities (@quark/core)
 ├── docker-compose.yml   # Container orchestration
 └── package.json         # Monorepo configuration
 ```
@@ -78,7 +78,7 @@ kronos-chat/
 - PostgreSQL database
 
 ### Shared Libraries
-- `@kronos/core`: Core types, utilities, and stream event system
+- `@quark/core`: Core types, utilities, and stream event system
   - **Stream Events**: Type-safe streaming event system for real-time chat
   - **Authentication**: User types and auth utilities
   - **Chat**: Message and conversation types
@@ -146,12 +146,12 @@ JWT_SECRET=your-secret-key-here
 - **Responsive Design**: Works on desktop, tablet, and mobile
 - **Type Safety**: Full TypeScript coverage across frontend and backend
 - **Monorepo Benefits**: Shared code, consistent tooling, and incremental builds
-- **Core Package**: Consolidated `@kronos/core` with types, utilities, and stream events
+- **Core Package**: Consolidated `@quark/core` with types, utilities, and stream events
 
 ## Development Workflow
 
-1. Use core types and utilities: `import { User, ChatMessage, formatDate, validateEmail } from '@kronos/core'`
-2. Use stream events: `import { StreamEventFactory, StartEvent } from '@kronos/core'`
+1. Use core types and utilities: `import { User, ChatMessage, formatDate, validateEmail } from '@quark/core'`
+2. Use stream events: `import { StreamEventFactory, StartEvent } from '@quark/core'`
 3. Run affected tests: `npx nx affected:test`
 4. View dependency graph: `npx nx graph`
 

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { apiService } from '../services/apiService';
-import { type UserLogin } from '@kronos/core';
+import { type UserLogin } from '@quark/core';
 
 interface LoginFormProps {
   onSuccess?: () => void;
