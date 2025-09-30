@@ -1,9 +1,9 @@
-import { QuarkAgentBuilder, QuarkAgentConfig } from './builder';
-import { CheckpointerService } from '../../checkpointer';
-import { ToolsExecutorService } from '../../tools/tools-executor.service';
-import { ToolsProviderService } from '../../tools/tools-provider.service';
-import { StateGraph } from '@langchain/langgraph';
-import { Provider } from '@quark/core';
+import { QuarkAgentBuilder, QuarkAgentConfig } from "./builder";
+import { CheckpointerService } from "../../checkpointer";
+import { ToolsExecutorService } from "../../tools/tools-executor.service";
+import { ToolsProviderService } from "../../tools/tools-provider.service";
+import { StateGraph } from "@langchain/langgraph";
+import { Provider } from "@quark/core";
 
 export class QuarkAgent {
   private userId: string;
@@ -26,7 +26,7 @@ export class QuarkAgent {
     this.toolkits = toolkits;
   }
 
-  async getCompiledAgent(): Promise<ReturnType<StateGraph<any>['compile']>> {
+  async getCompiledAgent(): Promise<ReturnType<StateGraph<any>["compile"]>> {
     const compiledAgent = await new QuarkAgentBuilder({
       userId: this.userId,
       checkpointerService: this.checkpointerService,
