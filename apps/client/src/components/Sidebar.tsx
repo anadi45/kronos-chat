@@ -68,15 +68,13 @@ const Sidebar: React.FC<SidebarProps> = ({
       <div className="sidebar-header">
         <div className={`sidebar-logo ${isCollapsed ? 'justify-center' : ''}`}>
           <div className="sidebar-logo-icon">
-            <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M18 10c0 3.866-3.582 7-8 7a8.841 8.841 0 01-4.083-.98L2 17l1.338-3.123C2.493 12.767 2 11.434 2 10c0-3.866 3.582-7 8-7s8 3.134 8 7zM7 9H5v2h2V9zm8 0h-2v2h2V9zM9 9h2v2H9V9z" clipRule="evenodd" />
-            </svg>
+            <img src="/logo.png" alt="Quark Chat" className="w-6 h-6" />
           </div>
           {!isCollapsed && (
             <span className="sidebar-logo-text">Quark</span>
           )}
         </div>
-        {!isCollapsed && (
+        {!isCollapsed ? (
           <button
             onClick={onToggle}
             className="sidebar-toggle"
@@ -91,6 +89,23 @@ const Sidebar: React.FC<SidebarProps> = ({
             >
               <line x1="18" y1="6" x2="6" y2="18" strokeLinecap="round" />
               <line x1="6" y1="6" x2="18" y2="18" strokeLinecap="round" />
+            </svg>
+          </button>
+        ) : (
+          <button
+            onClick={onToggle}
+            className="sidebar-toggle"
+            aria-label="Expand sidebar"
+          >
+            <svg
+              className="w-5 h-5 transition-all duration-300 ease-in-out"
+              fill="currentColor"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <line x1="6" y1="6" x2="18" y2="18" strokeLinecap="round" />
+              <line x1="6" y1="18" x2="18" y2="6" strokeLinecap="round" />
             </svg>
           </button>
         )}
