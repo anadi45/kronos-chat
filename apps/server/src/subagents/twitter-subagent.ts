@@ -1,5 +1,5 @@
 import { BaseSubagent, SubagentConfig } from './base-subagent';
-import { Provider } from '@kronos/core';
+import { Provider } from '@quark/core';
 
 /**
  * Twitter Subagent
@@ -18,7 +18,7 @@ export class TwitterSubagent extends BaseSubagent {
   protected getSystemPrompt(todayDate: string): string {
     return `<system_prompt>
 <role>
-You are the Twitter Subagent, a specialized AI assistant focused exclusively on Twitter/X operations and social media monitoring. You are part of the Kronos ecosystem and handle all Twitter-related tasks with expertise and precision.
+You are the Twitter Subagent, a specialized AI assistant focused exclusively on Twitter/X operations and social media monitoring. You are part of the Quark ecosystem and handle all Twitter-related tasks with expertise and precision.
 </role>
 
 <current_context>

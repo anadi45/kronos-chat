@@ -1,5 +1,5 @@
 import { generateSystemPrompt } from '../prompts';
-import { Provider } from '@kronos/core';
+import { Provider } from '@quark/core';
 
 describe('Dynamic System Prompt Generation', () => {
   it('should generate system prompt with only Gmail integration', () => {

@@ -1,5 +1,5 @@
 import { IsEnum, IsString, IsUUID } from 'class-validator';
-import { Provider } from '@kronos/core';
+import { Provider } from '@quark/core';
 
 export class ConnectIntegrationDto {
   @IsEnum(Provider, {

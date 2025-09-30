@@ -5,7 +5,9 @@
     "emitDeclarationOnly": true,
     "importHelpers": true,
     "isolatedModules": true,
-    "lib": ["es2022"],
+    "lib": [
+      "es2022"
+    ],
     "module": "nodenext",
     "moduleResolution": "nodenext",
     "noEmitOnError": true,
@@ -18,9 +20,15 @@
     "target": "es2022",
     "baseUrl": ".",
     "paths": {
-      "@kronos/core": ["libs/kronos-core/src/index.ts"],
-      "@kronos/core/types": ["libs/kronos-core/src/types/index.ts"],
-      "@kronos/core/utils": ["libs/kronos-core/src/utils/index.ts"]
+      "@quark/core": [
+        "libs/quark-core/src/index.ts"
+      ],
+      "@quark/core/types": [
+        "libs/quark-core/src/types/index.ts"
+      ],
+      "@quark/core/utils": [
+        "libs/quark-core/src/utils/index.ts"
+      ]
     }
   }
 }

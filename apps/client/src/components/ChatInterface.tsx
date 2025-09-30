@@ -7,8 +7,8 @@ import type {
   ChatMessage,
   ChatRequest,
   Provider
-} from '@kronos/core';
-import { StreamEvent, StreamEventType } from '@kronos/core';
+} from '@quark/core';
+import { StreamEvent, StreamEventType } from '@quark/core';
 import IntegrationSelector from './IntegrationSelector';
 
 interface ChatInterfaceProps {

@@ -13,7 +13,7 @@ import {
   Integration,
   ConnectIntegrationResponse,
   DisconnectIntegrationResponse,
-} from '@kronos/core';
+} from '@quark/core';
 import {
   ConnectIntegrationDto,
   DisconnectIntegrationDto,

@@ -10,14 +10,14 @@ import type {
   DisconnectIntegrationResponse,
   PaginatedResponse,
   Conversation,
-} from '@kronos/core';
+} from '@quark/core';
 
 // API Configuration
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api/v1';
 
 /**
- * API Service for Kronos Chat Backend
+ * API Service for Quark Chat Backend
  * Handles all communication with the FastAPI backend
  */
 class ApiService {

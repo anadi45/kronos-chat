@@ -1,5 +1,5 @@
 /**
- * Utility functions for the Kronos chat application.
+ * Utility functions for the Quark chat application.
  * 
  * This module provides common utility functions for:
  * - API communication and error handling

@@ -1,5 +1,5 @@
 import { BaseSubagent, SubagentConfig } from './base-subagent';
-import { Provider } from '@kronos/core';
+import { Provider } from '@quark/core';
 
 /**
  * Slack Subagent
@@ -18,7 +18,7 @@ export class SlackSubagent extends BaseSubagent {
   protected getSystemPrompt(todayDate: string): string {
     return `<system_prompt>
 <role>
-You are the Slack Subagent, a specialized AI assistant focused exclusively on Slack operations and team communication. You are part of the Kronos ecosystem and handle all Slack-related tasks with expertise and precision.
+You are the Slack Subagent, a specialized AI assistant focused exclusively on Slack operations and team communication. You are part of the Quark ecosystem and handle all Slack-related tasks with expertise and precision.
 </role>
 
 <current_context>

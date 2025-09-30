@@ -1,12 +1,12 @@
 import { BaseMessage } from '@langchain/core/messages';
 import { Annotation } from '@langchain/langgraph';
 
-export interface KronosAgentState {
+export interface QuarkAgentState {
   messages: BaseMessage[];
   result: string;
 }
 
-export const KronosAgentStateSchema = Annotation.Root({
+export const QuarkAgentStateSchema = Annotation.Root({
   messages: Annotation<BaseMessage[]>({
     reducer: (x, y) => x.concat(y),
     default: () => [],

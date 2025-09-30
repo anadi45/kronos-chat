@@ -1,7 +1,7 @@
 /**
- * @kronos/core
+ * @quark/core
  * 
- * Core types and utilities for the Kronos chat application.
+ * Core types and utilities for the Quark chat application.
  * 
  * This package provides modular access to:
  * - Types: All TypeScript interfaces and type definitions
@@ -10,11 +10,11 @@
  * Usage:
  * ```typescript
  * // Import everything
- * import { User, ChatMessage, formatDate, StreamEventFactory } from '@kronos/core';
+ * import { User, ChatMessage, formatDate, StreamEventFactory } from '@quark/core';
  * 
  * // Import specific modules
- * import { User, ChatMessage } from '@kronos/core/types';
- * import { formatDate, validateEmail } from '@kronos/core/utils';
+ * import { User, ChatMessage } from '@quark/core/types';
+ * import { formatDate, validateEmail } from '@quark/core/utils';
  * ```
  */
 

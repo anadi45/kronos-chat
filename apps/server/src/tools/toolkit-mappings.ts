@@ -1,4 +1,4 @@
-import { Provider } from '@kronos/core';
+import { Provider } from '@quark/core';
 
 /**
  * Toolkit to Tools Mapping

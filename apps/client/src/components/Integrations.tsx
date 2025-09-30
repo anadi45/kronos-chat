@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { apiService } from '../services/apiService';
-import type { Integration } from '@kronos/core';
+import type { Integration } from '@quark/core';
 
 interface IntegrationIconProps {
   integrationId: string;
@@ -49,7 +49,7 @@ const InfoTooltip: React.FC<InfoTooltipProps> = ({ capabilities, children }) => 
   const [isVisible, setIsVisible] = useState(false);
 
   return (
-    <div 
+    <div
       className="info-tooltip-container"
       onMouseEnter={() => setIsVisible(true)}
       onMouseLeave={() => setIsVisible(false)}
@@ -139,7 +139,7 @@ const IntegrationCard: React.FC<IntegrationCardProps> = ({
     if (integration.status === 'coming_soon') {
       return null; // Don't show action button for coming_soon integrations
     }
-    
+
     if (integration.status === 'beta') {
       return (
         <button className="btn btn-integration" disabled>
@@ -232,9 +232,8 @@ const IntegrationCard: React.FC<IntegrationCardProps> = ({
 
   return (
     <div
-      className={`integration-card ${
-        integration.isConnected ? 'connected' : ''
-      }`}
+      className={`integration-card ${integration.isConnected ? 'connected' : ''
+        }`}
     >
       <div className="integration-header">
         <IntegrationIcon integrationId={integration.id} className="w-8 h-8" />
@@ -242,9 +241,9 @@ const IntegrationCard: React.FC<IntegrationCardProps> = ({
           <h3 className="integration-title">{integration.name}</h3>
           <InfoTooltip capabilities={getIntegrationCapabilities(integration)}>
             <div className="integration-info-icon">
-              <img 
-                src="/images/integrations/info.png" 
-                alt="Info" 
+              <img
+                src="/images/integrations/info.png"
+                alt="Info"
                 className="info-icon"
               />
             </div>
@@ -334,12 +333,12 @@ const Integrations: React.FC = () => {
 
       // Load integrations to reflect the new connection
       loadIntegrations();
-      
+
       // Trigger a custom event to notify other components about the integration change
       window.dispatchEvent(new CustomEvent('integrationChanged', {
-        detail: { 
-          action: 'connected', 
-          provider: state 
+        detail: {
+          action: 'connected',
+          provider: state
         }
       }));
 
@@ -360,7 +359,7 @@ const Integrations: React.FC = () => {
       // Single API call that returns all integrations with connection status
       const integrations = await apiService.getAvailableIntegrations();
       setIntegrations(integrations);
-      
+
       // Log the refresh for debugging
       console.log('Integrations refreshed:', integrations.length, 'integrations loaded');
     } catch (error) {
@@ -394,12 +393,12 @@ const Integrations: React.FC = () => {
         } else {
           // Refresh integrations if no redirect needed
           await loadIntegrations();
-          
+
           // Trigger a custom event to notify other components about the integration change
           window.dispatchEvent(new CustomEvent('integrationChanged', {
-            detail: { 
-              action: 'connected', 
-              provider: provider 
+            detail: {
+              action: 'connected',
+              provider: provider
             }
           }));
         }
@@ -439,19 +438,19 @@ const Integrations: React.FC = () => {
         setSuccess(
           `${providerToDisconnect} has been successfully disconnected. Your AI assistant will no longer have access to this integration.`
         );
-        
+
         // Force refresh integrations to reflect the disconnection
         // Add a small delay to ensure backend state is updated
         setTimeout(async () => {
           try {
             await loadIntegrations();
             console.log(`Integration ${providerToDisconnect} disconnected and UI refreshed`);
-            
+
             // Trigger a custom event to notify other components about the integration change
             window.dispatchEvent(new CustomEvent('integrationChanged', {
-              detail: { 
-                action: 'disconnected', 
-                provider: providerToDisconnect 
+              detail: {
+                action: 'disconnected',
+                provider: providerToDisconnect
               }
             }));
           } catch (refreshError) {
@@ -465,14 +464,14 @@ const Integrations: React.FC = () => {
       } else {
         setError(
           result.message ||
-            `Unable to disconnect from ${providerToDisconnect}. Please try again or contact support if the issue persists.`
+          `Unable to disconnect from ${providerToDisconnect}. Please try again or contact support if the issue persists.`
         );
       }
     } catch (error: any) {
       console.error('Error disconnecting integration:', error);
       setError(
         error.message ||
-          `Unable to disconnect from ${providerToDisconnect}. This might be due to a network issue or server problem. Please try again in a moment.`
+        `Unable to disconnect from ${providerToDisconnect}. This might be due to a network issue or server problem. Please try again in a moment.`
       );
     } finally {
       setDisconnectingProvider(null);
@@ -504,7 +503,7 @@ const Integrations: React.FC = () => {
       <div className="integrations-page">
         <div className="page-header">
           <p className="text-gray-300">
-            Connect Kronos with your favorite tools and services
+            Connect Quark with your favorite tools and services
           </p>
         </div>
         <div className="page-content">
@@ -543,7 +542,7 @@ const Integrations: React.FC = () => {
         <div className="page-header-content">
           <div className="page-header-text">
             <p className="text-gray-300">
-              Connect Kronos with your favorite tools and services
+              Connect Quark with your favorite tools and services
             </p>
           </div>
           <button
@@ -552,17 +551,17 @@ const Integrations: React.FC = () => {
             className="refresh-button"
             title="Refresh integrations"
           >
-            <svg 
-              className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} 
-              fill="none" 
-              stroke="currentColor" 
+            <svg
+              className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`}
+              fill="none"
+              stroke="currentColor"
               viewBox="0 0 24 24"
             >
-              <path 
-                strokeLinecap="round" 
-                strokeLinejoin="round" 
-                strokeWidth={2} 
-                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" 
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
               />
             </svg>
             {loading ? 'Refreshing...' : 'Refresh'}
@@ -614,7 +613,7 @@ const Integrations: React.FC = () => {
               About Integrations
             </h3>
             <p className="text-gray-300 mb-4">
-              Kronos integrations allow you to connect with your favorite tools
+              Quark integrations allow you to connect with your favorite tools
               and services, making your AI assistant available wherever you
               work.
             </p>

@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { type UserProfile } from '@kronos/core';
+import { type UserProfile } from '@quark/core';
 
 interface HomePageProps {
   user?: UserProfile;
@@ -54,10 +54,10 @@ const HomePage: React.FC<HomePageProps> = () => {
           <div className="homepage-welcome">
             <div className="homepage-welcome-content">
               <h1 className="homepage-welcome-title" style={{ paddingTop: '2rem' }}>
-                Welcome to Kronos AI
+                Welcome to Quark AI
               </h1>
               <p className="homepage-welcome-description">
-                Your intelligent assistant for conversations, integrations, and productivity. 
+                Your intelligent assistant for conversations, integrations, and productivity.
                 Get started by exploring our features below.
               </p>
             </div>
@@ -113,7 +113,7 @@ const HomePage: React.FC<HomePageProps> = () => {
       <footer className="homepage-footer">
         <div className="homepage-footer-content">
           <p className="homepage-footer-text">
-            Kronos AI v1.0 - Your intelligent assistant for productivity and creativity
+            Quark AI v1.0 - Your intelligent assistant for productivity and creativity
           </p>
         </div>
       </footer>

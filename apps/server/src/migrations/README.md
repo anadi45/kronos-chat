@@ -1,6 +1,6 @@
 # Database Migrations
 
-This directory contains TypeORM migrations for the Kronos Chat application.
+This directory contains TypeORM migrations for the Quark Chat application.
 
 ## Getting Started
 

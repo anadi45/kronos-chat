@@ -4,17 +4,17 @@ services:
   # PostgreSQL Database
   postgres:
     image: postgres:15-alpine
-    container_name: kronos-postgres
+    container_name: quark-postgres
     environment:
-      POSTGRES_DB: kronos_chat
-      POSTGRES_USER: kronos_user
-      POSTGRES_PASSWORD: kronos_password
+      POSTGRES_DB: quark_chat
+      POSTGRES_USER: quark_user
+      POSTGRES_PASSWORD: quark_password
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
       - "5432:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U kronos_user -d kronos_chat"]
+      test: ["CMD-SHELL", "pg_isready -U quark_user -d quark_chat"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -25,14 +25,14 @@ services:
     build:
       context: .
       dockerfile: apps/server/Dockerfile
-    container_name: kronos-api
+    container_name: quark-api
     environment:
       - NODE_ENV=production
       - DATABASE_HOST=postgres
       - DATABASE_PORT=5432
-      - DATABASE_USERNAME=kronos_user
-      - DATABASE_PASSWORD=kronos_password
-      - DATABASE_NAME=kronos_chat
+      - DATABASE_USERNAME=quark_user
+      - DATABASE_PASSWORD=quark_password
+      - DATABASE_NAME=quark_chat
       - DATABASE_LOGGING=false
       - JWT_SECRET=${JWT_SECRET:-your-secret-key-here-change-in-production}
       - JWT_EXPIRES_IN=30m
@@ -58,7 +58,7 @@ services:
       dockerfile: Dockerfile
       args:
         - VITE_API_BASE_URL=${VITE_API_BASE_URL:-http://localhost:8000/api/v1}
-    container_name: kronos-client
+    container_name: quark-client
     ports:
       - "3000:80"
     depends_on:
@@ -77,4 +77,4 @@ volumes:
 
 networks:
   default:
-    name: kronos-network
+    name: quark-network

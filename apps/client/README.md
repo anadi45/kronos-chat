@@ -1,6 +1,6 @@
-# Kronos Chat Client
+# Quark Chat Client
 
-The frontend application for the Kronos Chat system - a modern React-based chat interface with real-time AI interactions and third-party integrations.
+The frontend application for the Quark Chat system - a modern React-based chat interface with real-time AI interactions and third-party integrations.
 
 ## Features
 

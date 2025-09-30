@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { apiService } from '../services/apiService';
-import type { Integration, Provider } from '@kronos/core';
+import type { Integration, Provider } from '@quark/core';
 
 interface IntegrationIconProps {
   integrationId: string;
@@ -47,15 +47,15 @@ const IntegrationSelector: React.FC<IntegrationSelectorProps> = ({
 
   useEffect(() => {
     loadIntegrations();
-    
+
     // Listen for integration changes from other components
     const handleIntegrationChange = () => {
       console.log('Integration change detected, refreshing IntegrationSelector');
       loadIntegrations();
     };
-    
+
     window.addEventListener('integrationChanged', handleIntegrationChange);
-    
+
     return () => {
       window.removeEventListener('integrationChanged', handleIntegrationChange);
     };
@@ -190,14 +190,12 @@ const IntegrationSelector: React.FC<IntegrationSelectorProps> = ({
           <span className="integration-selector-text">
             {selectedToolkits.length === 0
               ? 'Select integrations'
-              : `${selectedToolkits.length} integration${
-                  selectedToolkits.length !== 1 ? 's' : ''
-                } selected`}
+              : `${selectedToolkits.length} integration${selectedToolkits.length !== 1 ? 's' : ''
+              } selected`}
           </span>
           <svg
-            className={`w-4 h-4 text-gray-400 transition-transform ${
-              isOpen ? 'rotate-180' : ''
-            }`}
+            className={`w-4 h-4 text-gray-400 transition-transform ${isOpen ? 'rotate-180' : ''
+              }`}
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -217,7 +215,7 @@ const IntegrationSelector: React.FC<IntegrationSelectorProps> = ({
           <div className="integration-selector-header">
             <h4>Select Integrations</h4>
             <p>
-              Choose which integrations Kronos can use for this conversation
+              Choose which integrations Quark can use for this conversation
             </p>
           </div>
 
@@ -225,58 +223,56 @@ const IntegrationSelector: React.FC<IntegrationSelectorProps> = ({
             {integrations
               .filter((integration) => integration.status !== 'coming_soon')
               .map((integration) => {
-              const isSelected = selectedToolkits.includes(integration.id);
-              return (
-                <button
-                  key={integration.id}
-                  className={`integration-selector-item ${
-                    isSelected ? 'selected' : ''
-                  }`}
-                  onClick={() => handleToggleIntegration(integration.id)}
-                  type="button"
-                >
-                  <div className="integration-selector-item-content">
-                    <div className="integration-selector-item-icon">
-                      <IntegrationIcon
-                        integrationId={integration.id}
-                        className="w-5 h-5"
-                      />
-                    </div>
-                    <div className="integration-selector-item-info">
-                      <div className="integration-selector-item-name-container">
-                        <div className="integration-selector-item-name">
-                          {integration.name}
+                const isSelected = selectedToolkits.includes(integration.id);
+                return (
+                  <button
+                    key={integration.id}
+                    className={`integration-selector-item ${isSelected ? 'selected' : ''
+                      }`}
+                    onClick={() => handleToggleIntegration(integration.id)}
+                    type="button"
+                  >
+                    <div className="integration-selector-item-content">
+                      <div className="integration-selector-item-icon">
+                        <IntegrationIcon
+                          integrationId={integration.id}
+                          className="w-5 h-5"
+                        />
+                      </div>
+                      <div className="integration-selector-item-info">
+                        <div className="integration-selector-item-name-container">
+                          <div className="integration-selector-item-name">
+                            {integration.name}
+                          </div>
+                        </div>
+                        <div className="integration-selector-item-description">
+                          {integration.description}
                         </div>
                       </div>
-                      <div className="integration-selector-item-description">
-                        {integration.description}
+                      <div className="integration-selector-item-checkbox">
+                        <div
+                          className={`integration-checkbox ${isSelected ? 'checked' : ''
+                            }`}
+                        >
+                          {isSelected && (
+                            <svg
+                              className="w-4 h-4 text-white"
+                              fill="currentColor"
+                              viewBox="0 0 20 20"
+                            >
+                              <path
+                                fillRule="evenodd"
+                                d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                clipRule="evenodd"
+                              />
+                            </svg>
+                          )}
+                        </div>
                       </div>
                     </div>
-                    <div className="integration-selector-item-checkbox">
-                      <div
-                        className={`integration-checkbox ${
-                          isSelected ? 'checked' : ''
-                        }`}
-                      >
-                        {isSelected && (
-                          <svg
-                            className="w-4 h-4 text-white"
-                            fill="currentColor"
-                            viewBox="0 0 20 20"
-                          >
-                            <path
-                              fillRule="evenodd"
-                              d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                              clipRule="evenodd"
-                            />
-                          </svg>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </button>
-              );
-            })}
+                  </button>
+                );
+              })}
           </div>
         </div>
       )}

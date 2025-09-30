@@ -1,6 +1,6 @@
 # Database Migration Setup Guide
 
-This guide explains how to set up and use database migrations in the Kronos Chat application.
+This guide explains how to set up and use database migrations in the Quark Chat application.
 
 ## Quick Start
 

@@ -3,7 +3,7 @@ import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { ConfigService } from '@nestjs/config';
 import { AuthService } from './auth.service';
-import type { JwtPayload } from '@kronos/core';
+import type { JwtPayload } from '@quark/core';
 import { UserResponseDto } from '../dto/user.dto';
 
 @Injectable()

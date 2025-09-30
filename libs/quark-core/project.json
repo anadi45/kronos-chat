@@ -1,0 +1,35 @@
+{
+  "name": "@quark/core",
+  "projectType": "library",
+  "sourceRoot": "libs/quark-core/src",
+  "targets": {
+    "build": {
+      "executor": "@nx/js:tsc",
+      "outputs": [
+        "{options.outputPath}"
+      ],
+      "options": {
+        "outputPath": "dist/libs/quark-core",
+        "tsConfig": "libs/quark-core/tsconfig.lib.json",
+        "packageJson": "libs/quark-core/package.json",
+        "main": "libs/quark-core/src/index.ts"
+      }
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint"
+    },
+    "test": {
+      "executor": "@nx/jest:jest",
+      "outputs": [
+        "{workspaceRoot}/coverage/{projectRoot}"
+      ],
+      "options": {
+        "jestConfig": "libs/quark-core/jest.config.ts"
+      }
+    }
+  },
+  "tags": [
+    "type:lib",
+    "scope:shared"
+  ]
+}

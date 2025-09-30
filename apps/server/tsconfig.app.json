@@ -2,7 +2,9 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "outDir": "dist",
-    "types": ["node"],
+    "types": [
+      "node"
+    ],
     "tsBuildInfoFile": "dist/tsconfig.app.tsbuildinfo",
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
@@ -20,12 +22,20 @@
     "allowSyntheticDefaultImports": true,
     "baseUrl": ".",
     "paths": {
-      "@kronos/core": ["../../dist/libs/kronos-core/src/index.js"],
-      "@kronos/core/types": ["../../dist/libs/kronos-core/src/types/index.js"],
-      "@kronos/core/utils": ["../../dist/libs/kronos-core/src/utils/index.js"]
+      "@quark/core": [
+        "../../dist/libs/quark-core/src/index.js"
+      ],
+      "@quark/core/types": [
+        "../../dist/libs/quark-core/src/types/index.js"
+      ],
+      "@quark/core/utils": [
+        "../../dist/libs/quark-core/src/utils/index.js"
+      ]
     }
   },
-  "include": ["src/**/*.ts"],
+  "include": [
+    "src/**/*.ts"
+  ],
   "exclude": [
     "out-tsc",
     "dist",
@@ -38,7 +48,7 @@
   ],
   "references": [
     {
-      "path": "../../libs/kronos-core/tsconfig.lib.json"
+      "path": "../../libs/quark-core/tsconfig.lib.json"
     }
   ]
 }

@@ -8,17 +8,17 @@ import {
 } from '@langchain/core/messages';
 import { Runnable, RunnableConfig } from '@langchain/core/runnables';
 import { Logger } from '@nestjs/common';
-import { KronosAgentState, KronosAgentStateSchema } from './state';
+import { QuarkAgentState, QuarkAgentStateSchema } from './state';
 import { MODELS } from '../../constants/models.constants';
 import { generateSystemPrompt, formatFinalAnswerSystemPrompt } from './prompts';
 import { getContextValue, extractToolCalls } from '../common/utils';
-import { getCurrentDate } from '@kronos/core';
+import { getCurrentDate } from '@quark/core';
 import { CheckpointerService } from '../../checkpointer';
 import { ToolsExecutorService } from '../../tools/tools-executor.service';
 import { ToolsProviderService } from '../../tools/tools-provider.service';
-import { Provider } from '@kronos/core';
+import { Provider } from '@quark/core';
 
-export type KronosAgentConfig = {
+export type QuarkAgentConfig = {
   userId: string;
   checkpointerService: CheckpointerService;
   toolsExecutorService: ToolsExecutorService;
@@ -27,12 +27,12 @@ export type KronosAgentConfig = {
 };
 
 /**
- * Kronos Agent Builder
+ * Quark Agent Builder
  *
- * Encapsulates the complex logic for building the Kronos agent graph using LangGraph.
+ * Encapsulates the complex logic for building the Quark agent graph using LangGraph.
  * This builder creates a workflow with tool execution, agent reasoning, and response generation.
  */
-export class KronosAgentBuilder {
+export class QuarkAgentBuilder {
   private model: ChatGoogleGenerativeAI;
   private answerModel: Runnable;
   private tools: any[] = [];
@@ -41,9 +41,9 @@ export class KronosAgentBuilder {
   private toolsExecutorService: ToolsExecutorService;
   private toolsProviderService: ToolsProviderService;
   private userId: string;
-  private readonly logger = new Logger(KronosAgentBuilder.name);
+  private readonly logger = new Logger(QuarkAgentBuilder.name);
 
-  AGENT_NAME = 'kronos_agent';
+  AGENT_NAME = 'quark_agent';
 
   constructor({
     userId,
@@ -51,7 +51,7 @@ export class KronosAgentBuilder {
     toolsExecutorService,
     toolsProviderService,
     toolkits,
-  }: KronosAgentConfig) {
+  }: QuarkAgentConfig) {
     this.userId = userId;
     this.checkpointerService = checkpointerService;
     this.toolsExecutorService = toolsExecutorService;
@@ -61,13 +61,13 @@ export class KronosAgentBuilder {
   }
 
   /**
-   * Build and return the complete Kronos agent graph
+   * Build and return the complete Quark agent graph
    */
   async build(): Promise<ReturnType<StateGraph<any>['compile']>> {
     try {
       await this.loadTools(this.userId, this.toolkits);
 
-      const workflow = new StateGraph(KronosAgentStateSchema);
+      const workflow = new StateGraph(QuarkAgentStateSchema);
 
       await this.addNodes(workflow);
       this.configureEdges(workflow);
@@ -80,7 +80,7 @@ export class KronosAgentBuilder {
       const compiledGraph = workflow.compile(compileOptions);
       return compiledGraph;
     } catch (error) {
-      throw new Error(`Failed to build Kronos agent: ${error.message}`);
+      throw new Error(`Failed to build Quark agent: ${error.message}`);
     }
   }
 
@@ -130,11 +130,11 @@ export class KronosAgentBuilder {
         this.toolsExecutorService
       );
 
-      // Use the tools provider service to get Kronos agent tools (delegation tools only)
+      // Use the tools provider service to get Quark agent tools (delegation tools only)
       this.tools = await this.toolsProviderService.getAvailableTools(
         userId,
         toolkits,
-        'kronos_agent'
+        'quark_agent'
       );
 
       this.logger.log(
@@ -169,7 +169,7 @@ export class KronosAgentBuilder {
     // Validation -> agent or final answer based on toolkits
     workflow.addConditionalEdges(
       'validation',
-      (state: KronosAgentState) => {
+      (state: QuarkAgentState) => {
         // If no toolkits are provided or toolkits is undefined, go directly to final answer
         if (!this.toolkits || this.toolkits.length === 0) {
           return 'no';
@@ -202,7 +202,7 @@ export class KronosAgentBuilder {
    * Create the validation node that checks for toolkits and routes accordingly
    */
   private createValidationNode() {
-    return async (state: KronosAgentState, config: RunnableConfig) => {
+    return async (state: QuarkAgentState, config: RunnableConfig) => {
       return state;
     };
   }
@@ -210,7 +210,7 @@ export class KronosAgentBuilder {
   /**
    * Determine if the agent should use tools or move to final answer
    */
-  private shouldAct(state: KronosAgentState): string {
+  private shouldAct(state: QuarkAgentState): string {
     const lastMessage = state.messages[state.messages.length - 1];
 
     // Handle AIMessage with tool routing logic
@@ -234,7 +234,7 @@ export class KronosAgentBuilder {
    * Create the tool execution node with enhanced error handling and context support
    */
   private createToolNode() {
-    return async (state: KronosAgentState, config: RunnableConfig) => {
+    return async (state: QuarkAgentState, config: RunnableConfig) => {
       const lastMessage = state.messages[state.messages.length - 1];
 
       if (!lastMessage || !isAIMessage(lastMessage)) {
@@ -304,7 +304,7 @@ export class KronosAgentBuilder {
    * Create the agent reasoning node with enhanced message handling
    */
   private createAgentNode() {
-    return async (state: KronosAgentState, config: RunnableConfig) => {
+    return async (state: QuarkAgentState, config: RunnableConfig) => {
       const todayDate = getCurrentDate();
       const formattedPrompt = generateSystemPrompt(this.toolkits, todayDate);
 
@@ -326,7 +326,7 @@ export class KronosAgentBuilder {
    * Create the final answer node with LLM-based response synthesis
    */
   private createFinalAnswerNode() {
-    return async (state: KronosAgentState, config: RunnableConfig) => {
+    return async (state: QuarkAgentState, config: RunnableConfig) => {
       const todayDate = getCurrentDate();
       const formattedPrompt = formatFinalAnswerSystemPrompt(todayDate);
 

@@ -1,6 +1,6 @@
-# Kronos Chat Server
+# Quark Chat Server
 
-The backend API for the Kronos Chat system - a scalable NestJS application with authentication and chat functionality.
+The backend API for the Quark Chat system - a scalable NestJS application with authentication and chat functionality.
 
 ## Features
 
@@ -85,9 +85,9 @@ apps/server/
    # Database Configuration
    DATABASE_HOST=localhost
    DATABASE_PORT=5432
-   DATABASE_USERNAME=kronos_user
-   DATABASE_PASSWORD=kronos_password
-   DATABASE_NAME=kronos_chat
+   DATABASE_USERNAME=quark_user
+   DATABASE_PASSWORD=quark_password
+   DATABASE_NAME=quark_chat
    
    # Authentication
    JWT_SECRET=your-super-secret-jwt-key-here
@@ -104,10 +104,10 @@ apps/server/
 4. **Start PostgreSQL database:**
    ```bash
    # Using Docker
-   docker run --name kronos-postgres \
-     -e POSTGRES_USER=kronos_user \
-     -e POSTGRES_PASSWORD=kronos_password \
-     -e POSTGRES_DB=kronos_chat \
+   docker run --name quark-postgres \
+     -e POSTGRES_USER=quark_user \
+     -e POSTGRES_PASSWORD=quark_password \
+     -e POSTGRES_DB=quark_chat \
      -p 5432:5432 \
      -d postgres:15-alpine
    
@@ -264,12 +264,12 @@ npm run test:e2e
 ### Development
 ```bash
 # Build image
-docker build -t kronos-server:dev .
+docker build -t quark-server:dev .
 
 # Run container
 docker run -p 3000:3000 \
   -e DATABASE_HOST=host.docker.internal \
-  kronos-server:dev
+  quark-server:dev
 ```
 
 ### Production
@@ -278,7 +278,7 @@ docker run -p 3000:3000 \
 docker-compose up -d server
 
 # Or build production image
-docker build -t kronos-server:prod --target production .
+docker build -t quark-server:prod --target production .
 ```
 
 ## Monitoring & Logging

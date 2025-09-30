@@ -8,7 +8,7 @@ import { LangChainToolConverter } from './langchain-tool-converter';
 import { ComposioOAuth } from '../entities/composio-oauth.entity';
 import { getToolsForToolkits } from './toolkit-mappings';
 import { DelegationToolsFactory } from './delegation-tools';
-import { Provider } from '@kronos/core';
+import { Provider } from '@quark/core';
 
 /**
  * Signal Context Readiness Tool
@@ -151,7 +151,7 @@ export class ToolsProviderService {
    *
    * @param userId - The user identifier
    * @param toolkits - Array of toolkit names to retrieve tools for
-   * @param agentName - The name of the agent requesting tools (e.g., 'kronos_agent', 'gmail_subagent', 'github_subagent')
+   * @param agentName - The name of the agent requesting tools (e.g., 'quark_agent', 'gmail_subagent', 'github_subagent')
    * @returns Promise<any[]> - Array of LangChain compatible tools
    */
   async getAvailableTools(
@@ -183,14 +183,14 @@ export class ToolsProviderService {
       // Get in-house tools
       const inhouseTools = Array.from(this.inhouseTools.values());
 
-      if (agentName === 'kronos_agent') {
-        // For Kronos agent: only delegation tools + in-house tools (NO integration tools)
+      if (agentName === 'quark_agent') {
+        // For Quark agent: only delegation tools + in-house tools (NO integration tools)
         const delegationTools = this.getDelegationToolsForProviders(finalToolkits);
         // Get updated in-house tools (which now includes registered delegation tools)
         const updatedInhouseTools = Array.from(this.inhouseTools.values());
 
         this.logger.log(
-          `Successfully retrieved ${updatedInhouseTools.length} Kronos agent tools (including ${delegationTools.length} delegation tools)`
+          `Successfully retrieved ${updatedInhouseTools.length} Quark agent tools (including ${delegationTools.length} delegation tools)`
         );
         return updatedInhouseTools;
       } else {
@@ -240,7 +240,7 @@ export class ToolsProviderService {
       const filteredInhouseTools = this.filterDelegationTools(inhouseTools, agentName);
       
       this.logger.warn(
-        `Falling back to in-house tools only: ${filteredInhouseTools.length} tools (${agentName === 'kronos_agent' ? 'including delegation tools' : 'delegation tools filtered out'})`
+        `Falling back to in-house tools only: ${filteredInhouseTools.length} tools (${agentName === 'quark_agent' ? 'including delegation tools' : 'delegation tools filtered out'})`
       );
       return filteredInhouseTools;
     }
@@ -248,15 +248,15 @@ export class ToolsProviderService {
 
   /**
    * Filter out delegation tools from a list of tools
-   * Delegation tools start with 'delegateTo' and should only be available to Kronos agent
+   * Delegation tools start with 'delegateTo' and should only be available to Quark agent
    *
    * @param tools - Array of tools to filter
    * @param agentName - Name of the agent requesting tools
    * @returns any[] - Filtered array of tools
    */
   private filterDelegationTools(tools: any[], agentName: string): any[] {
-    if (agentName === 'kronos_agent') {
-      // Kronos agent gets all tools including delegation tools
+    if (agentName === 'quark_agent') {
+      // Quark agent gets all tools including delegation tools
       return tools;
     } else {
       // Subagents should not have access to delegation tools
